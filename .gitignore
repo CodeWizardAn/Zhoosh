@@ -1,0 +1,56 @@
+# ─── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.tsbuildinfo
+
+# ─── Python / Backend ──────────────────────────────────────────────────────────
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.venv/
+venv/
+env/
+*.egg
+
+# ─── DATA FILES (proprietary – do not share) ──────────────────────────────────
+# Root TMDB raw datasets
+tmdb_5000_movies.csv
+tmdb_5000_credits.csv
+
+# Backend processed/expanded datasets
+backend/data/movies.csv
+backend/data/spotify_tracks.csv
+
+# Any other CSVs / pickles / model weights
+*.csv
+*.pkl
+*.pickle
+*.h5
+*.pt
+*.bin
+
+# ─── Secrets & API keys ────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+**/.env
+backend/.env
+frontend/.env
+
+# ─── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── OS & Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/

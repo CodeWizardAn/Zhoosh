@@ -1,0 +1,58 @@
+export type AppMode = 'movies' | 'music';
+
+export interface Movie {
+  id: string | number;
+  title: string;
+  overview: string;
+  poster_path: string;
+  backdrop_path?: string;
+  release_date: string;
+  vote_average: number;
+  genres: string[];
+  runtime?: number;
+  trailer_url?: string;
+  language?: string;
+  match_score?: number; // AI Agent Match %
+  agent_rationale?: string; // AI Reason for Recommendation
+}
+
+export interface Song {
+  id: string | number;
+  title: string;
+  artist: string;
+  album: string;
+  album_art: string;
+  duration_sec: number;
+  audio_url?: string;
+  genre: string;
+  language?: string;
+  plays?: string;
+  match_score?: number; // AI Agent Match %
+  agent_rationale?: string;
+}
+
+export interface Playlist {
+  id: string;
+  title: string;
+  description: string;
+  mode: AppMode;
+  items: Array<Movie | Song>;
+  created_at: string;
+  cover_art?: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: string;
+}
+
+export interface VoiceSearchState {
+  isOpen: boolean;
+  isListening: boolean;
+  transcript: string;
+  isProcessing: boolean;
+  resultQuery: string;
+}
