@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Sparkles, ArrowRight, Loader2, CheckCircle, Shield } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2, Shield } from 'lucide-react';
 import { SubscriptionPlan, PreferenceItem, TRANSITION_BEZIER } from '../types';
 import { PreferenceSummaryStrip } from '../components/PreferenceSummaryStrip';
 import { zhooshAudio } from '@/utils/cinematicSound';
@@ -53,18 +53,12 @@ export const DashboardRevealTransition: React.FC<DashboardRevealTransitionProps>
         isLaunching ? 'opacity-0' : 'opacity-100'
       }`} />
 
-      {/* Top Breadcrumb */}
-      <div className="w-full max-w-4xl flex items-center justify-between z-10 mb-6">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#C084FC]" />
-          <span className="text-xs font-mono font-bold tracking-wider text-gray-300 uppercase">
-            Taste Profile Synchronized
-          </span>
-        </div>
+      {/* Top Bar with Adjust Preferences */}
+      <div className="w-full max-w-2xl flex items-center justify-end z-10 mb-4">
         <button
           onClick={onModifyPreferences}
           disabled={isLaunching}
-          className="text-xs text-gray-400 hover:text-white font-semibold transition-colors disabled:opacity-30"
+          className="text-xs text-gray-400 hover:text-white font-semibold transition-colors disabled:opacity-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20"
         >
           Adjust Preferences
         </button>
@@ -75,53 +69,52 @@ export const DashboardRevealTransition: React.FC<DashboardRevealTransitionProps>
         <motion.div
           animate={isLaunching ? { opacity: 0.3, scale: 0.98 } : { opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="w-full space-y-6"
+          className="w-full space-y-4"
         >
           {/* Welcome Title */}
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-3">
-              <CheckCircle className="w-3.5 h-3.5 text-[#FF1E56]" />
-              <span>Zhoosh Neural Agent Calibrated</span>
-            </div>
+          <div className="space-y-2">
             <h1 className="text-3xl sm:text-5xl font-black font-serif text-white tracking-tight">
               Ready for Liftoff, {userName.split(' ')[0] || 'Member'}
             </h1>
-            <p className="text-xs sm:text-sm text-gray-400 mt-2 max-w-md mx-auto">
-              Your unified cinema and acoustic experience has synthesized 5 preference vectors with your {selectedPlan.name} membership.
+            <p className="text-xs sm:text-sm text-gray-400 max-w-md mx-auto">
+              Your personalized cinema and music experience is ready with your {selectedPlan.name} membership.
             </p>
           </div>
 
-          {/* Membership Mini Card */}
-          <div className="p-4 rounded-2xl bg-[#12121E] border border-purple-500/20 flex items-center justify-between shadow-lg text-left">
-            <div className="flex items-center gap-3">
+          {/* Membership Card */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-white/[0.06] to-white/[0.02] border border-white/10 backdrop-blur-xl flex items-center justify-between shadow-xl text-left transition-all hover:border-white/20">
+            <div className="flex items-center gap-3.5">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-md"
-                style={{ backgroundColor: selectedPlan.accentColor }}
+                className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shrink-0"
+                style={{
+                  backgroundColor: selectedPlan.accentColor,
+                  boxShadow: `0 0 20px ${selectedPlan.accentColor}40`,
+                }}
               >
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white flex items-center gap-2">
+                <div className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <span>{selectedPlan.name}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-gray-300">
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-white/10 border border-white/15 text-gray-200">
                     {selectedPlan.resolution}
                   </span>
                 </div>
-                <div className="text-xs text-gray-400 font-mono">
-                  ${selectedPlan.priceMonthly}/mo • {selectedPlan.simultaneousStreams} Concurrent Screens
+                <div className="text-xs text-gray-400 mt-0.5">
+                  ${selectedPlan.priceMonthly}/mo • {selectedPlan.simultaneousStreams} Concurrent Screens • Cancel anytime
                 </div>
               </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-2 text-xs text-[#C084FC] font-semibold">
-              <span>Lossless Spatial Audio</span>
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-[#D8B4FE] font-medium shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-[#C084FC]" />
+              <span>Spatial Audio</span>
             </div>
           </div>
 
           {/* Top 5 Summary Strip */}
           <PreferenceSummaryStrip
             selectedItems={selectedPreferences}
-            onRemoveItem={() => {}}
             maxItems={5}
           />
         </motion.div>

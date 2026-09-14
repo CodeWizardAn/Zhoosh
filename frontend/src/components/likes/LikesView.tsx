@@ -15,19 +15,39 @@ export const LikesView: React.FC = () => {
   const itemsToShow = mode === 'movies' ? likedMovies : likedSongs;
 
   return (
-    <div className="px-6 sm:px-10 py-6 max-w-7xl mx-auto space-y-6 pb-24">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
-            <Heart className="w-6 h-6 fill-rose-500/50" />
-          </div>
+    <div className="relative min-h-screen pb-24 bg-[#07070b] overflow-x-hidden">
+      {/* Black & Red Faded Grid Design Background Layer */}
+      <div className="absolute inset-0 pointer-events-none select-none z-0">
+        {/* Geometric Red Grid Mesh */}
+        <div className="absolute inset-0 dashboard-grid-pattern opacity-90" />
+
+        {/* Ambient Red Aura Glows */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90vw] max-w-[1200px] h-[500px] rounded-full bg-[#E50914]/15 blur-[120px]" />
+        <div className="absolute top-[40%] right-[-5%] w-[600px] h-[600px] rounded-full bg-[#B81D24]/12 blur-[140px]" />
+        <div className="absolute top-[70%] left-[-5%] w-[600px] h-[600px] rounded-full bg-[#E50914]/10 blur-[140px]" />
+
+        {/* Radial vignette fade from center */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse at 50% 20%, transparent 40%, rgba(5,5,8,0.75) 85%)'
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 px-6 sm:px-10 py-8 max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10 backdrop-blur-xs">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-[#E50914]/15 border border-[#E50914]/30 flex items-center justify-center text-[#E50914] shadow-lg shadow-[#E50914]/10">
+              <Heart className="w-6 h-6 fill-[#E50914]" />
+            </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Your Liked Library
+              My Zhoosh
             </h1>
             <p className="text-xs sm:text-sm text-gray-400">
-              Personalized bookmark queue that feeds continuous training to your AI recommendation model
+              Your personalized watchlist and bookmarks queue
             </p>
           </div>
         </div>
@@ -60,6 +80,7 @@ export const LikesView: React.FC = () => {
           onAction={() => setActiveNav('discover')}
         />
       )}
+      </div>
     </div>
   );
 };

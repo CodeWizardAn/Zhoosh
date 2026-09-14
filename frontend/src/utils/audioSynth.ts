@@ -85,6 +85,19 @@ class AudioSynthEngine {
     }
   }
 
+  playAmbientDrone() {
+    this.isMuted = false;
+    this.initCtx();
+    if (!this.ctx) return;
+    try {
+      this.triggerTone(55, 1.2, 'sine'); // Deep sub-bass A1
+      this.triggerTone(110, 1.0, 'triangle'); // Low A2
+      this.triggerTone(164.81, 0.8, 'sine'); // E3
+    } catch {
+      // Audio context safe fallback
+    }
+  }
+
   getAudioContext() {
     this.initCtx();
     return this.ctx;

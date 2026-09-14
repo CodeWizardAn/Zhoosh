@@ -2,19 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Sparkles, Check, Image as ImageIcon } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { NETFLIX_AVATARS, DEFAULT_AVATAR } from '@/utils/avatars';
 
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-];
+const PRESET_AVATARS = NETFLIX_AVATARS.map((a) => a.svgDataUri);
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
   const { user, setUser, addToast } = useAppStore();
@@ -26,7 +21,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     if (user) {
       setName(user.name);
       setEmail(user.email);
-      setAvatar(user.avatar || PRESET_AVATARS[0]);
+      setAvatar(user.avatar || DEFAULT_AVATAR);
     }
   }, [user, isOpen]);
 
@@ -103,16 +98,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                       key={idx}
                       type="button"
                       onClick={() => setAvatar(preset)}
-                      className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all hover:scale-105 ${
+                      className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
                         isSelected
-                          ? 'border-[#FF1E56] shadow-[0_0_15px_rgba(255,30,86,0.6)] scale-105'
-                          : 'border-white/10 opacity-70 hover:opacity-100'
+                          ? 'border-white shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105'
+                          : 'border-white/20 opacity-75 hover:opacity-100'
                       }`}
                     >
                       <img src={preset} alt="" className="w-full h-full object-cover" />
                       {isSelected && (
-                        <div className="absolute inset-0 bg-[#FF1E56]/30 flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white stroke-[3]" />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Check className="w-5 h-5 text-white stroke-[3] drop-shadow" />
                         </div>
                       )}
                     </button>

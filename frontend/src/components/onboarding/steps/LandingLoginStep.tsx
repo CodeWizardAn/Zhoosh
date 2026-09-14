@@ -186,7 +186,7 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
           >
             <img
               src="/netflix-poster-wall.jpg"
-              alt="Netflix Movie Poster Wall"
+              alt="Zhoosh Movie Poster Wall"
               className="w-full h-full object-cover object-left-top"
             />
             {backdropMode === 'dual' && (

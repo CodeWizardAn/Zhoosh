@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { AppMode, Movie, Song, Playlist, User, VoiceSearchState } from '@/types';
+import { DEFAULT_AVATAR } from '@/utils/avatars';
 
 interface ToastMessage {
   id: string;
@@ -23,6 +24,7 @@ interface AppState {
   closeAuth: () => void;
   setUser: (user: User | null) => void;
   logout: () => void;
+  logoutAndRedirect: () => void;
   isOnboardingOpen: boolean;
   openOnboarding: () => void;
   closeOnboarding: () => void;
@@ -96,7 +98,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     id: 'u-101',
     name: 'Alex Mercer',
     email: 'alex.mercer@zhoosh.stream',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    avatar: DEFAULT_AVATAR,
     role: 'Zhoosh VIP Ultra'
   },
   isAuthOpen: false,
@@ -104,7 +106,26 @@ export const useAppStore = create<AppState>((set, get) => ({
   openAuth: (authMode = 'login') => set({ isAuthOpen: true, authMode }),
   closeAuth: () => set({ isAuthOpen: false }),
   setUser: (user) => set({ user }),
-  logout: () => set({ user: null }),
+  logout: () => {
+    try {
+      localStorage.removeItem('zhoosh_onboarding_completed');
+      localStorage.removeItem('aura_onboarding_completed');
+      localStorage.removeItem('zhoosh_user_profile');
+      localStorage.removeItem('zhoosh_agent_v1');
+    } catch {}
+    set({ user: null });
+  },
+  logoutAndRedirect: () => {
+    try {
+      localStorage.removeItem('zhoosh_onboarding_completed');
+      localStorage.removeItem('aura_onboarding_completed');
+      localStorage.removeItem('zhoosh_user_profile');
+      localStorage.removeItem('zhoosh_agent_v1');
+    } catch {}
+    set({ user: null });
+    // Signal App.tsx to go back to landing — we use a custom event
+    window.dispatchEvent(new CustomEvent('zhoosh:logout'));
+  },
   isOnboardingOpen: false,
   openOnboarding: () => set({ isOnboardingOpen: true }),
   closeOnboarding: () => set({ isOnboardingOpen: false }),

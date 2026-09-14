@@ -10,6 +10,10 @@ class MovieItem(BaseModel):
     release_date: str
     vote_average: float
     genres: List[str] = []
+    director: Optional[str] = None
+    cast: List[str] = []
+    year: Optional[int] = None
+    language: Optional[str] = None
     runtime: Optional[int] = 140
     match_score: Optional[int] = 95
     agent_rationale: Optional[str] = None

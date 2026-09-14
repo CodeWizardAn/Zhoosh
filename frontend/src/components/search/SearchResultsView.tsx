@@ -24,7 +24,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) =
       <div className="flex items-center gap-2 text-sm text-gray-400">
         <Search className="w-4 h-4" />
         <span>
-          Showing AI search results for <span className="text-white font-bold">"{query}"</span>
+          Showing search results for <span className="text-white font-bold">"{query}"</span>
         </span>
       </div>
 

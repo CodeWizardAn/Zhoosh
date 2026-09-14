@@ -6,8 +6,17 @@ from backend.app.models import MovieItem
 router = APIRouter(prefix="/movies", tags=["Movies"])
 
 @router.get("", response_model=List[MovieItem])
-def list_movies(genre: Optional[str] = Query(None, description="Filter by genre"), limit: int = 24):
-    movies = engine.get_movies(genre=genre, limit=limit)
+def list_movies(
+    genre: Optional[str] = Query(None, description="Filter by genre"),
+    language: Optional[str] = Query(None, description="Filter by language"),
+    limit: int = Query(600, description="Max movies to return")
+):
+    # Automatically reload if in-memory dataset has outdated poster hashes
+    if engine.movies_df is not None and not engine.movies_df.empty:
+        if len(engine.movies_df) > 3 and 'zq8Cl3PNIDGU3i' not in str(engine.movies_df.iloc[3]['poster_path']):
+            print("[Movies Router] In-memory dataset is outdated. Reloading from disk...")
+            engine.load_and_train()
+    movies = engine.get_movies(genre=genre, language=language, limit=limit)
     return movies
 
 @router.get("/{movie_id}", response_model=MovieItem)

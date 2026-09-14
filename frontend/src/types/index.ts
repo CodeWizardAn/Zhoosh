@@ -9,6 +9,9 @@ export interface Movie {
   release_date: string;
   vote_average: number;
   genres: string[];
+  director?: string;
+  cast?: string[];
+  year?: number;
   runtime?: number;
   trailer_url?: string;
   language?: string;
@@ -55,4 +58,19 @@ export interface VoiceSearchState {
   transcript: string;
   isProcessing: boolean;
   resultQuery: string;
+}
+
+export interface AgentMessage {
+  id: string;
+  role: 'user' | 'agent';
+  content: string;
+  timestamp: string;
+  isStreaming?: boolean;
+  intent?: string;
+}
+
+export interface AgentProfile {
+  name: string;
+  avatarUrl: string;
+  createdAt: string;
 }

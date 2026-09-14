@@ -5,6 +5,7 @@ import { LandingLoginStep } from './steps/LandingLoginStep';
 import { PlansStep } from './steps/PlansStep';
 import { AccountCreationStep } from './steps/AccountCreationStep';
 import { PreferencesStep } from './steps/PreferencesStep';
+import { AgentSetupStep } from './steps/AgentSetupStep';
 import { DashboardRevealTransition } from './steps/DashboardRevealTransition';
 import { SplitScreenCurtain } from './components/SplitScreenCurtain';
 
@@ -26,7 +27,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     email: 'alex.mercer@zhoosh.stream',
     phone: '(555) 349-2810',
     selectedPlan: SUBSCRIPTION_PLANS[1], // Standard default
-    selectedPreferences: PREFERENCE_ITEMS.slice(0, 5) // 5 curated defaults ready
+    selectedPreferences: [], // Start empty so user can freely select genres and languages
+    agentName: 'Nova',
   });
 
   // Step 1 -> Step 2
@@ -41,7 +43,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       email,
       name: email.split('@')[0].replace('.', ' ')
     }));
-    // Take user to taste calibration or straight to reveal
+    // Take user to taste calibration
     setCurrentStep('preferences');
   };
 
@@ -60,13 +62,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setCurrentStep('preferences');
   };
 
-  // Step 4 -> Step 5
+  // Step 4 -> Step 5 (Agent Setup — NEW final onboarding step)
   const handlePreferencesComplete = (preferences: PreferenceItem[]) => {
     setUserData((prev) => ({ ...prev, selectedPreferences: preferences }));
+    setCurrentStep('agent-setup');
+  };
+
+  // Step 5 -> Step 6 (Reveal)
+  const handleAgentSetupComplete = (agentName: string) => {
+    setUserData((prev) => ({ ...prev, agentName }));
     setCurrentStep('reveal');
   };
 
-  // Step 5: "Let's Go" clicked -> Trigger 400ms Split Screen Curtain
+  // Step 6: "Let's Go" clicked -> Trigger 400ms Split Screen Curtain
   const handleBeginReveal = () => {
     setIsSplitting(true);
   };
@@ -121,6 +129,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             initialPreferences={userData.selectedPreferences}
             onPreferencesComplete={handlePreferencesComplete}
             onBack={() => setCurrentStep('account')}
+          />
+        )}
+
+        {currentStep === 'agent-setup' && (
+          <AgentSetupStep
+            key="agent-setup"
+            userName={userData.name}
+            selectedPlan={userData.selectedPlan || SUBSCRIPTION_PLANS[1]}
+            onComplete={handleAgentSetupComplete}
+            onBack={() => setCurrentStep('preferences')}
           />
         )}
 

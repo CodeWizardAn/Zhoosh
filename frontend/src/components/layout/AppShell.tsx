@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
+import { useAgentStore } from '@/store/useAgentStore';
 import { TopBar } from './TopBar';
 import { TopProgress } from '../common/TopProgress';
 import { PlayerBar } from '../player/PlayerBar';
@@ -16,11 +17,52 @@ import { LikesView } from '../likes/LikesView';
 import { SearchResultsView } from '../search/SearchResultsView';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
 import { FadedGridBackdrop } from '../common/FadedGridBackdrop';
+import { AgentCompanion } from '../agent/AgentCompanion';
+import { FixedFooter } from '../common/FixedFooter';
+import { NavThemeTransition } from '../common/NavThemeTransition';
+import { DEFAULT_AVATAR } from '@/utils/avatars';
 
 export const AppShell: React.FC = () => {
   const { mode, activeNav, isOnboardingOpen, closeOnboarding, setUser, addToast } = useAppStore();
+  const { profile: agentProfile, setProfile: setAgentProfile, loadFromStorage } = useAgentStore();
   const shouldReduceMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isNavTransitioning, setIsNavTransitioning] = useState(false);
+  const [transitionTarget, setTransitionTarget] = useState('');
+  const prevNavRef = React.useRef(activeNav);
+
+  // Trigger cinematic theme loading transition when switching between Home and My Zhoosh (Watchlist)
+  useEffect(() => {
+    if (prevNavRef.current !== activeNav) {
+      const isSwitchingHomeOrLikes =
+        (prevNavRef.current === 'discover' && activeNav === 'likes') ||
+        (prevNavRef.current === 'likes' && activeNav === 'discover');
+
+      if (isSwitchingHomeOrLikes && !shouldReduceMotion) {
+        setTransitionTarget(activeNav);
+        setIsNavTransitioning(true);
+        const timer = setTimeout(() => {
+          setIsNavTransitioning(false);
+        }, 550);
+        prevNavRef.current = activeNav;
+        return () => clearTimeout(timer);
+      }
+      prevNavRef.current = activeNav;
+    }
+  }, [activeNav, shouldReduceMotion]);
+
+  // Ensure agent profile is initialized for users who bypass onboarding
+  useEffect(() => {
+    loadFromStorage();
+    // If no profile in storage, set a default
+    if (!agentProfile) {
+      setAgentProfile({
+        name: 'Nova',
+        avatarUrl: '/agent-avatar.jpg',
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderActiveView = () => {
     if (searchQuery.trim().length > 0) {
@@ -46,9 +88,9 @@ export const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050508] text-white flex flex-col relative overflow-x-hidden font-sans">
-      {/* 1. Global Faded Grid Background matching the Black-Red-Purple theme */}
-      <FadedGridBackdrop intensity="medium" showPosters={true} />
+    <div className="min-h-screen bg-[#07070b] text-white flex flex-col relative overflow-x-hidden font-sans">
+      {/* 1. Global Clean Background */}
+      <FadedGridBackdrop intensity="subtle" showPosters={false} />
 
       {/* Top background query progress line */}
       <TopProgress />
@@ -72,16 +114,29 @@ export const AppShell: React.FC = () => {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        {/* Global Fixed Directory Footer */}
+        <FixedFooter />
       </div>
 
       {/* Bottom Player for Audio */}
       <PlayerBar />
+
+      {/* Agent Companion Floating Bubble */}
+      <AgentCompanion />
 
       {/* Overlays & Modals */}
       <VoiceSearchBar />
       <PlaylistPopover />
       <AuthModal />
       <ToastContainer />
+
+      {/* Cinematic Theme Loading Transition between Home and My Zhoosh */}
+      <AnimatePresence>
+        {isNavTransitioning && (
+          <NavThemeTransition targetNav={transitionTarget} />
+        )}
+      </AnimatePresence>
 
       {/* Premium Streaming Onboarding Flow Modal Overlay */}
       <AnimatePresence>
@@ -99,7 +154,7 @@ export const AppShell: React.FC = () => {
                   id: 'u-user-custom',
                   name: data.name,
                   email: data.email,
-                  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                  avatar: DEFAULT_AVATAR,
                   role: `${data.selectedPlan?.name || 'Standard'} Member`
                 });
                 closeOnboarding();

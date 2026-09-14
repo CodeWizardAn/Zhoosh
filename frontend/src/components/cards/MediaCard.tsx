@@ -83,13 +83,13 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         }
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative rounded-md overflow-hidden cursor-pointer select-none bg-[#181818] shadow-md hover:shadow-2xl transition-all w-44 sm:w-52 aspect-[2/3] shrink-0"
+        className="group relative rounded-md overflow-hidden cursor-pointer select-none bg-[#181818] shadow-md hover:shadow-2xl transition-all w-[160px] sm:w-[185px] md:w-[205px] aspect-[2/3] shrink-0"
       >
         <img
           src={posterImage}
           alt={title}
           loading="lazy"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-top"
         />
 
         {/* Netflix Match Tag */}

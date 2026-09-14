@@ -24,6 +24,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
   const [activeTab, setActiveTab] = useState<'movie' | 'music'>('movie');
   const [selectedItems, setSelectedItems] = useState<PreferenceItem[]>(initialPreferences);
 
+  const [limitNotice, setLimitNotice] = useState(false);
+
   const count = selectedItems.length;
   const isComplete = count >= 5;
 
@@ -35,6 +37,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
     const exists = selectedItems.some((i) => i.id === item.id);
     if (exists) {
       setSelectedItems(selectedItems.filter((i) => i.id !== item.id));
+      setLimitNotice(false);
     } else {
       if (selectedItems.length < 5) {
         const next = [...selectedItems, item];
@@ -42,6 +45,9 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         if (next.length === 5) {
           try { zhooshAudio.playZhooshIntroSound(); } catch {}
         }
+      } else {
+        setLimitNotice(true);
+        setTimeout(() => setLimitNotice(false), 3000);
       }
     }
   };
@@ -63,17 +69,16 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       <motion.button
         key={item.id}
         layout
-        onClick={() => !isFull && toggleItem(item)}
-        whileTap={shouldReduceMotion || isFull ? {} : { scale: 0.96, transition: SPRING_CURVE }}
-        disabled={isFull}
-        className={`relative w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 overflow-hidden group ${
+        onClick={() => toggleItem(item)}
+        whileTap={shouldReduceMotion ? {} : { scale: 0.96, transition: SPRING_CURVE }}
+        className={`relative w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 overflow-hidden group cursor-pointer ${
           isSelected
             ? activeTab === 'movie'
-              ? 'border-[#FF1E56]/70 bg-[#FF1E56]/10'
-              : 'border-[#A855F7]/70 bg-[#A855F7]/10'
+              ? 'border-[#FF1E56]/70 bg-[#FF1E56]/10 shadow-[0_0_15px_rgba(255,30,86,0.25)]'
+              : 'border-[#A855F7]/70 bg-[#A855F7]/10 shadow-[0_0_15px_rgba(168,85,247,0.25)]'
             : isFull
-            ? 'border-white/5 bg-white/3 opacity-30 cursor-not-allowed'
-            : 'border-white/10 bg-white/4 hover:border-white/25 hover:bg-white/8 cursor-pointer'
+            ? 'border-white/5 bg-white/3 opacity-45 hover:opacity-75'
+            : 'border-white/10 bg-white/4 hover:border-white/25 hover:bg-white/8'
         }`}
       >
         {/* Selected glow line on left */}
@@ -85,7 +90,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         )}
 
         <div className="flex items-center justify-between gap-3">
-          <span className={`text-sm font-semibold leading-tight ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+          <span className={`text-sm font-semibold leading-tight ${isSelected ? 'text-white font-bold' : 'text-gray-200'}`}>
             {item.title}
           </span>
 
@@ -159,13 +164,25 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             </button>
           </div>
 
-          {/* Progress indicator */}
-          <span className="text-xs text-gray-500 font-mono">{count}/5 selected</span>
+          {/* Progress indicator tag / line */}
+          {count === 5 ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>5/5 selected</span>
+            </div>
+          ) : count === 4 ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FF1E56]/15 border border-[#FF1E56]/40 text-[#FF6B8B] animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF1E56]" />
+              <span>Please select one more</span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-500 font-mono">{count}/5 selected</span>
+          )}
         </div>
       </div>
 
       {/* Page content */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto px-6 py-8 flex flex-col gap-8">
+      <div className="relative z-10 w-full max-w-4xl mx-auto px-6 py-8 flex flex-col gap-6">
 
         {/* Heading */}
         <div>
@@ -173,9 +190,32 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             What do you like to watch{userName ? `, ${userName}` : ''}?
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Pick at least 5 — languages and genres — to personalise your feed.
+            Pick 5 — languages and genres — to personalise your feed.
           </p>
         </div>
+
+        {/* Dynamic status line when 4 selected or limit reached */}
+        {count === 4 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-2.5 rounded-xl bg-[#FF1E56]/10 border border-[#FF1E56]/35 flex items-center gap-2.5 text-xs font-semibold text-[#FF6B8B]"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#FF1E56] animate-pulse shrink-0" />
+            <span>Please select one more</span>
+          </motion.div>
+        )}
+
+        {limitNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between text-xs font-medium text-purple-300"
+          >
+            <span>5/5 already selected! Tap any selected item to swap.</span>
+            <button onClick={() => setLimitNotice(false)} className="text-gray-400 hover:text-white text-xs">✕</button>
+          </motion.div>
+        )}
 
         {/* Selected chips row */}
         {selectedItems.length > 0 && (
@@ -230,10 +270,21 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       {/* Sticky bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#050508]/95 backdrop-blur-md border-t border-white/8">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
-          <div className="text-xs text-gray-500">
-            {isComplete
-              ? 'Ready to go! Hit Continue.'
-              : `Select ${5 - count} more to continue`}
+          <div className="text-xs">
+            {count === 5 ? (
+              <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                5/5 selected • Ready to go!
+              </span>
+            ) : count === 4 ? (
+              <span className="font-semibold text-[#FF6B8B]">
+                Please select one more
+              </span>
+            ) : (
+              <span className="text-gray-500">
+                Select {5 - count} more to continue
+              </span>
+            )}
           </div>
 
           {/* Progress bar */}

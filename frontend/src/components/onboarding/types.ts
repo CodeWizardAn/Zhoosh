@@ -2,7 +2,8 @@ export type OnboardingStep =
   | 'landing' 
   | 'plans' 
   | 'account' 
-  | 'preferences' 
+  | 'preferences'
+  | 'agent-setup'
   | 'reveal';
 
 export interface SubscriptionPlan {
@@ -39,6 +40,7 @@ export interface OnboardingUserData {
   password?: string;
   selectedPlan: SubscriptionPlan | null;
   selectedPreferences: PreferenceItem[];
+  agentName?: string;
 }
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [

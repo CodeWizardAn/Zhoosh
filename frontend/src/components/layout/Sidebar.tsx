@@ -125,19 +125,14 @@ export const Sidebar: React.FC = () => {
 
           <button
             onClick={() => setActiveNav('agent-ai')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+            className={`w-full flex items-center gap-3.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
               activeNav === 'agent-ai'
                 ? 'text-white bg-[#282828]'
                 : 'text-[#B3B3B3] hover:text-white hover:bg-[#181818]'
             }`}
           >
-            <div className="flex items-center gap-3.5">
-              <Sparkles className={`w-4 h-4 ${activeNav === 'agent-ai' ? (mode === 'movies' ? 'text-[#FF1E56]' : 'text-[#A855F7]') : ''}`} />
-              <span>For You</span>
-            </div>
-            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-gray-300">
-              Smart
-            </span>
+            <Sparkles className={`w-4 h-4 ${activeNav === 'agent-ai' ? (mode === 'movies' ? 'text-[#FF1E56]' : 'text-[#A855F7]') : ''}`} />
+            <span>For You</span>
           </button>
 
           <button
