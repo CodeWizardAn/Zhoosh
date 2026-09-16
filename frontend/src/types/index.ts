@@ -67,10 +67,23 @@ export interface AgentMessage {
   timestamp: string;
   isStreaming?: boolean;
   intent?: string;
+  movies?: Movie[];
+  songs?: Song[];
 }
 
 export interface AgentProfile {
   name: string;
   avatarUrl: string;
   createdAt: string;
+}
+
+export interface SearchResult {
+  query?: string;
+  search_type?: 'title_match' | 'genre_match' | 'general';
+  primary_movie?: Movie | null;
+  similar_movies?: Movie[];
+  genre?: string | null;
+  genre_top_movies?: Movie[];
+  movies: Movie[];
+  music: Song[];
 }

@@ -51,7 +51,20 @@ class ApiClient {
     }
   }
 
-  async search(query: string, mode: AppMode): Promise<{ movies: Movie[]; music: Song[] }> {
+  async fetchMovieRecommendations(movieId: string | number, limit: number = 8): Promise<Movie[]> {
+    try {
+      const res = await fetch(`${this.baseUrl}/movies/${movieId}/recommendations?limit=${limit}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      await delay(350);
+      return [...MOCK_MOVIES]
+        .filter((m) => String(m.id) !== String(movieId))
+        .slice(0, limit);
+    }
+  }
+
+  async search(query: string, mode: AppMode): Promise<import('@/types').SearchResult> {
     try {
       const res = await fetch(`${this.baseUrl}/search?q=${encodeURIComponent(query)}&mode=${mode}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -71,7 +84,36 @@ class ApiClient {
           s.artist.toLowerCase().includes(q) ||
           s.genre.toLowerCase().includes(q)
       );
-      return { movies: filteredMovies, music: filteredMusic };
+
+      const isInterstellar = q.includes('interstellar');
+      const isThriller = q.includes('thriller');
+
+      let primary_movie: Movie | null = null;
+      let similar_movies: Movie[] = [];
+      let genre_top_movies: Movie[] = [];
+      let search_type: 'title_match' | 'genre_match' | 'general' = 'general';
+
+      if (isInterstellar) {
+        primary_movie = MOCK_MOVIES.find((m) => m.title.toLowerCase().includes('interstellar')) || MOCK_MOVIES[0];
+        similar_movies = MOCK_MOVIES.filter((m) => String(m.id) !== String(primary_movie?.id)).slice(0, 6);
+        search_type = 'title_match';
+      } else if (isThriller) {
+        genre_top_movies = MOCK_MOVIES.filter((m) =>
+          m.genres.some((g) => g.toLowerCase().includes('thriller') || g.toLowerCase().includes('crime') || g.toLowerCase().includes('action'))
+        );
+        search_type = 'genre_match';
+      }
+
+      return {
+        query,
+        search_type,
+        primary_movie,
+        similar_movies,
+        genre: isThriller ? 'Thriller' : null,
+        genre_top_movies,
+        movies: filteredMovies,
+        music: filteredMusic
+      };
     }
   }
 
@@ -165,7 +207,9 @@ class ApiClient {
     agentName: string,
     onToken: (token: string) => void,
     onDone: (intent: string) => void,
-    onError: () => void
+    onError: () => void,
+    onMovies?: (movies: Movie[]) => void,
+    onSongs?: (songs: Song[]) => void
   ): Promise<void> {
     try {
       const res = await fetch(`${this.baseUrl}/agent/chat`, {
@@ -202,6 +246,10 @@ class ApiClient {
             const evt = JSON.parse(jsonStr);
             if (evt.type === 'token' && evt.content) {
               onToken(evt.content);
+            } else if (evt.type === 'movies' && evt.movies && onMovies) {
+              onMovies(evt.movies);
+            } else if (evt.type === 'songs' && evt.songs && onSongs) {
+              onSongs(evt.songs);
             } else if (evt.type === 'intent' && evt.intent) {
               detectedIntent = evt.intent;
             } else if (evt.type === 'done') {
@@ -213,27 +261,51 @@ class ApiClient {
       onDone(detectedIntent);
     } catch {
       // Mock streaming fallback
-      await delay(300);
-      const mockResponses: Record<string, string> = {
-        trending: "Here are today's **top trending picks** on Zhoosh:\n\n1. 🎬 **Forrest Gump** — Score: 99 · 6 Oscar Winner\n2. 🎬 **The Shawshank Redemption** — Score: 99 · IMDb #1 Masterpiece\n3. 🎬 **Oppenheimer** — Score: 98 · Historical masterpiece\n4. 🎬 **The Dark Knight** — Score: 98 · Dark noir thriller\n5. 🎬 **Spider-Man: Across the Spider-Verse** — Score: 96 · Multiverse animation\n\nWant details on any of these?",
-        recommendation: "Based on your taste profile, here are **5 picks curated for you**:\n\n1. 🎬 **Forrest Gump** (1994) — 99% match\n2. 🎬 **The Shawshank Redemption** — 99% match\n3. 🎬 **Gladiator** — 97% match\n4. 🎬 **Inception** — 97% match\n5. 🎬 **The Dark Knight** — 99% match\n\nThese align with your love of legendary, all-time cinematic masterpieces.",
-        availability: "Yes! That title **is available** on Zhoosh in your region. Stream it in 4K Ultra HD on your plan. Want me to find similar picks?",
-        history: "Looking at your recent activity:\n\n📅 **This week** you watched:\n• Forrest Gump ⭐⭐⭐⭐⭐\n• The Shawshank Redemption ⭐⭐⭐⭐⭐\n• Inception ⭐⭐⭐⭐\n\nYou're on a serious cinema masterpiece streak! Want to keep going?",
-        conversational: `I'm ${agentName}, your Zhoosh companion! Ask me about trending movies, personalized recommendations, or anything about your taste. What are you in the mood for?`,
-      };
-
+      await delay(200);
       const msg = message.toLowerCase();
       let intent = 'conversational';
-      if (msg.includes('trend') || msg.includes('top') || msg.includes('popular')) intent = 'trending';
-      else if (msg.includes('recommend') || msg.includes('suggest') || msg.includes('similar')) intent = 'recommendation';
-      else if (msg.includes('available') || msg.includes('watch')) intent = 'availability';
-      else if (msg.includes('history') || msg.includes('watched')) intent = 'history';
+      let attachedMovies: Movie[] = [];
+      let attachedSongs: Song[] = [];
+      let replyText = '';
 
-      const text = mockResponses[intent] || mockResponses.conversational;
-      const words = text.split(' ');
+      if (msg.includes('horror')) {
+        intent = 'horror';
+        replyText = "Here are top-rated 🎬 **Horror** movies curated for you on Zhoosh. Click **Watch / View Movie** on any card below to start streaming!";
+        attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('horror') || g.toLowerCase().includes('thriller'))).slice(0, 6);
+        if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 5);
+      } else if (msg.includes('comedy')) {
+        intent = 'comedy';
+        replyText = "Here are acclaimed 🎬 **Comedy** movies to brighten your day on Zhoosh. Click any card below to launch playback!";
+        attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('comedy') || g.toLowerCase().includes('adventure') || g.toLowerCase().includes('animation'))).slice(0, 6);
+        if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 5);
+      } else if (msg.includes('inception') || msg.includes('similar') || (msg.includes('like') && !msg.includes('predicted'))) {
+        intent = 'similar';
+        replyText = "If you love mind-bending cinema like 🎬 **Inception**, here are exceptional films tailored with matching atmosphere and high ratings:";
+        attachedMovies = MOCK_MOVIES.filter(m => !m.title.toLowerCase().includes('inception')).slice(0, 6);
+      } else if (msg.includes('predict') || msg.includes('tomorrow') || msg.includes('yesterday')) {
+        intent = 'predicted';
+        replyText = "🔮 **Predictive Neural Cinema Match**:\n\nBased on your predictive viewing history and taste profile, here are the top predicted feature films ready for you to stream today:";
+        attachedMovies = [...MOCK_MOVIES].sort((a, b) => (b.match_score || 0) - (a.match_score || 0)).slice(0, 6);
+      } else if (msg.includes('music') || msg.includes('song') || msg.includes('track') || msg.includes('soundtrack')) {
+        intent = 'music';
+        replyText = "Here are trending tracks and soundtrack scores on Zhoosh right now. Click any track to listen instantly!";
+        attachedSongs = MOCK_SONGS.slice(0, 6);
+      } else if (msg.includes('hi') || msg.includes('hello') || msg.includes('hey') || msg.includes('name') || msg.includes('who are you')) {
+        intent = 'conversational';
+        replyText = `Hello! I'm **${agentName}**, your personal cinema and soundtrack intelligence assistant on Zhoosh.\n\nAsk me for movie recommendations by genre (like **Horror** or **Comedy**), similar titles to **Inception**, or movies based on what was predicted for you!`;
+      } else {
+        intent = 'recommendation';
+        replyText = "Here are top-tier cinematic recommendations curated for your taste on Zhoosh:";
+        attachedMovies = MOCK_MOVIES.slice(0, 6);
+      }
+
+      if (attachedMovies.length > 0 && onMovies) onMovies(attachedMovies);
+      if (attachedSongs.length > 0 && onSongs) onSongs(attachedSongs);
+
+      const words = replyText.split(' ');
       for (const word of words) {
         onToken(word + ' ');
-        await delay(35);
+        await delay(20);
       }
       onDone(intent);
     }

@@ -8,6 +8,7 @@ import { PlayerBar } from '../player/PlayerBar';
 import { VoiceSearchBar } from '../voice/VoiceSearchBar';
 import { PlaylistPopover } from '../playlist/PlaylistPopover';
 import { AuthModal } from '../auth/AuthModal';
+import { MovieDetailsModal } from '../movies/MovieDetailsModal';
 import { ToastContainer } from '../common/Toast';
 import { MoviesView } from '../movies/MoviesView';
 import { MusicView } from '../music/MusicView';
@@ -17,7 +18,7 @@ import { LikesView } from '../likes/LikesView';
 import { SearchResultsView } from '../search/SearchResultsView';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
 import { FadedGridBackdrop } from '../common/FadedGridBackdrop';
-import { AgentCompanion } from '../agent/AgentCompanion';
+import { AIChatView } from '../agent/AIChatView';
 import { FixedFooter } from '../common/FixedFooter';
 import { NavThemeTransition } from '../common/NavThemeTransition';
 import { DEFAULT_AVATAR } from '@/utils/avatars';
@@ -71,7 +72,7 @@ export const AppShell: React.FC = () => {
 
     switch (activeNav) {
       case 'agent-ai':
-        return <RecommendationsView key="recommendations" />;
+        return <AIChatView key="ai-chat-view" />;
       case 'playlists':
         return <PlaylistPage key="playlists" />;
       case 'likes':
@@ -88,7 +89,7 @@ export const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#07070b] text-white flex flex-col relative overflow-x-hidden font-sans">
+    <div className={`min-h-screen bg-[#07070b] text-white flex flex-col relative font-sans ${activeNav === 'agent-ai' ? 'h-screen overflow-hidden' : 'overflow-x-hidden'}`}>
       {/* 1. Global Clean Background */}
       <FadedGridBackdrop intensity="subtle" showPosters={false} />
 
@@ -99,8 +100,8 @@ export const AppShell: React.FC = () => {
       <TopBar onSearchChange={setSearchQuery} searchValue={searchQuery} />
 
       {/* 3. Main Full-Width Streaming Experience */}
-      <div className="flex-1 w-full pt-16 flex flex-col z-10">
-        <main className="flex-1 min-h-[calc(100vh-64px)] w-full">
+      <div className={`flex-1 w-full pt-16 flex flex-col z-10 ${activeNav === 'agent-ai' ? 'h-[calc(100vh)] overflow-hidden' : ''}`}>
+        <main className={`flex-1 w-full flex flex-col ${activeNav === 'agent-ai' ? 'h-[calc(100vh-64px)] overflow-hidden' : 'min-h-[calc(100vh-64px)]'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={`${mode}-${activeNav}-${searchQuery ? 'searching' : 'content'}`}
@@ -108,27 +109,25 @@ export const AppShell: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full"
+              className={`w-full ${activeNav === 'agent-ai' ? 'h-full flex-1 flex flex-col overflow-hidden' : ''}`}
             >
               {renderActiveView()}
             </motion.div>
           </AnimatePresence>
         </main>
 
-        {/* Global Fixed Directory Footer */}
-        <FixedFooter />
+        {/* Global Fixed Directory Footer (hidden in full-screen AI chat) */}
+        {activeNav !== 'agent-ai' && <FixedFooter />}
       </div>
 
       {/* Bottom Player for Audio */}
       <PlayerBar />
 
-      {/* Agent Companion Floating Bubble */}
-      <AgentCompanion />
-
       {/* Overlays & Modals */}
       <VoiceSearchBar />
       <PlaylistPopover />
       <AuthModal />
+      <MovieDetailsModal />
       <ToastContainer />
 
       {/* Cinematic Theme Loading Transition between Home and My Zhoosh */}

@@ -7,6 +7,7 @@ export const QUERY_KEYS = {
   movies: (genre?: string) => ['movies', genre || 'all'] as const,
   music: (genre?: string) => ['music', genre || 'all'] as const,
   recommendations: (mode: AppMode) => ['recommendations', mode] as const,
+  movieRecommendations: (movieId: string | number) => ['movie-recommendations', String(movieId)] as const,
   search: (query: string, mode: AppMode) => ['search', query, mode] as const,
 };
 
@@ -34,6 +35,15 @@ export function useRecommendations(mode: AppMode) {
   });
 }
 
+export function useMovieRecommendations(movieId: string | number | null | undefined, limit: number = 8) {
+  return useQuery({
+    queryKey: QUERY_KEYS.movieRecommendations(movieId || 'none'),
+    queryFn: () => (movieId ? api.fetchMovieRecommendations(movieId, limit) : Promise.resolve([])),
+    enabled: !!movieId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useSearch(query: string, mode: AppMode) {
   return useQuery({
     queryKey: QUERY_KEYS.search(query, mode),
@@ -50,20 +60,21 @@ export function useLikeMutation() {
 
   return useMutation({
     mutationFn: async ({ item, mode }: { item: Movie | Song; mode: AppMode }) => {
-      // Optimistically update local store immediately
-      const nextLiked = toggleLike(item.id);
+      // Optimistically update local store immediately with full item object
+      const nextLiked = toggleLike(item);
       try {
         await api.toggleLike(item.id, mode);
-        return { id: item.id, liked: nextLiked };
+        return { item, liked: nextLiked };
       } catch (err) {
         // Rollback if server fails
-        toggleLike(item.id);
+        toggleLike(item);
         throw err;
       }
     },
     onSuccess: (data) => {
+      const title = 'title' in data.item ? data.item.title : 'Item';
       addToast({
-        title: data.liked ? 'Saved to your favorites' : 'Removed from favorites',
+        title: data.liked ? `Saved "${title}" to My Zhoosh` : `Removed "${title}" from My Zhoosh`,
         type: 'info'
       });
       queryClient.invalidateQueries({ queryKey: ['likes'] });

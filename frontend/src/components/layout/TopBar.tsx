@@ -8,37 +8,22 @@ import {
   Edit3,
   ChevronDown,
   Lock,
-  ArrowRightLeft,
   HelpCircle,
   Film,
-  Music2
+  Music2,
+  Sparkles
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useAgentStore } from '@/store/useAgentStore';
 import { ProfileModal } from '@/components/profile/ProfileModal';
 import { PlanDetailsModal } from '@/components/profile/PlanDetailsModal';
-import { NETFLIX_AVATARS, DEFAULT_AVATAR } from '@/utils/avatars';
+import { NETFLIX_AVATARS, DEFAULT_AVATAR, sanitizeAvatar } from '@/utils/avatars';
 import { ZhooshLogo } from '@/components/common/ZhooshLogo';
 
 interface TopBarProps {
   onSearchChange: (q: string) => void;
   searchValue: string;
 }
-
-const MOVIE_NAV = ['Home', 'My Zhoosh', 'Browse by Languages'];
-
-const KIDS_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="kidsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00C0FF"/>
-      <stop offset="50%" stop-color="#FFD700"/>
-      <stop offset="100%" stop-color="#FF0055"/>
-    </linearGradient>
-  </defs>
-  <rect width="120" height="120" rx="16" fill="url(#kidsGrad)"/>
-  <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="44" fill="#FFFFFF">kids</text>
-</svg>
-`)}`;
 
 export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) => {
   const {
@@ -52,25 +37,36 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
     logoutAndRedirect,
   } = useAppStore();
 
+  const { profile: agentProfile } = useAgentStore();
+  const assistantName = agentProfile?.name || 'Nova';
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  const NAV_ITEMS = ['Home', 'assistant', 'My Zhoosh'];
+
   const handleNavClick = (item: string) => {
-    if (item === 'My Zhoosh' || item === 'Zhoosh' || item === 'My List') setActiveNav('likes');
-    else setActiveNav('discover');
+    if (item === 'My Zhoosh' || item === 'Zhoosh' || item === 'My List') {
+      setActiveNav('likes');
+    } else if (item === 'assistant') {
+      setActiveNav('agent-ai');
+    } else {
+      setActiveNav('discover');
+    }
   };
 
   const isNavActive = (item: string) => {
     if ((item === 'My Zhoosh' || item === 'Zhoosh') && activeNav === 'likes') return true;
+    if (item === 'assistant' && activeNav === 'agent-ai') return true;
     if (item === 'Home' && (activeNav === 'discover' || activeNav === 'trending')) return true;
     return false;
   };
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-50 h-16 flex items-center px-6 sm:px-10 gap-6 select-none bg-[#050508]/95 backdrop-blur-md transition-colors">
+      <header className="fixed top-0 inset-x-0 z-50 h-16 flex items-center px-4 sm:px-8 gap-4 select-none bg-[#050508]/95 backdrop-blur-md border-b border-white/10 transition-colors">
         {/* LEFT: Zhoosh Brand Logo */}
         <button
           onClick={() => setActiveNav('discover')}
@@ -81,37 +77,57 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
         </button>
 
         {/* CENTER: Nav links with active pill */}
-        <nav className="hidden md:flex items-center gap-1.5">
-          {MOVIE_NAV.map((item) => {
+        <nav className="hidden md:flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
+          {NAV_ITEMS.map((item) => {
             const active = isNavActive(item);
+            const isAIItem = item === 'assistant';
             return (
               <button
                 key={item}
                 onClick={() => handleNavClick(item)}
-                className={`px-3.5 py-1 text-sm font-medium transition-all cursor-pointer ${
+                className={`px-3.5 py-1 text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   active
-                    ? 'bg-white/20 text-white font-semibold rounded-full shadow-sm'
+                    ? isAIItem
+                      ? mode === 'movies'
+                        ? 'bg-[#E50914] text-white font-bold rounded-full shadow-md shadow-red-950/60'
+                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-full shadow-md'
+                      : 'bg-white/20 text-white font-semibold rounded-full shadow-sm'
+                    : isAIItem
+                    ? mode === 'movies'
+                      ? 'text-red-400 hover:text-white font-semibold'
+                      : 'text-emerald-400 hover:text-white font-semibold'
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
-                {item}
+                {isAIItem && (
+                  <div className="w-4 h-4 rounded-full overflow-hidden shrink-0 border border-white/40 bg-purple-900/60">
+                    <img
+                      src={agentProfile?.avatarUrl || '/agent-avatar.jpg'}
+                      alt={assistantName}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/agent-avatar.jpg';
+                      }}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <span>{isAIItem ? assistantName : item}</span>
               </button>
             );
           })}
         </nav>
 
         {/* RIGHT controls */}
-        <div className="flex items-center gap-3 sm:gap-4 ml-auto shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 ml-auto shrink-0">
           {/* Movies / Music Mode Switcher Pill */}
           <div className="flex items-center bg-black/60 border border-white/20 rounded-full p-0.5 shadow-inner backdrop-blur-md">
             <button
               onClick={() => {
                 if (mode !== 'movies') {
                   setMode('movies');
-                  setActiveNav('discover');
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 mode === 'movies'
                   ? 'bg-[#E50914] text-white shadow-md'
                   : 'text-gray-400 hover:text-white'
@@ -119,16 +135,15 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
               title="Movies Mode"
             >
               <Film className="w-3.5 h-3.5" />
-              <span>Cinema</span>
+              <span className="hidden sm:inline">Cinema</span>
             </button>
             <button
               onClick={() => {
                 if (mode !== 'music') {
                   setMode('music');
-                  setActiveNav('discover');
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 mode === 'music'
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
                   : 'text-gray-400 hover:text-white'
@@ -136,7 +151,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
               title="Music Mode"
             >
               <Music2 className="w-3.5 h-3.5" />
-              <span>Music</span>
+              <span className="hidden sm:inline">Music</span>
             </button>
           </div>
 
@@ -185,12 +200,12 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-1.5 group p-1 rounded hover:bg-white/5 transition-all cursor-pointer"
-                title="Account & Profiles"
+                className="flex items-center gap-2 group p-1 rounded-full hover:bg-white/5 transition-all cursor-pointer"
+                title="Account & Profile"
               >
-                <div className="w-8 h-8 rounded-sm overflow-hidden ring-1 ring-white/20 group-hover:ring-white transition-all shadow bg-[#E50914] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 group-hover:ring-[#FF1E56] transition-all shadow-md shadow-black/40 flex items-center justify-center bg-black/40">
                   <img
-                    src={user.avatar || DEFAULT_AVATAR}
+                    src={sanitizeAvatar(user.avatar)}
                     alt={user.name}
                     className="w-full h-full object-cover"
                   />
@@ -209,96 +224,45 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-60 rounded-md bg-[#141414] border border-white/15 shadow-2xl py-2 text-sm text-white z-50 select-none"
+                    className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-[#0D0B14]/95 backdrop-blur-xl border border-white/15 shadow-2xl p-2.5 text-sm text-white z-50 select-none"
                   >
-                    {/* Upward triangle pointer caret (Screenshot 2) */}
-                    <div className="absolute -top-1.5 right-4 w-3 h-3 bg-[#141414] border-t border-l border-white/15 rotate-45" />
+                    {/* Upward triangle pointer caret */}
+                    <div className="absolute -top-1.5 right-4 w-3 h-3 bg-[#0D0B14] border-t border-l border-white/15 rotate-45" />
 
-                    {/* 1. Profile Switcher List (Screenshot 2) */}
-                    <div className="flex flex-col py-1">
-                      {/* Profile 1: ritujapatil2005 (Blue Smiley) + Lock */}
-                      <button
-                        onClick={() => {
-                          setUser({ ...user, name: 'ritujapatil2005', avatar: NETFLIX_AVATARS[1].svgDataUri });
-                          setIsProfileOpen(false);
-                        }}
-                        className="w-full flex items-center justify-between px-3.5 py-2 hover:bg-white/10 transition-colors group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-sm overflow-hidden bg-[#0071EB] shrink-0">
-                            <img src={NETFLIX_AVATARS[1].svgDataUri} alt="ritujapatil2005" className="w-full h-full object-cover" />
-                          </div>
-                          <span className="text-sm font-normal text-gray-200 group-hover:text-white truncate">
-                            {user?.name || 'ritujapatil2005'}
+                    {/* Active Profile Info */}
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.05] border border-white/10 mb-2">
+                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#FF1E56]/40 shrink-0 shadow-md">
+                        <img
+                          src={sanitizeAvatar(user.avatar)}
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-white truncate">
+                            {user.name || 'Advaith'}
                           </span>
+                          <Lock className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" />
                         </div>
-                        <Lock className="w-4 h-4 text-gray-400 group-hover:text-gray-200 shrink-0 ml-2" />
-                      </button>
-
-                      {/* Profile 2: Sharada (Yellow Smiley) */}
-                      <button
-                        onClick={() => {
-                          setUser({ ...user, name: 'Sharada', avatar: NETFLIX_AVATARS[2].svgDataUri });
-                          setIsProfileOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-3.5 py-2 hover:bg-white/10 transition-colors group cursor-pointer"
-                      >
-                        <div className="w-8 h-8 rounded-sm overflow-hidden bg-[#F59E0B] shrink-0">
-                          <img src={NETFLIX_AVATARS[2].svgDataUri} alt="Sharada" className="w-full h-full object-cover" />
-                        </div>
-                        <span className="text-sm font-normal text-gray-200 group-hover:text-white truncate">
-                          Sharada
+                        <span className="text-xs text-gray-400 truncate">
+                          {user.email || 'advaith@zhoosh.stream'}
                         </span>
-                      </button>
-
-                      {/* Profile 3: Children (Kids Gradient) */}
-                      <button
-                        onClick={() => {
-                          setUser({ ...user, name: 'Children', avatar: KIDS_AVATAR });
-                          setIsProfileOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-3.5 py-2 hover:bg-white/10 transition-colors group cursor-pointer"
-                      >
-                        <div
-                          className="w-8 h-8 rounded-sm overflow-hidden flex items-center justify-center font-black text-[10px] text-white shadow shrink-0"
-                          style={{ background: 'linear-gradient(135deg, #00C0FF 0%, #FFD700 45%, #FF0055 100%)' }}
-                        >
-                          <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] tracking-tight">kids</span>
-                        </div>
-                        <span className="text-sm font-normal text-gray-200 group-hover:text-white truncate">
-                          Children
-                        </span>
-                      </button>
+                      </div>
                     </div>
 
-                    {/* 2. Management Menu Items (Screenshot 2) */}
-                    <div className="flex flex-col py-1 text-sm font-normal text-gray-200">
-                      {/* Manage Profiles */}
+                    {/* Management Menu Items */}
+                    <div className="flex flex-col py-1 text-sm font-normal text-gray-200 space-y-0.5">
+                      {/* Manage Profile */}
                       <button
                         onClick={() => {
                           setIsProfileOpen(false);
                           setIsProfileModalOpen(true);
                         }}
-                        className="w-full flex items-center gap-3.5 px-3.5 py-2 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
                       >
                         <Edit3 className="w-4 h-4 text-gray-300 stroke-[1.75]" />
-                        <span>Manage Profiles</span>
-                      </button>
-
-                      {/* Transfer Profile */}
-                      <button
-                        onClick={() => {
-                          setIsProfileOpen(false);
-                          useAppStore.getState().addToast({
-                            title: 'Transfer Profile',
-                            description: 'Profile transfer wizard is ready for your account.',
-                            type: 'info'
-                          });
-                        }}
-                        className="w-full flex items-center gap-3.5 px-3.5 py-2 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
-                      >
-                        <ArrowRightLeft className="w-4 h-4 text-gray-300 stroke-[1.75]" />
-                        <span>Transfer Profile</span>
+                        <span>Manage Profile</span>
                       </button>
 
                       {/* Account */}
@@ -307,7 +271,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                           setIsProfileOpen(false);
                           setIsPlanModalOpen(true);
                         }}
-                        className="w-full flex items-center gap-3.5 px-3.5 py-2 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
                       >
                         <UserIcon className="w-4 h-4 text-gray-300 stroke-[1.75]" />
                         <span>Account</span>
@@ -323,21 +287,21 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                             type: 'info'
                           });
                         }}
-                        className="w-full flex items-center gap-3.5 px-3.5 py-2 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
                       >
                         <HelpCircle className="w-4 h-4 text-gray-300 stroke-[1.75]" />
                         <span>Help Centre</span>
                       </button>
                     </div>
 
-                    {/* 3. Divider & Sign Out */}
+                    {/* Divider & Sign Out */}
                     <div className="border-t border-white/10 mt-1 pt-1">
                       <button
                         onClick={() => {
                           setIsProfileOpen(false);
                           logoutAndRedirect();
                         }}
-                        className="w-full px-3.5 py-2 hover:underline hover:text-white text-gray-300 transition-colors text-center text-sm font-normal cursor-pointer"
+                        className="w-full px-3 py-2 rounded-lg hover:bg-red-500/10 hover:text-red-400 text-gray-300 transition-colors text-center text-sm font-medium cursor-pointer"
                       >
                         Sign out of Zhoosh
                       </button>

@@ -14,7 +14,8 @@ import {
   Award,
   Flame,
   Check,
-  Shuffle
+  Shuffle,
+  X
 } from 'lucide-react';
 import { useMovies, useLikeMutation } from '@/api/hooks';
 import { useAppStore } from '@/store/useAppStore';
@@ -336,7 +337,7 @@ const HeroBillboard: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
-  const { openPopover, likedIds } = useAppStore();
+  const { openPopover, likedIds, openMovieModal } = useAppStore();
   const likeMutation = useLikeMutation();
 
   const current = HERO_SHOWCASE[currentIndex];
@@ -387,7 +388,7 @@ const HeroBillboard: React.FC = () => {
   };
 
   const handleMoreInfo = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    e.stopPropagation();
     const movieObj: Movie = {
       id: current.id,
       title: current.title,
@@ -402,7 +403,7 @@ const HeroBillboard: React.FC = () => {
       year: current.year,
       match_score: current.matchScore
     };
-    openPopover(movieObj, rect);
+    openMovieModal(movieObj);
   };
 
   return (
@@ -571,9 +572,25 @@ interface ContinueWatchingItem {
   episodeLabel: string;
 }
 
-const ContinueWatchingCard: React.FC<{ item: ContinueWatchingItem }> = ({ item }) => {
+const VERIFIED_FALLBACK_POSTERS = [
+  'https://image.tmdb.org/t/p/w780/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',
+  'https://image.tmdb.org/t/p/w780/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+  'https://image.tmdb.org/t/p/w780/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+  'https://image.tmdb.org/t/p/w780/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg',
+  'https://image.tmdb.org/t/p/w780/lyQBXzOQSuE59IsHyhrp0qIiPAz.jpg',
+];
+
+const getSafeFallbackPoster = (id: string | number) => {
+  const hash = String(id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return VERIFIED_FALLBACK_POSTERS[hash % VERIFIED_FALLBACK_POSTERS.length];
+};
+
+const ContinueWatchingCard: React.FC<{
+  item: ContinueWatchingItem;
+  onRemove: (id: string | number, title: string) => void;
+}> = ({ item, onRemove }) => {
   const { movie, progressPercent, timeLeft, episodeLabel } = item;
-  const { openPopover, likedIds } = useAppStore();
+  const { likedIds, openMovieModal } = useAppStore();
   const isLiked = !!likedIds[String(movie.id)];
   const likeMutation = useLikeMutation();
 
@@ -615,17 +632,29 @@ const ContinueWatchingCard: React.FC<{ item: ContinueWatchingItem }> = ({ item }
             } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
               setImgSrc(movie.backdrop_path);
             } else {
-              setImgSrc('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80');
+              setImgSrc(getSafeFallbackPoster(movie.id));
             }
           }}
         />
+
+        {/* Quick Corner Remove Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(item.id, movie.title);
+          }}
+          className="absolute top-2 right-2 z-30 p-1.5 rounded-full bg-black/75 hover:bg-red-600 text-gray-300 hover:text-white border border-white/20 transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-lg"
+          title="Remove from Continue Watching"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
 
         {/* Hover Action Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-3 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <div className="flex items-center gap-2 mb-2.5">
             <button
               onClick={handleCardPlay}
-              className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
               title="Resume Play"
             >
               <Play className="w-4 h-4 fill-black ml-0.5" />
@@ -633,9 +662,9 @@ const ContinueWatchingCard: React.FC<{ item: ContinueWatchingItem }> = ({ item }
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                openPopover(movie, e.currentTarget.getBoundingClientRect());
+                openMovieModal(movie);
               }}
-              className="w-9 h-9 rounded-full bg-black/60 border border-white/50 text-white flex items-center justify-center hover:border-white transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 border border-white/50 text-white flex items-center justify-center hover:border-white transition-colors"
               title="More Info"
             >
               <Info className="w-4 h-4" />
@@ -646,11 +675,22 @@ const ContinueWatchingCard: React.FC<{ item: ContinueWatchingItem }> = ({ item }
                 triggerLikeBurst(e.clientX, e.clientY, 'movies');
                 likeMutation.mutate({ item: movie, mode: 'movies' });
               }}
-              className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-colors ${
                 isLiked ? 'bg-[#FF1E56] border-[#FF1E56] text-white' : 'border-white/50 bg-black/60 text-white hover:border-white'
               }`}
+              title={isLiked ? 'Unlike' : 'Like'}
             >
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(item.id, movie.title);
+              }}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 border border-white/50 text-gray-300 hover:text-red-400 hover:border-red-500 hover:bg-red-500/20 flex items-center justify-center transition-all cursor-pointer"
+              title="Remove from Continue Watching"
+            >
+              <X className="w-4 h-4" />
             </button>
           </div>
 
@@ -672,10 +712,32 @@ const ContinueWatchingCard: React.FC<{ item: ContinueWatchingItem }> = ({ item }
 
 const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [removedIds, setRemovedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('zhoosh_removed_cw_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: dir === 'right' ? 750 : -750, behavior: 'smooth' });
+  };
+
+  const handleRemove = (id: string | number, title: string) => {
+    const idStr = String(id);
+    const updated = [...removedIds, idStr];
+    setRemovedIds(updated);
+    try {
+      localStorage.setItem('zhoosh_removed_cw_ids', JSON.stringify(updated));
+    } catch {}
+    useAppStore.getState().addToast({
+      title: `Removed from Continue Watching`,
+      description: `"${title}" removed from your continue watching row.`,
+      type: 'info'
+    });
   };
 
   const continueItems: ContinueWatchingItem[] = useMemo(() => {
@@ -690,14 +752,17 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
       'Mid-Season Special'
     ];
 
-    return movies.slice(0, 8).map((m, idx) => ({
-      id: `cw-${m.id}`,
-      movie: m,
-      progressPercent: percentages[idx % percentages.length],
-      timeLeft: timeLabels[idx % timeLabels.length],
-      episodeLabel: episodeLabels[idx % episodeLabels.length]
-    }));
-  }, [movies]);
+    return movies
+      .filter((m) => !removedIds.includes(`cw-${m.id}`) && !removedIds.includes(String(m.id)))
+      .slice(0, 8)
+      .map((m, idx) => ({
+        id: `cw-${m.id}`,
+        movie: m,
+        progressPercent: percentages[idx % percentages.length],
+        timeLeft: timeLabels[idx % timeLabels.length],
+        episodeLabel: episodeLabels[idx % episodeLabels.length]
+      }));
+  }, [movies, removedIds]);
 
   if (!continueItems.length) return null;
 
@@ -724,7 +789,7 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
           className="flex gap-4 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
         >
           {continueItems.map((item) => (
-            <ContinueWatchingCard key={item.id} item={item} />
+            <ContinueWatchingCard key={item.id} item={item} onRemove={handleRemove} />
           ))}
         </div>
 
@@ -780,7 +845,7 @@ const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) =>
             } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
               setImgSrc(movie.backdrop_path);
             } else {
-              setImgSrc('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80');
+              setImgSrc(getSafeFallbackPoster(movie.id));
             }
           }}
         />
@@ -918,7 +983,7 @@ const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
             } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
               setImgSrc(movie.backdrop_path);
             } else {
-              setImgSrc('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80');
+              setImgSrc(getSafeFallbackPoster(movie.id));
             }
           }}
         />

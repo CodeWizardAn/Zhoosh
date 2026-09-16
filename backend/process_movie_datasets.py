@@ -30,8 +30,7 @@ def norm_title(t):
     # strip year in parens like (2020)
     t = re.sub(r"\s*\(\d{4}\)\s*$", "", str(t))
     t = re.sub(r"[^\w\s]", "", t.lower())
-    return " ".join(t.split())
-
+    return " ".join(t.split()) 
 # -------------------------------------------------------------
 # 1. Load TMDb 5000 Credits -> Directors & Cast Lookup
 # -------------------------------------------------------------

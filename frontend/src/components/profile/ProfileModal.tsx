@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Sparkles, Check, Image as ImageIcon } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
-import { NETFLIX_AVATARS, DEFAULT_AVATAR } from '@/utils/avatars';
+import { NETFLIX_AVATARS, DEFAULT_AVATAR, sanitizeAvatar } from '@/utils/avatars';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     if (user) {
       setName(user.name);
       setEmail(user.email);
-      setAvatar(user.avatar || DEFAULT_AVATAR);
+      setAvatar(sanitizeAvatar(user.avatar));
     }
   }, [user, isOpen]);
 

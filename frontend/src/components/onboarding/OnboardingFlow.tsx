@@ -12,11 +12,13 @@ import { SplitScreenCurtain } from './components/SplitScreenCurtain';
 interface OnboardingFlowProps {
   onComplete: (userData: OnboardingUserData) => void;
   onInstantBypass?: () => void;
+  onDirectSignIn?: (email: string) => void;
 }
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete,
-  onInstantBypass
+  onInstantBypass,
+  onDirectSignIn
 }) => {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('landing');
   const [isSplitting, setIsSplitting] = useState(false);
@@ -36,15 +38,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setCurrentStep('plans');
   };
 
-  // Step 1: direct sign in
+  // Step 1: direct sign in -> enters dashboard directly
   const handleLoginSuccess = (email: string) => {
-    setUserData((prev) => ({
-      ...prev,
+    const updatedUser = {
+      ...userData,
       email,
       name: email.split('@')[0].replace('.', ' ')
-    }));
-    // Take user to taste calibration
-    setCurrentStep('preferences');
+    };
+    setUserData(updatedUser);
+    if (onDirectSignIn) {
+      onDirectSignIn(email);
+    } else {
+      onComplete(updatedUser);
+    }
   };
 
   // Step 2 -> Step 3

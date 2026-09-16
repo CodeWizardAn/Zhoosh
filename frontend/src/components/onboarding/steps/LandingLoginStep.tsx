@@ -53,8 +53,17 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
   onLoginSuccess
 }) => {
   const shouldReduceMotion = useReducedMotion();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const signInCardRef = React.useRef<HTMLDivElement>(null);
+  const emailInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [email, setEmail] = useState(() => {
+    try {
+      return localStorage.getItem('zhoosh_last_email') || 'alex.mercer@zhoosh.stream';
+    } catch {
+      return 'alex.mercer@zhoosh.stream';
+    }
+  });
+  const [password, setPassword] = useState('ZhooshPass2026!');
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
@@ -62,6 +71,15 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
   const [backdropMode, setBackdropMode] = useState<'dual' | 'movies' | 'music'>('dual');
   const [hoveredMovieId, setHoveredMovieId] = useState<string | null>(null);
   const [hoveredSongId, setHoveredSongId] = useState<string | null>(null);
+
+  const handleSignInClick = () => {
+    if (signInCardRef.current) {
+      signInCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        emailInputRef.current?.focus();
+      }, 400);
+    }
+  };
 
   const triggerErrorShake = (msg: string) => {
     setErrorMessage(msg);
@@ -238,14 +256,14 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
         {/* CTA Buttons */}
         <div className="flex items-center gap-3">
           <button
-            onClick={onGoToPlans}
-            className="px-5 py-2 rounded-full text-sm font-semibold text-white/80 hover:text-white border border-white/20 hover:border-white/50 transition-all backdrop-blur-sm bg-white/5 hover:bg-white/10"
+            onClick={handleSignInClick}
+            className="px-5 py-2 rounded-full text-sm font-semibold text-white/80 hover:text-white border border-white/20 hover:border-white/50 transition-all backdrop-blur-sm bg-white/5 hover:bg-white/10 cursor-pointer"
           >
             Sign In
           </button>
           <button
             onClick={onGoToPlans}
-            className="px-5 py-2 rounded-full bg-gradient-to-r from-[#FF1E56] to-[#A855F7] text-sm font-bold text-white shadow-lg shadow-[#FF1E56]/25 hover:shadow-[#FF1E56]/50 hover:scale-105 transition-all"
+            className="px-5 py-2 rounded-full bg-gradient-to-r from-[#FF1E56] to-[#A855F7] text-sm font-bold text-white shadow-lg shadow-[#FF1E56]/25 hover:shadow-[#FF1E56]/50 hover:scale-105 transition-all cursor-pointer"
           >
             Get Started
           </button>
@@ -277,6 +295,7 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
 
         {/* Sliding Sign In Card */}
         <motion.div
+          ref={signInCardRef}
           initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.45 }}
@@ -334,6 +353,7 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
                     }`}
                   />
                   <input
+                    ref={emailInputRef}
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -562,8 +582,8 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
           </button>
         </div>
 
-        {/* Carousel / Row of Ranked Song Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pt-4 pb-2">
+        {/* Carousel / Row of Ranked Song Cards - Uniform with Trending Movies */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-4 pb-2">
           {trendingSongs.map((song, index) => (
             <div
               key={song.id}
@@ -574,7 +594,7 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
             >
               {/* Giant Rank Number Overlapping Lower Left */}
               <span
-                className="text-7xl sm:text-8xl lg:text-9xl font-black select-none pointer-events-none absolute -bottom-3 -left-4 sm:-left-6 z-20 leading-none"
+                className="text-7xl sm:text-8xl lg:text-9xl font-black select-none pointer-events-none absolute -bottom-3 -left-3 sm:-left-5 z-20 leading-none"
                 style={{
                   WebkitTextStroke: '4px #FFFFFF',
                   color: '#000000',
@@ -584,60 +604,52 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
                 {index + 1}
               </span>
 
-              {/* Track Card — clean, no image */}
+              {/* Poster/Cover Card — Uniform with Trending Movies */}
               <motion.div
                 whileHover={{ y: -8, scale: 1.03 }}
                 transition={{ duration: 0.25 }}
-                className="relative z-10 w-full rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#1A0D2E] to-[#0D0817] shadow-xl group-hover:border-[#A855F7]/60 group-hover:shadow-[0_12px_35px_rgba(168,85,247,0.3)] transition-all p-5 flex flex-col justify-between min-h-[110px]"
+                className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 bg-[#160D24] shadow-2xl group-hover:border-[#A855F7]/60 group-hover:shadow-[0_12px_35px_rgba(168,85,247,0.3)] transition-all"
               >
-                {/* Play button top-right */}
-                <div className="flex items-start justify-between">
-                  <div className="w-9 h-9 rounded-full bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play className="w-4 h-4 text-[#C084FC] fill-[#C084FC] translate-x-px" />
-                  </div>
-                  <Volume2 className="w-4 h-4 text-[#A855F7]/40 group-hover:text-[#A855F7] transition-colors" />
+                <img
+                  src={song.cover}
+                  alt={song.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+
+                {/* Dark Vignette Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
+
+                {/* Top Badge */}
+                <div className="absolute top-3 right-3 z-10">
+                  <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-[#A855F7]/40 text-[9px] font-bold text-[#C084FC]">
+                    {song.badge}
+                  </span>
                 </div>
 
-                {/* Song info at bottom */}
-                <div className="mt-4">
-                  <h3 className="font-bold text-sm text-white truncate leading-tight">
+                {/* Hover Play Button Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#A855F7] to-[#7C3AED] text-white flex items-center justify-center shadow-lg shadow-[#A855F7]/50 transform scale-90 group-hover:scale-100 transition-transform">
+                    <Play className="w-5 h-5 fill-white translate-x-0.5" />
+                  </div>
+                </div>
+
+                {/* Bottom Metadata */}
+                <div className="absolute bottom-3 right-3 left-10 sm:left-12 text-right">
+                  <h3 className="font-bold text-sm sm:text-base text-white truncate leading-tight drop-shadow">
                     {song.title}
                   </h3>
-                  <p className="text-[11px] text-gray-400 truncate mt-0.5">{song.artist}</p>
-                  <p className="text-[10px] text-gray-600 font-mono mt-1">{song.duration}</p>
+                  <p className="text-[10px] text-gray-300 font-medium truncate mt-0.5">
+                    {song.artist}
+                  </p>
+                  <div className="flex items-center justify-end gap-1.5 text-[9px] font-mono text-gray-400 mt-1">
+                    <span>{song.album}</span>
+                    <span>•</span>
+                    <span className="text-[#C084FC] font-bold">{song.duration}</span>
+                  </div>
                 </div>
               </motion.div>
             </div>
           ))}
-
-          {/* "+ More" Songs Card -> Redirects to Account Creation / Plans */}
-          <div
-            onClick={onGoToPlans}
-            className="relative flex items-end select-none group cursor-pointer"
-          >
-            <motion.div
-              whileHover={{ y: -8, scale: 1.03 }}
-              transition={{ duration: 0.25 }}
-              className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-dashed border-[#A855F7]/40 hover:border-[#A855F7] bg-gradient-to-b from-[#160D24]/80 to-[#07050C]/95 backdrop-blur-xl p-5 flex flex-col items-center justify-center text-center shadow-xl hover:shadow-[0_12px_35px_rgba(168,85,247,0.3)] transition-all group"
-            >
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#A855F7] to-[#7C3AED] flex items-center justify-center text-white mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                <Plus className="w-7 h-7" />
-              </div>
-              <h3 className="font-black text-sm sm:text-base text-white tracking-tight uppercase">
-                Explore 100M+
-              </h3>
-              <p className="text-xs text-[#C084FC] font-bold mt-0.5">
-                More Tracks & Albums
-              </p>
-              <p className="text-[11px] text-gray-400 mt-2 leading-tight">
-                Create an account to stream lossless studio audio
-              </p>
-              <span className="mt-4 px-3 py-1.5 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/40 text-[10px] font-bold text-white group-hover:bg-[#A855F7] transition-colors flex items-center gap-1">
-                <span>Unlock All</span>
-                <ArrowRight className="w-3 h-3" />
-              </span>
-            </motion.div>
-          </div>
         </div>
       </section>
 
@@ -730,83 +742,16 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
       {/* ========================================================================= */}
       {/* 7. TIDY, PROFESSIONAL MULTI-COLUMN FOOTER                                  */}
       {/* ========================================================================= */}
-      <footer className="relative z-20 w-full bg-[#030206] border-t border-[#1C1226] text-gray-400 text-xs py-12 select-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          {/* Top Row: Questions & Hotline */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-8 border-b border-[#1A1224] gap-4">
-            <div className="flex items-center gap-3">
-              <ZhooshLogo size="sm" variant="emblem" layout="horizontal" showText={true} />
-              <span className="text-[11px] text-gray-500 font-mono hidden md:inline">
-                • The Premier Cinema & Music Network
-              </span>
-            </div>
-            <p className="text-xs text-gray-400">
-              Questions? Call{' '}
-              <a href="tel:1800946674" className="text-white hover:underline font-mono">
-                1-800-ZHOOSH
-              </a>{' '}
-              (24/7 VIP Support)
-            </p>
+      <footer className="relative z-20 w-full bg-[#030206] border-t border-white/5 text-gray-500 text-xs py-8 select-none">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <ZhooshLogo size="sm" variant="emblem" layout="horizontal" showText={true} />
+            <span className="text-[11px] text-gray-600 hidden sm:inline">• Unified Cinema & Audio</span>
           </div>
 
-          {/* 4-Column Directory Links */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-8">
-            <div className="space-y-2.5">
-              <h4 className="text-[11px] font-bold text-white uppercase tracking-wider mb-3">
-                Browse Entertainment
-              </h4>
-              <p><a href="#movies" onClick={onGoToPlans} className="hover:text-white hover:underline">Trending Movies</a></p>
-              <p><a href="#music" onClick={onGoToPlans} className="hover:text-white hover:underline">Top 50 Global Songs</a></p>
-              <p><a href="#originals" onClick={onGoToPlans} className="hover:text-white hover:underline">Zhoosh Originals</a></p>
-              <p><a href="#lyrics" onClick={onGoToPlans} className="hover:text-white hover:underline">Real-Time Lyrics</a></p>
-              <p><a href="#4k" onClick={onGoToPlans} className="hover:text-white hover:underline">4K HDR Cinema</a></p>
-            </div>
-
-            <div className="space-y-2.5">
-              <h4 className="text-[11px] font-bold text-white uppercase tracking-wider mb-3">
-                Membership & Plans
-              </h4>
-              <p><a href="#plans" onClick={onGoToPlans} className="hover:text-white hover:underline">Standard HD Plan</a></p>
-              <p><a href="#plans" onClick={onGoToPlans} className="hover:text-white hover:underline">Premium 4K Studio Tier</a></p>
-              <p><a href="#student" onClick={onGoToPlans} className="hover:text-white hover:underline">Student Discount</a></p>
-              <p><a href="#family" onClick={onGoToPlans} className="hover:text-white hover:underline">Family Dual Pass</a></p>
-              <p><a href="#redeem" onClick={onGoToPlans} className="hover:text-white hover:underline">Redeem Gift Card</a></p>
-            </div>
-
-            <div className="space-y-2.5">
-              <h4 className="text-[11px] font-bold text-white uppercase tracking-wider mb-3">
-                Help & Devices
-              </h4>
-              <p><a href="#help" onClick={onGoToPlans} className="hover:text-white hover:underline">Help Center</a></p>
-              <p><a href="#account" onClick={onGoToPlans} className="hover:text-white hover:underline">Account Settings</a></p>
-              <p><a href="#devices" onClick={onGoToPlans} className="hover:text-white hover:underline">Supported Devices</a></p>
-              <p><a href="#audio-specs" onClick={onGoToPlans} className="hover:text-white hover:underline">Hi-Fi Audio Guide</a></p>
-              <p><a href="#speed" onClick={onGoToPlans} className="hover:text-white hover:underline">Speed Test</a></p>
-            </div>
-
-            <div className="space-y-2.5">
-              <h4 className="text-[11px] font-bold text-white uppercase tracking-wider mb-3">
-                Legal & Corporate
-              </h4>
-              <p><a href="#terms" onClick={onGoToPlans} className="hover:text-white hover:underline">Terms of Use</a></p>
-              <p><a href="#privacy" onClick={onGoToPlans} className="hover:text-white hover:underline">Privacy Policy</a></p>
-              <p><a href="#cookies" onClick={onGoToPlans} className="hover:text-white hover:underline">Cookie Preferences</a></p>
-              <p><a href="#corporate" onClick={onGoToPlans} className="hover:text-white hover:underline">Corporate Information</a></p>
-              <p><a href="#notices" onClick={onGoToPlans} className="hover:text-white hover:underline">Legal Notices</a></p>
-            </div>
-          </div>
-
-          {/* Bottom Bar: Language & Copyright */}
-          <div className="pt-6 border-t border-[#1A1224] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-gray-500">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#0C0814] border border-[#251836] text-gray-300">
-                <Globe className="w-3.5 h-3.5 text-[#FF1E56]" />
-                <span>English (US)</span>
-              </div>
-              <span>• Zhoosh Streaming Inc.</span>
-            </div>
-            <p>© 2026 Zhoosh Entertainment, Inc. All rights reserved.</p>
-          </div>
+          <p className="text-[11px] text-gray-600 text-center sm:text-right">
+            © {new Date().getFullYear()} Zhoosh. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>

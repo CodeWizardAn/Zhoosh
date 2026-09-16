@@ -24,6 +24,8 @@ interface AgentState {
   messages: AgentMessage[];
   addMessage: (msg: Omit<AgentMessage, 'id' | 'timestamp'>) => AgentMessage;
   updateLastAgentMessage: (content: string, done?: boolean) => void;
+  attachMoviesToLastMessage: (movies: import('@/types').Movie[]) => void;
+  attachSongsToLastMessage: (songs: import('@/types').Song[]) => void;
   clearHistory: () => void;
 
   // Persistence
@@ -96,6 +98,36 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     if (done) {
       setTimeout(() => get().saveToStorage(), 300);
     }
+  },
+
+  attachMoviesToLastMessage: (movies) => {
+    set((state) => {
+      const msgs = [...state.messages];
+      const lastIdx = msgs.length - 1;
+      if (lastIdx >= 0 && msgs[lastIdx].role === 'agent') {
+        msgs[lastIdx] = {
+          ...msgs[lastIdx],
+          movies,
+        };
+      }
+      return { messages: msgs };
+    });
+    setTimeout(() => get().saveToStorage(), 300);
+  },
+
+  attachSongsToLastMessage: (songs) => {
+    set((state) => {
+      const msgs = [...state.messages];
+      const lastIdx = msgs.length - 1;
+      if (lastIdx >= 0 && msgs[lastIdx].role === 'agent') {
+        msgs[lastIdx] = {
+          ...msgs[lastIdx],
+          songs,
+        };
+      }
+      return { messages: msgs };
+    });
+    setTimeout(() => get().saveToStorage(), 300);
   },
 
   clearHistory: () => {

@@ -31,4 +31,4 @@ def get_movie_recommendations(movie_id: str, limit: int = 6):
     movie = engine.get_movie_by_id(movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
-    return engine.recommend_movies_for_title(movie['title'], top_n=limit)
+    return engine.recommend_movies_for_title(movie['title'], top_n=limit, exclude_id=str(movie_id))

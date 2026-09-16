@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { AppMode, Movie, Song, Playlist, User, VoiceSearchState } from '@/types';
 import { DEFAULT_AVATAR } from '@/utils/avatars';
+import { MOCK_MOVIES, MOCK_SONGS } from '@/api/mockData';
 
 interface ToastMessage {
   id: string;
@@ -53,9 +54,10 @@ interface AppState {
   setVoiceProcessing: (processing: boolean) => void;
   setVoiceResult: (result: string) => void;
 
-  // Likes (optimistic state)
+  // Likes (optimistic state + items store + persistent localStorage)
   likedIds: Record<string, boolean>;
-  toggleLike: (id: string | number) => boolean; // returns new liked state
+  likedItems: Record<string, Movie | Song>;
+  toggleLike: (target: Movie | Song | string | number) => boolean; // returns new liked state
 
   // Playlists (optimistic state)
   playlists: Playlist[];
@@ -72,11 +74,44 @@ interface AppState {
   openPopover: (item: Movie | Song, anchorRect: DOMRect) => void;
   closePopover: () => void;
 
+  // Movie Details Modal
+  selectedMovie: Movie | null;
+  openMovieModal: (movie: Movie) => void;
+  closeMovieModal: () => void;
+
   // Toasts
   toasts: ToastMessage[];
   addToast: (toast: Omit<ToastMessage, 'id'>) => void;
   removeToast: (id: string) => void;
 }
+
+const getInitialLikes = (): { likedIds: Record<string, boolean>; likedItems: Record<string, Movie | Song> } => {
+  try {
+    const savedIds = localStorage.getItem('zhoosh_liked_ids');
+    const savedItems = localStorage.getItem('zhoosh_liked_items');
+    if (savedIds && savedItems) {
+      const parsedIds = JSON.parse(savedIds);
+      const parsedItems = JSON.parse(savedItems);
+      if (Object.keys(parsedIds).length > 0) {
+        return { likedIds: parsedIds, likedItems: parsedItems };
+      }
+    }
+  } catch {}
+
+  const defaultIds: Record<string, boolean> = {};
+  const defaultItems: Record<string, Movie | Song> = {};
+  MOCK_MOVIES.slice(0, 3).forEach((m) => {
+    defaultIds[String(m.id)] = true;
+    defaultItems[String(m.id)] = m;
+  });
+  MOCK_SONGS.slice(0, 2).forEach((s) => {
+    defaultIds[String(s.id)] = true;
+    defaultItems[String(s.id)] = s;
+  });
+  return { likedIds: defaultIds, likedItems: defaultItems };
+};
+
+const initialLikes = getInitialLikes();
 
 export const useAppStore = create<AppState>((set, get) => ({
   mode: 'movies',
@@ -108,22 +143,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   setUser: (user) => set({ user }),
   logout: () => {
     try {
+      localStorage.setItem('zhoosh_auth_session', 'false');
+      localStorage.removeItem('zhoosh_auth_session');
       localStorage.removeItem('zhoosh_onboarding_completed');
-      localStorage.removeItem('aura_onboarding_completed');
-      localStorage.removeItem('zhoosh_user_profile');
-      localStorage.removeItem('zhoosh_agent_v1');
     } catch {}
     set({ user: null });
+    window.dispatchEvent(new CustomEvent('zhoosh:logout'));
   },
   logoutAndRedirect: () => {
     try {
+      localStorage.setItem('zhoosh_auth_session', 'false');
+      localStorage.removeItem('zhoosh_auth_session');
       localStorage.removeItem('zhoosh_onboarding_completed');
-      localStorage.removeItem('aura_onboarding_completed');
-      localStorage.removeItem('zhoosh_user_profile');
-      localStorage.removeItem('zhoosh_agent_v1');
     } catch {}
     set({ user: null });
-    // Signal App.tsx to go back to landing — we use a custom event
     window.dispatchEvent(new CustomEvent('zhoosh:logout'));
   },
   isOnboardingOpen: false,
@@ -203,24 +236,39 @@ export const useAppStore = create<AppState>((set, get) => ({
     voiceSearch: { ...state.voiceSearch, resultQuery }
   })),
 
-  likedIds: {
-    'm-1': true,
-    'm-3': true,
-    's-2': true,
-    's-5': true
-  },
-  toggleLike: (id) => {
-    const strId = String(id);
+  likedIds: initialLikes.likedIds,
+  likedItems: initialLikes.likedItems,
+  toggleLike: (target) => {
+    const isObject = typeof target === 'object' && target !== null && 'id' in target;
+    const strId = isObject ? String(target.id) : String(target);
     let nextState = false;
+
     set((state) => {
       nextState = !state.likedIds[strId];
-      return {
-        likedIds: {
-          ...state.likedIds,
-          [strId]: nextState
+      const newLikedIds = { ...state.likedIds };
+      const newLikedItems = { ...state.likedItems };
+
+      if (nextState) {
+        newLikedIds[strId] = true;
+        if (isObject) {
+          newLikedItems[strId] = target as Movie | Song;
         }
+      } else {
+        delete newLikedIds[strId];
+        delete newLikedItems[strId];
+      }
+
+      try {
+        localStorage.setItem('zhoosh_liked_ids', JSON.stringify(newLikedIds));
+        localStorage.setItem('zhoosh_liked_items', JSON.stringify(newLikedItems));
+      } catch {}
+
+      return {
+        likedIds: newLikedIds,
+        likedItems: newLikedItems
       };
     });
+
     return nextState;
   },
 
@@ -300,6 +348,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   popoverTarget: null,
   openPopover: (item, anchorRect) => set({ popoverTarget: { item, anchorRect } }),
   closePopover: () => set({ popoverTarget: null }),
+
+  selectedMovie: null,
+  openMovieModal: (movie) => set({ selectedMovie: movie }),
+  closeMovieModal: () => set({ selectedMovie: null }),
 
   toasts: [],
   addToast: (toast) => {

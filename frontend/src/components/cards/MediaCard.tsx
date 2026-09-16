@@ -19,7 +19,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   index = 0,
 }) => {
   const shouldReduceMotion = useReducedMotion();
-  const { mode, likedIds, openPopover, playTrack, currentTrack, isPlaying } = useAppStore();
+  const { mode, likedIds, openPopover, playTrack, currentTrack, isPlaying, openMovieModal } = useAppStore();
   const likeMutation = useLikeMutation();
   const [isHovered, setIsHovered] = useState(false);
   const [likeBouncing, setLikeBouncing] = useState(false);
@@ -51,7 +51,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   };
 
   const handleCardClick = () => {
-    if (song) {
+    if (movie) {
+      openMovieModal(movie);
+    } else if (song) {
       playTrack(song);
       synthEngine.playTrackPreview(song.genre);
     }
@@ -83,6 +85,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         }
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleCardClick}
         className="group relative rounded-md overflow-hidden cursor-pointer select-none bg-[#181818] shadow-md hover:shadow-2xl transition-all w-[160px] sm:w-[185px] md:w-[205px] aspect-[2/3] shrink-0"
       >
         <img
@@ -91,13 +94,6 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           loading="lazy"
           className="w-full h-full object-cover object-top"
         />
-
-        {/* Netflix Match Tag */}
-        <div className="absolute top-2 left-2 z-10">
-          <span className="text-[11px] font-bold text-[#46D369] bg-black/75 px-1.5 py-0.5 rounded backdrop-blur-sm">
-            {item.match_score || 97}% Match
-          </span>
-        </div>
 
         {/* Hover Action Drawer */}
         <div
@@ -112,15 +108,6 @@ export const MediaCard: React.FC<MediaCardProps> = ({
               title="Play"
             >
               <Play className="w-4 h-4 fill-black ml-0.5" />
-            </button>
-
-            <button
-              ref={addBtnRef}
-              onClick={handleOpenPlaylist}
-              className="w-8 h-8 rounded-full border border-white/40 hover:border-white text-white flex items-center justify-center bg-[#2A2A2A]/80 transition-colors"
-              title="Add to My List"
-            >
-              <Plus className="w-4 h-4" />
             </button>
 
             <motion.button
