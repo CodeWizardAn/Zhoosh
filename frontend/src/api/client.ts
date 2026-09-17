@@ -7,14 +7,32 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class ApiClient {
   private baseUrl = '/api';
+  private directUrl = 'http://127.0.0.1:8005/api';
+
+  private async request(path: string, options?: RequestInit): Promise<Response> {
+    try {
+      const res = await fetch(`${this.baseUrl}${path}`, options);
+      if (res.ok) return res;
+    } catch {
+      // Vite proxy unreachable
+    }
+
+    try {
+      const res = await fetch(`${this.directUrl}${path}`, options);
+      if (res.ok) return res;
+    } catch {
+      // Direct backend unreachable
+    }
+
+    throw new Error(`Failed to fetch ${path}`);
+  }
 
   async fetchMovies(genre?: string, limit: number = 600): Promise<Movie[]> {
     try {
-      const url = genre
-        ? `${this.baseUrl}/movies?genre=${encodeURIComponent(genre)}&limit=${limit}`
-        : `${this.baseUrl}/movies?limit=${limit}`;
-      const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const path = genre
+        ? `/movies?genre=${encodeURIComponent(genre)}&limit=${limit}`
+        : `/movies?limit=${limit}`;
+      const res = await this.request(path, { headers: { 'Content-Type': 'application/json' } });
       return await res.json();
     } catch {
       // Graceful fallback to rich mock data
@@ -26,11 +44,10 @@ class ApiClient {
 
   async fetchMusic(genre?: string, limit: number = 100): Promise<Song[]> {
     try {
-      const url = genre
-        ? `${this.baseUrl}/music?genre=${encodeURIComponent(genre)}&limit=${limit}`
-        : `${this.baseUrl}/music?limit=${limit}`;
-      const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const path = genre
+        ? `/music?genre=${encodeURIComponent(genre)}&limit=${limit}`
+        : `/music?limit=${limit}`;
+      const res = await this.request(path, { headers: { 'Content-Type': 'application/json' } });
       return await res.json();
     } catch {
       await delay(450);
@@ -41,8 +58,7 @@ class ApiClient {
 
   async fetchRecommendations(mode: AppMode): Promise<Array<Movie | Song>> {
     try {
-      const res = await fetch(`${this.baseUrl}/recommendations?mode=${mode}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await this.request(`/recommendations?mode=${mode}`);
       return await res.json();
     } catch {
       await delay(500);
@@ -55,8 +71,7 @@ class ApiClient {
 
   async fetchMovieRecommendations(movieId: string | number, limit: number = 8): Promise<Movie[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/movies/${movieId}/recommendations?limit=${limit}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await this.request(`/movies/${movieId}/recommendations?limit=${limit}`);
       return await res.json();
     } catch {
       await delay(350);
@@ -68,8 +83,7 @@ class ApiClient {
 
   async search(query: string, mode: AppMode): Promise<import('@/types').SearchResult> {
     try {
-      const res = await fetch(`${this.baseUrl}/search?q=${encodeURIComponent(query)}&mode=${mode}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await this.request(`/search?q=${encodeURIComponent(query)}&mode=${mode}`);
       return await res.json();
     } catch {
       await delay(400);
@@ -268,20 +282,34 @@ class ApiClient {
     onError: () => void,
     onMovies?: (movies: Movie[]) => void,
     onSongs?: (songs: Song[]) => void,
-    mode: AppMode = 'movies'
+    mode: AppMode = 'movies',
+    likedTitles?: string[]
   ): Promise<void> {
     try {
-      const res = await fetch(`${this.baseUrl}/agent/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: 'u-101',
-          agent_name: agentName,
-          message,
-          mode,
-          history: history.slice(-10),
-        }),
+      let res: Response;
+      const bodyPayload = JSON.stringify({
+        user_id: 'u-101',
+        agent_name: agentName,
+        message,
+        mode,
+        history: history.slice(-12),
+        liked_titles: likedTitles || [],
       });
+
+      try {
+        res = await fetch(`${this.baseUrl}/agent/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: bodyPayload,
+        });
+        if (!res.ok) throw new Error();
+      } catch {
+        res = await fetch(`${this.directUrl}/agent/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: bodyPayload,
+        });
+      }
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 

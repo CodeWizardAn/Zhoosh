@@ -72,66 +72,82 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-50 h-16 flex items-center px-4 sm:px-8 gap-4 select-none bg-[#050508]/95 backdrop-blur-md border-b border-white/10 transition-colors">
-        {/* LEFT: Zhoosh Brand Logo */}
-        <button
-          onClick={() => setActiveNav('discover')}
-          className="shrink-0 flex items-center pr-2 cursor-pointer group"
-          title="Zhoosh Home"
-        >
-          <ZhooshLogo size="sm" variant="auto" showWordmark={true} />
-        </button>
+      <header className="fixed top-0 inset-x-0 z-50 h-16 flex items-center px-4 sm:px-8 gap-4 sm:gap-6 select-none bg-[#050508]/95 backdrop-blur-md border-b border-white/10 transition-colors">
+        {/* LEFT: Zhoosh Brand Logo & Navigation Links */}
+        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+          <button
+            onClick={() => setActiveNav('discover')}
+            className="shrink-0 flex items-center pr-2 cursor-pointer group"
+            title="Zhoosh Home"
+          >
+            <ZhooshLogo size="sm" variant="wordmark" />
+          </button>
 
-        {/* CENTER: Nav links with active pill */}
-        <nav className="hidden md:flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
-          {NAV_ITEMS.map((item) => {
-            const active = isNavActive(item);
-            const isAIItem = item === 'assistant';
-            return (
-              <button
-                key={item}
-                onClick={() => handleNavClick(item)}
-                className={`px-3.5 py-1 text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-                  active
-                    ? isAIItem
+          {/* Navigation links */}
+          <nav className="hidden md:flex items-center gap-1.5">
+            {NAV_ITEMS.map((item) => {
+              const active = isNavActive(item);
+              const isAIItem = item === 'assistant';
+              return (
+                <button
+                  key={item}
+                  onClick={() => handleNavClick(item)}
+                  className={`px-3.5 py-1 text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    active
+                      ? isAIItem
+                        ? mode === 'movies'
+                          ? 'bg-[#E50914] text-white font-bold rounded-full shadow-md shadow-red-950/60'
+                          : 'bg-[#0070F3] text-white font-bold rounded-full shadow-md shadow-blue-600/50'
+                        : mode === 'music'
+                        ? 'bg-blue-600/30 border border-blue-500/50 text-white font-semibold rounded-full shadow-sm'
+                        : 'bg-white/20 text-white font-semibold rounded-full shadow-sm'
+                      : isAIItem
                       ? mode === 'movies'
-                        ? 'bg-[#E50914] text-white font-bold rounded-full shadow-md shadow-red-950/60'
-                        : 'bg-[#0070F3] text-white font-bold rounded-full shadow-md shadow-blue-600/50'
-                      : mode === 'music'
-                      ? 'bg-blue-600/30 border border-blue-500/50 text-white font-semibold rounded-full shadow-sm'
-                      : 'bg-white/20 text-white font-semibold rounded-full shadow-sm'
-                    : isAIItem
-                    ? mode === 'movies'
-                      ? 'text-red-400 hover:text-white font-semibold'
-                      : 'text-blue-400 hover:text-white font-semibold'
-                    : 'text-gray-300 hover:text-white'
-                }`}
-              >
-                {isAIItem && (
-                  <div className={`w-4 h-4 rounded-full overflow-hidden shrink-0 border ${
-                    mode === 'movies' ? 'border-red-400/40 bg-purple-900/60' : 'border-blue-400/60 bg-blue-950/80'
-                  }`}>
-                    <img
-                      src={agentProfile?.avatarUrl || '/agent-avatar.jpg'}
-                      alt={assistantName}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/agent-avatar.jpg';
-                      }}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <span>{isAIItem ? assistantName : item}</span>
-              </button>
-            );
-          })}
-        </nav>
+                        ? 'text-red-400 hover:text-white font-semibold'
+                        : 'text-blue-400 hover:text-white font-semibold'
+                      : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  {isAIItem && (
+                    <div className={`w-4 h-4 rounded-full overflow-hidden shrink-0 border ${
+                      mode === 'movies' ? 'border-red-400/40 bg-purple-900/60' : 'border-blue-400/60 bg-blue-950/80'
+                    }`}>
+                      <img
+                        src={agentProfile?.avatarUrl || '/agent-avatar.jpg'}
+                        alt={assistantName}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/agent-avatar.jpg';
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <span>{isAIItem ? assistantName : item}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Dynamic spacer that absorbs space so search and nav never overlap */}
+        <div className="flex-1 min-w-2" />
 
         {/* RIGHT controls */}
-        <div className="flex items-center gap-2.5 sm:gap-3 ml-auto shrink-0">
-          {/* Movies / Music Mode Switcher Pill */}
-          <div className="flex items-center bg-black/60 border border-white/20 rounded-full p-0.5 shadow-inner backdrop-blur-md">
-            <button
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          {/* Cinema / Music Mode Switcher Pill */}
+          <div className="relative flex items-center p-1 rounded-full bg-[#0d0f18]/85 border border-white/10 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.8),0_4px_16px_rgba(0,0,0,0.4)] backdrop-blur-xl group/toggle">
+            {/* Dynamic ambient halo glow behind active mode */}
+            <div
+              className={`absolute -inset-0.5 rounded-full blur-md transition-opacity duration-500 pointer-events-none -z-10 ${
+                mode === 'movies'
+                  ? 'bg-gradient-to-r from-red-600/30 to-red-900/10 opacity-70'
+                  : 'bg-gradient-to-r from-blue-600/30 to-cyan-500/20 opacity-70'
+              }`}
+            />
+
+            {/* Cinema Button */}
+            <motion.button
+              whileTap={{ scale: 0.94 }}
               onClick={() => {
                 if (mode !== 'movies') {
                   setMode('movies');
@@ -140,17 +156,27 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                   }
                 }
               }}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
                 mode === 'movies'
-                  ? 'bg-[#E50914] text-white shadow-md'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'text-white font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               }`}
-              title="Movies Mode"
+              title="Switch to Cinema Mode"
             >
-              <Film className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cinema</span>
-            </button>
-            <button
+              {mode === 'movies' && (
+                <motion.div
+                  layoutId="topbarActivePill"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-[#E50914] via-[#F40612] to-[#B81D24] shadow-[0_2px_12px_rgba(229,9,20,0.55),inset_0_1px_1px_rgba(255,255,255,0.35)] -z-10"
+                />
+              )}
+              <Film className={`w-3.5 h-3.5 shrink-0 transition-transform ${mode === 'movies' ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]' : 'text-zinc-400'}`} />
+              <span className="font-semibold text-[11px] sm:text-xs">Cinema</span>
+            </motion.button>
+
+            {/* Music Button */}
+            <motion.button
+              whileTap={{ scale: 0.94 }}
               onClick={() => {
                 if (mode !== 'music') {
                   setMode('music');
@@ -159,16 +185,23 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                   }
                 }
               }}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
                 mode === 'music'
-                  ? 'bg-[#0070F3] text-white shadow-md shadow-blue-600/40'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'text-white font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               }`}
-              title="Music Mode"
+              title="Switch to Music Mode"
             >
-              <Music2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Music</span>
-            </button>
+              {mode === 'music' && (
+                <motion.div
+                  layoutId="topbarActivePill"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-[#0062E3] via-[#0070F3] to-[#00D2FF] shadow-[0_2px_14px_rgba(0,112,243,0.55),inset_0_1px_1px_rgba(255,255,255,0.35)] -z-10"
+                />
+              )}
+              <Music2 className={`w-3.5 h-3.5 shrink-0 transition-transform ${mode === 'music' ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]' : 'text-zinc-400'}`} />
+              <span className="font-semibold text-[11px] sm:text-xs">Music</span>
+            </motion.button>
           </div>
 
           {/* Search */}

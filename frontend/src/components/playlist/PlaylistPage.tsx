@@ -188,10 +188,9 @@ export const PlaylistPage: React.FC = () => {
             {effectivePlaylists.map((pl) => {
               const isSelected = pl.id === currentPlaylist?.id;
               return (
-                <button
+                <div
                   key={pl.id}
-                  onClick={() => setSelectedPlaylistId(pl.id)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`inline-flex items-center rounded-full transition-all group/tab ${
                     isSelected
                       ? isMusicMode
                         ? 'bg-[#0070F3] text-white shadow-md shadow-blue-600/40'
@@ -199,10 +198,30 @@ export const PlaylistPage: React.FC = () => {
                       : 'bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <Music2 className="w-3 h-3" />
-                  <span>{pl.title}</span>
-                  <span className="text-[11px] opacity-70">({pl.items.length})</span>
-                </button>
+                  <button
+                    onClick={() => setSelectedPlaylistId(pl.id)}
+                    className="px-3.5 py-1.5 text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                  >
+                    <Music2 className="w-3 h-3" />
+                    <span>{pl.title}</span>
+                    <span className="text-[11px] opacity-70">({pl.items.length})</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePlaylist(pl.id, pl.title);
+                    }}
+                    className={`pr-2.5 pl-0.5 py-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer ${
+                      isSelected
+                        ? isMusicMode ? 'text-white/80 hover:text-rose-200' : 'text-black/60 hover:text-rose-600'
+                        : 'text-gray-400 hover:text-rose-400'
+                    }`}
+                    title={`Delete "${pl.title}" playlist`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -219,6 +238,26 @@ export const PlaylistPage: React.FC = () => {
             <span>Create Playlist</span>
           </button>
         </div>
+
+        {/* Empty State when all playlists are deleted */}
+        {effectivePlaylists.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
+            <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mb-4 text-cyan-400 border border-blue-400/30">
+              <Music2 className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">No Playlists Found</h3>
+            <p className="text-sm text-gray-400 max-w-md mb-6">
+              You haven't created any playlists yet. Start curating your favorite movies and music into personalized collections!
+            </p>
+            <button
+              onClick={() => setIsCreatingModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0070F3] hover:bg-blue-600 text-white font-bold text-sm shadow-xl shadow-blue-500/30 transition-all transform hover:scale-105 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Your First Playlist</span>
+            </button>
+          </div>
+        ) : null}
 
         {/* Playlist Banner Header */}
         {currentPlaylist ? (
@@ -272,10 +311,11 @@ export const PlaylistPage: React.FC = () => {
 
                 <button
                   onClick={() => handleDeletePlaylist(currentPlaylist.id, currentPlaylist.title)}
-                  className="p-2 rounded-full bg-black/40 hover:bg-rose-500/20 text-gray-400 hover:text-rose-400 border border-white/10 hover:border-rose-400/40 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-400 transition-all cursor-pointer text-xs font-bold shadow-md"
                   title="Delete Playlist"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Playlist</span>
                 </button>
               </div>
             </div>

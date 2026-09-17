@@ -19,9 +19,15 @@ import {
   Download,
   Smartphone,
   ChevronRight,
-  Volume2
+  Volume2,
+  GraduationCap,
+  Award,
+  Scale,
+  Code2
 } from 'lucide-react';
 import { ZhooshLogo } from '@/components/common/ZhooshLogo';
+import { ProjectCreditsModal } from '@/components/common/ProjectCreditsModal';
+import { ACADEMIC_PROJECT_INFO } from '@/data/teamMembers';
 
 interface LandingLoginStepProps {
   onGoToPlans: () => void;
@@ -71,6 +77,8 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
   const [backdropMode, setBackdropMode] = useState<'dual' | 'movies' | 'music'>('dual');
   const [hoveredMovieId, setHoveredMovieId] = useState<string | null>(null);
   const [hoveredSongId, setHoveredSongId] = useState<string | null>(null);
+  const [isCreditsOpen, setIsCreditsOpen] = useState(false);
+  const [creditsTab, setCreditsTab] = useState<'legal' | 'developer' | 'academic'>('legal');
 
   const handleSignInClick = () => {
     if (signInCardRef.current) {
@@ -250,7 +258,7 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
       <header className="relative z-30 w-full max-w-7xl mx-auto px-4 sm:px-8 py-5 flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
-          <ZhooshLogo size="md" variant="emblem" layout="horizontal" showText={true} />
+          <ZhooshLogo size="md" layout="horizontal" showWordmark={true} />
         </div>
 
         {/* CTA Buttons */}
@@ -740,20 +748,59 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
       </section>
 
       {/* ========================================================================= */}
-      {/* 7. TIDY, PROFESSIONAL MULTI-COLUMN FOOTER                                  */}
+      {/* 7. MINIMALIST FOOTER WITH DEVELOPER TEAM & AI COMPETITION BUTTONS        */}
       {/* ========================================================================= */}
       <footer className="relative z-20 w-full bg-[#030206] border-t border-white/5 text-gray-500 text-xs py-8 select-none">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <ZhooshLogo size="sm" variant="emblem" layout="horizontal" showText={true} />
-            <span className="text-[11px] text-gray-600 hidden sm:inline">• Unified Cinema & Audio</span>
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-3">
+              <ZhooshLogo size="sm" layout="horizontal" showWordmark={true} />
+              <span className="text-[11px] text-gray-600 hidden sm:inline">• Unified Cinema & Audio</span>
+            </div>
+
+            <div className="flex items-center gap-5 text-gray-400 font-medium">
+              <button
+                onClick={() => {
+                  setCreditsTab('developer');
+                  setIsCreditsOpen(true);
+                }}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Developer Team
+              </button>
+              <button
+                onClick={() => {
+                  setCreditsTab('academic');
+                  setIsCreditsOpen(true);
+                }}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                AI Project Competition
+              </button>
+              <button
+                onClick={() => {
+                  setCreditsTab('legal');
+                  setIsCreditsOpen(true);
+                }}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Legal Team
+              </button>
+            </div>
           </div>
 
           <p className="text-[11px] text-gray-600 text-center sm:text-right">
-            © {new Date().getFullYear()} Zhoosh. All rights reserved.
+            © {new Date().getFullYear()} Zhoosh • Pillai University (Batch A2)
           </p>
         </div>
       </footer>
+
+      {/* Interactive Project Credits Modal */}
+      <ProjectCreditsModal
+        isOpen={isCreditsOpen}
+        onClose={() => setIsCreditsOpen(false)}
+        defaultTab={creditsTab}
+      />
     </div>
   );
 };

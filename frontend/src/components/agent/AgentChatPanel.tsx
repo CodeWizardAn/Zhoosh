@@ -19,7 +19,7 @@ interface AgentChatPanelProps {
 }
 
 export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
-  const { mode } = useAppStore();
+  const { mode, likedItems } = useAppStore();
   const {
     profile,
     messages,
@@ -104,14 +104,17 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
           if (abortRef.current) return;
           attachSongsToLastMessage(songs);
         },
-        mode
+        mode,
+        Object.values(likedItems)
+          .map((item) => ('title' in item ? item.title : (item as any).track_name || ''))
+          .filter(Boolean)
       );
     } catch {
       updateLastAgentMessage('Sorry, something went wrong. Please try again.', true);
       setThinking(false);
       setAvatarState('idle');
     }
-  }, [addMessage, agentName, attachMoviesToLastMessage, attachSongsToLastMessage, isThinking, messages, mode, setThinking, updateLastAgentMessage]);
+  }, [addMessage, agentName, attachMoviesToLastMessage, attachSongsToLastMessage, isThinking, likedItems, messages, mode, setThinking, updateLastAgentMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

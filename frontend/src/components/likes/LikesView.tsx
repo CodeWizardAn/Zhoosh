@@ -6,14 +6,8 @@ import { EmptyState } from '../common/EmptyState';
 import type { Movie, Song } from '@/types';
 
 export const LikesView: React.FC = () => {
-  const { likedItems, likedIds, setActiveNav, mode } = useAppStore();
+  const { likedItems, likedIds, setActiveNav, mode, playTrack } = useAppStore();
   const isMusicMode = mode === 'music';
-
-  useEffect(() => {
-    if (isMusicMode) {
-      setActiveNav('playlists');
-    }
-  }, [isMusicMode, setActiveNav]);
 
   const allItems = Object.values(likedItems);
 
@@ -85,18 +79,30 @@ export const LikesView: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                My Zhoosh
+                {isMusicMode ? 'Liked Songs' : 'My Watchlist'}
               </h1>
               <p className="text-xs sm:text-sm text-gray-400">
                 {isMusicMode
-                  ? 'Your personalized music library and saved tracks'
+                  ? 'All your favorite tracks, melodies, and saved music in one place'
                   : 'Your personalized cinema watchlist and saved movies'}
               </p>
             </div>
           </div>
 
-          {/* Count Badge */}
-          <div className="flex items-center gap-2">
+          {/* Actions & Count Badge */}
+          <div className="flex items-center gap-3">
+            {isMusicMode && likedSongs.length > 0 && (
+              <button
+                onClick={() => {
+                  playTrack(likedSongs[0], likedSongs);
+                }}
+                className="flex items-center gap-2 px-5 py-2 rounded-full bg-[#0070F3] hover:bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-500/30 transition-all cursor-pointer hover:scale-105"
+              >
+                <Music2 className="w-3.5 h-3.5" />
+                <span>Play All ({likedSongs.length})</span>
+              </button>
+            )}
+
             <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-gray-300">
               {isMusicMode ? (
                 <Music2 className="w-4 h-4 text-cyan-400" />

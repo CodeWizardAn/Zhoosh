@@ -93,7 +93,7 @@ class RecommendationEngine:
             'agent_rationale': rationale or f"Curated match with {match_pct}% compatibility based on genre and narrative motifs."
         }
 
-    def get_movies(self, genre: Optional[str] = None, language: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_movies(self, genre: Optional[str] = None, language: Optional[str] = None, limit: int = 20, offset: int = 0, exclude_titles: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         if self.movies_df is None:
             return []
         
@@ -103,8 +103,16 @@ class RecommendationEngine:
         if language and language.lower() != 'all':
             df = df[df['language'].str.contains(language, case=False, na=False)]
             
+        exclude_set = set([t.lower().strip() for t in (exclude_titles or [])])
         results = []
-        for _, row in df.head(limit).iterrows():
+        skipped = 0
+        for _, row in df.iterrows():
+            t_name = str(row['title']).lower().strip()
+            if t_name in exclude_set:
+                continue
+            if skipped < offset:
+                skipped += 1
+                continue
             vote_avg = float(row.get('vote_average', 7.5))
             match_score = int(min(99, max(85, int(vote_avg * 10 + 10))))
             results.append(self._format_movie_row(
@@ -112,6 +120,8 @@ class RecommendationEngine:
                 match_pct=match_score, 
                 rationale=f"Ranked #{len(results)+1} based on audience consensus and high similarity index."
             ))
+            if len(results) >= limit:
+                break
         return results
 
     def get_movie_by_id(self, movie_id: str) -> Optional[Dict[str, Any]]:
@@ -194,8 +204,8 @@ class RecommendationEngine:
                 
         return results
 
-    def get_top_genre_movies(self, genre: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Returns top-ranked consensus movies for a specific genre."""
+    def get_top_genre_movies(self, genre: str, limit: int = 10, offset: int = 0, exclude_titles: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """Returns top-ranked consensus movies for a specific genre with offset & exclusion support."""
         if self.movies_df is None:
             return []
             
@@ -203,7 +213,7 @@ class RecommendationEngine:
         matches = self.movies_df[self.movies_df['genres_str'].str.lower().str.contains(genre_clean, na=False)].copy()
         
         if matches.empty:
-            return self.get_movies(limit=limit)
+            return self.get_movies(limit=limit, offset=offset, exclude_titles=exclude_titles)
             
         if 'vote_count' in matches.columns and 'vote_average' in matches.columns:
             # Weighted rating formula
@@ -212,14 +222,24 @@ class RecommendationEngine:
         else:
             matches = matches.sort_values(by='vote_average', ascending=False)
             
+        exclude_set = set([t.lower().strip() for t in (exclude_titles or [])])
         results = []
-        for i, (_, row) in enumerate(matches.head(limit).iterrows()):
-            score = max(91, 99 - i)
+        skipped = 0
+        for i, (_, row) in enumerate(matches.iterrows()):
+            t_name = str(row['title']).lower().strip()
+            if t_name in exclude_set:
+                continue
+            if skipped < offset:
+                skipped += 1
+                continue
+            score = max(88, 99 - len(results))
             results.append(self._format_movie_row(
                 row,
                 match_pct=score,
-                rationale=f"Ranked #{i+1} all-time top {genre.title()} film based on universal critical consensus."
+                rationale=f"Ranked top {genre.title()} feature film based on universal critical consensus."
             ))
+            if len(results) >= limit:
+                break
         return results
 
     def _format_song_row(self, row, match_pct: int = 95, rationale: Optional[str] = None) -> Dict[str, Any]:
@@ -238,7 +258,7 @@ class RecommendationEngine:
             'agent_rationale': rationale or f"High harmonic resonance and {genre_str} pacing based on audio feature profile."
         }
 
-    def get_music(self, genre: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_music(self, genre: Optional[str] = None, limit: int = 20, offset: int = 0, exclude_titles: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         if self.music_df is None:
             return []
             
@@ -246,13 +266,25 @@ class RecommendationEngine:
         if genre and genre.lower() != 'all':
             df = df[df['track_genre'].str.contains(genre, case=False, na=False)]
             
+        exclude_set = set([t.lower().strip() for t in (exclude_titles or [])])
         results = []
-        for _, row in df.head(limit).iterrows():
+        seen_titles = set()
+        skipped = 0
+        for _, row in df.iterrows():
+            title_key = str(row['track_name']).strip().lower()
+            if title_key in seen_titles or title_key in exclude_set:
+                continue
+            seen_titles.add(title_key)
+            if skipped < offset:
+                skipped += 1
+                continue
             results.append(self._format_song_row(
                 row,
                 match_pct=int(min(99, max(80, int(row.get('popularity', 85))))),
                 rationale=f"Calibrated for high harmonic resonance and {row.get('track_genre', 'genre')} pacing."
             ))
+            if len(results) >= limit:
+                break
         return results
 
     def get_songs_by_artist(self, artist_query: str, limit: int = 12) -> List[Dict[str, Any]]:

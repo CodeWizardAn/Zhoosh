@@ -128,12 +128,6 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) =
             Showing results for <span className="text-white font-bold">"{query}"</span>
           </span>
         </div>
-        {isMusicMode && (
-          <span className="text-xs text-blue-400 font-medium flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            Spotify Acoustic Recommender Active
-          </span>
-        )}
       </div>
 
       {isLoading ? (

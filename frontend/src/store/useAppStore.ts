@@ -145,9 +145,9 @@ const DEFAULT_PLAYLISTS: Playlist[] = [
 const getInitialPlaylists = (): Playlist[] => {
   try {
     const saved = localStorage.getItem('zhoosh_user_playlists');
-    if (saved) {
+    if (saved !== null) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch {}
   return DEFAULT_PLAYLISTS;

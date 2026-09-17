@@ -1,0 +1,342 @@
+import re
+
+MOCK_FILE = 'frontend/src/api/mockData.ts'
+
+with open(MOCK_FILE, 'r', encoding='utf-8') as f:
+    content = f.read()
+
+NEW_MOVIES_CODE = '''  {
+    id: 'm-deadpool',
+    title: 'Deadpool',
+    overview: 'A wisecracking mercenary gets experimented on and becomes immortal but ugly, and sets out to track down the man who ruined his looks.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/zq8Cl3PNIDGU3iWNRoc5nEZ6pCe.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/en971MEXui9diirXlogOrPKmsEn.jpg',
+    release_date: '2016-02-12',
+    vote_average: 7.6,
+    genres: ['Action', 'Adventure', 'Comedy'],
+    language: 'English',
+    runtime: 108,
+    match_score: 95,
+    agent_rationale: 'Hilarious, boundary-pushing meta-superhero comedy with relentless action.'
+  },
+  {
+    id: 'm-avengers',
+    title: 'The Avengers',
+    overview: 'Earth\\'s mightiest heroes must come together and learn to fight as a team if they are going to stop the mischievous Loki and his alien army from enslaving humanity.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/9BBTo63ANSmhC4e6r62OJFuK2GL.jpg',
+    release_date: '2012-05-04',
+    vote_average: 7.7,
+    genres: ['Action', 'Sci-Fi', 'Adventure'],
+    language: 'English',
+    runtime: 143,
+    match_score: 96,
+    agent_rationale: 'Groundbreaking superhero ensemble film that reshaped blockbuster cinema.'
+  },
+  {
+    id: 'm-spiderverse',
+    title: 'Spider-Man: Across the Spider-Verse',
+    overview: 'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People charged with protecting its very existence. When the heroes clash on how to handle a threat, Miles must redefine what it means to be a hero.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg',
+    release_date: '2023-06-02',
+    vote_average: 8.8,
+    genres: ['Animation', 'Action', 'Sci-Fi', 'Adventure'],
+    language: 'English',
+    runtime: 140,
+    match_score: 99,
+    agent_rationale: 'Visually miraculous animation triumph blending multiple art styles into pure comic book kinetic energy.'
+  },
+  {
+    id: 'm-oppenheimer',
+    title: 'Oppenheimer',
+    overview: 'The pulse-pounding story of J. Robert Oppenheimer and the Manhattan Project — racing against the Nazis to build the atomic bomb and confronting the catastrophic reality of what came next.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg',
+    release_date: '2023-07-21',
+    vote_average: 8.8,
+    genres: ['Drama', 'History', 'Thriller', 'Biography'],
+    language: 'English',
+    runtime: 180,
+    match_score: 98,
+    agent_rationale: '7 Academy Awards winner including Best Picture and Best Director for Christopher Nolan.'
+  },
+  {
+    id: 'm-dune2',
+    title: 'Dune: Part Two',
+    overview: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/xOMo8BRK7PfcJv9JCnx7s5200SV.jpg',
+    release_date: '2024-03-01',
+    vote_average: 8.7,
+    genres: ['Sci-Fi', 'Adventure', 'Action', 'Drama'],
+    language: 'English',
+    runtime: 166,
+    match_score: 98,
+    agent_rationale: 'Monumental sci-fi epic by Denis Villeneuve with staggering scale and Hans Zimmer percussion score.'
+  },
+  {
+    id: 'm-bladerunner2049',
+    title: 'Blade Runner 2049',
+    overview: 'Young Blade Runner K\\'s discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard, who\\'s been missing for thirty years.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/sAtoMqDVhNDQBc3QJL3RF6hl7q6.jpg',
+    release_date: '2017-10-06',
+    vote_average: 8.0,
+    genres: ['Sci-Fi', 'Mystery', 'Drama', 'Thriller'],
+    language: 'English',
+    runtime: 164,
+    match_score: 96,
+    agent_rationale: 'Breathtaking neo-noir cyberpunk visual masterpiece with Roger Deakins Oscar-winning cinematography.'
+  },
+  {
+    id: 'm-madmax',
+    title: 'Mad Max: Fury Road',
+    overview: 'In a post-apocalyptic wasteland, a woman rebels against a tyrannical ruler in search for her homeland with the aid of a group of female prisoners, a psychotic worshiper, and a drifter named Max.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/hA2ple9q4qnwxp3hKVNhroipsir.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/nlCHUW2Y9XWbuEUQauCBgnY8ymF.jpg',
+    release_date: '2015-05-15',
+    vote_average: 8.1,
+    genres: ['Action', 'Sci-Fi', 'Adventure'],
+    language: 'English',
+    runtime: 120,
+    match_score: 97,
+    agent_rationale: 'High-octane practical stunt filmmaking masterclass from visionary George Miller.'
+  },
+  {
+    id: 'm-johnwick4',
+    title: 'John Wick: Chapter 4',
+    overview: 'With the price on his head ever increasing, John Wick uncovers a path to defeating The High Table.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/7I6VUdPj6tQECNHdviJkUHD2389.jpg',
+    release_date: '2023-03-24',
+    vote_average: 7.8,
+    genres: ['Action', 'Crime', 'Thriller'],
+    language: 'English',
+    runtime: 169,
+    match_score: 95,
+    agent_rationale: 'Peak martial-arts neo-noir action cinema featuring Donnie Yen and Keanu Reeves.'
+  },
+  {
+    id: 'm-se7en',
+    title: 'Se7en',
+    overview: 'Two detectives, a rookie and a veteran, hunt a serial killer who uses the seven deadly sins as his motives.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/6yoghtyTpznpBik8EngEmJskVUO.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/ba4CpLnvvLP4AauLa92qKq47FhS.jpg',
+    release_date: '1995-09-22',
+    vote_average: 8.6,
+    genres: ['Crime', 'Mystery', 'Thriller', 'Drama'],
+    language: 'English',
+    runtime: 127,
+    match_score: 97,
+    agent_rationale: 'David Fincher bleak psychological thriller masterpiece with shocking climax.'
+  },
+  {
+    id: 'm-fightclub',
+    title: 'Fight Club',
+    overview: 'An insomniac office worker looking for a way to change his life crosses paths with a devil-may-care soap maker and they form an underground fight club.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/hZkgoQYus5vegHoetLkCJzb17zJ.jpg',
+    release_date: '1999-10-15',
+    vote_average: 8.4,
+    genres: ['Drama', 'Thriller'],
+    language: 'English',
+    runtime: 139,
+    match_score: 96,
+    agent_rationale: 'Cult cinema defining generational rebellion and identity.'
+  },
+  {
+    id: 'm-pulpfiction',
+    title: 'Pulp Fiction',
+    overview: 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/d5iIlFnGhFvlW147Ha50slsu496.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg',
+    release_date: '1994-10-14',
+    vote_average: 8.9,
+    genres: ['Crime', 'Drama', 'Comedy'],
+    language: 'English',
+    runtime: 154,
+    match_score: 98,
+    agent_rationale: 'Quentin Tarantino Palme d\\'Or winning pop-culture milestone.'
+  },
+  {
+    id: 'm-aquietplace',
+    title: 'A Quiet Place',
+    overview: 'A family is forced to live in silence while hiding from creatures that hunt by sound.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/nAU74GmpUk7t5iklEp3bufwDq4n.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/roYyPiQDytnk0mmHIKEQ395OIbT.jpg',
+    release_date: '2018-04-06',
+    vote_average: 7.4,
+    genres: ['Horror', 'Sci-Fi', 'Thriller'],
+    language: 'English',
+    runtime: 90,
+    match_score: 93,
+    agent_rationale: 'Masterclass in atmospheric tension, acoustic design, and parental love.'
+  },
+  {
+    id: 'm-hereditary',
+    title: 'Hereditary',
+    overview: 'A grieving family is haunted by tragic and disturbing occurrences after the death of their secretive grandmother.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/h99p4L0wEQa5w1VbQ1b8h4AflQ6.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/4fZw1yN76fRk7NlK5j8oF9wV3bH.jpg',
+    release_date: '2018-06-08',
+    vote_average: 7.3,
+    genres: ['Horror', 'Mystery', 'Drama'],
+    language: 'English',
+    runtime: 127,
+    match_score: 92,
+    agent_rationale: 'Ari Aster chilling psychological dread and supernatural horror.'
+  },
+  {
+    id: 'm-conjuring',
+    title: 'The Conjuring',
+    overview: 'Paranormal investigators Ed and Lorraine Warren work to help a family terrorized by a dark presence in their farmhouse.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/wVYREutTvI2tmxr6ujrHT704wGF.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/kHqT7Z1cO462n67H7uWfI3R4f14.jpg',
+    release_date: '2013-07-19',
+    vote_average: 7.5,
+    genres: ['Horror', 'Mystery', 'Thriller'],
+    language: 'English',
+    runtime: 112,
+    match_score: 94,
+    agent_rationale: 'James Wan modern horror classic with exquisite suspense craftsmanship.'
+  },
+  {
+    id: 'm-getout',
+    title: 'Get Out',
+    overview: 'A young African-American visits his white girlfriend\\'s parents for the weekend, where his simmering uneasiness about their reception of him eventually reaches a boiling point.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/tFXcEccSQMf3lfhfXKSU9iRBpa3.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/m9hFfB9WvO9N6Lz7P7lH9oQ2Z8o.jpg',
+    release_date: '2017-02-24',
+    vote_average: 7.7,
+    genres: ['Horror', 'Mystery', 'Thriller'],
+    language: 'English',
+    runtime: 104,
+    match_score: 95,
+    agent_rationale: 'Jordan Peele Oscar-winning psychological horror and social satire.'
+  },
+  {
+    id: 'm-yourname',
+    title: 'Your Name (君の名は。)',
+    overview: 'Two teenagers share a profound, magical connection upon discovering they are swapping bodies. Things become even more complicated when the boy and girl decide to meet in person.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/q719jXXEzOoYaps6qFsPwaogvdQ.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/7OMAfDJikBxItZ2OcxAhAh77xpp.jpg',
+    release_date: '2016-08-26',
+    vote_average: 8.5,
+    genres: ['Anime', 'Animation', 'Romance', 'Drama', 'Fantasy'],
+    language: 'Japanese',
+    runtime: 106,
+    match_score: 98,
+    agent_rationale: 'Makoto Shinkai emotionally shattering anime spectacle.'
+  },
+  {
+    id: 'm-princessmononoke',
+    title: 'Princess Mononoke (もののけ姫)',
+    overview: 'On a journey to find the cure for a Tatarigami\\'s curse, Ashitaka finds himself in the middle of a war between the forest gods and Tatara, a mining colony.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/cmyDbFkzV1qfWqfS4uCgq1B2n1A.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/m63b6iYJ3c6kQxR7yZ2O2hZ5N5d.jpg',
+    release_date: '1997-07-12',
+    vote_average: 8.4,
+    genres: ['Anime', 'Animation', 'Fantasy', 'Adventure'],
+    language: 'Japanese',
+    runtime: 134,
+    match_score: 97,
+    agent_rationale: 'Hayao Miyazaki towering environmental fantasy epic.'
+  },
+  {
+    id: 'm-laland',
+    title: 'La La Land',
+    overview: 'While navigating their careers in Los Angeles, a pianist and an actress fall in love while attempting to reconcile their aspirations for the future.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/uDO8zWDhfWwoFdKS4fzkVJt0Rf0.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/nlPCvjGzG5B58Z9pE0h9Xl7x6bS.jpg',
+    release_date: '2016-12-09',
+    vote_average: 8.0,
+    genres: ['Romance', 'Comedy', 'Drama', 'Music'],
+    language: 'English',
+    runtime: 128,
+    match_score: 97,
+    agent_rationale: 'Damien Chazelle 6 Academy Award-winning modern Hollywood musical love letter.'
+  },
+  {
+    id: 'm-titanic',
+    title: 'Titanic',
+    overview: '101-year-old Rose DeWitt Bukater tells the story of her life aboard the Titanic, 84 years later. A young Rose boards the ship with her mother and fiance, and meets Jack Dawson.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/yDHYTfA3R0jFYba16jBB1jv8uaC.jpg',
+    release_date: '1997-12-19',
+    vote_average: 7.9,
+    genres: ['Romance', 'Drama'],
+    language: 'English',
+    runtime: 194,
+    match_score: 96,
+    agent_rationale: 'James Cameron 11 Oscars record-tying romantic disaster epic.'
+  },
+  {
+    id: 'm-pastlives',
+    title: 'Past Lives',
+    overview: 'Nora and Hae Sung, two deeply connected childhood friends, are wrested apart after Nora\\'s family emigrates from South Korea. Decades later, they are reunited for one fateful week.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/k3waqVXSnvCZWfJYNtdamTgTtTA.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/2wkVhQ8cZ3Y7vX8pE6Z0o7d7V9a.jpg',
+    release_date: '2023-06-02',
+    vote_average: 8.0,
+    genres: ['Romance', 'Drama'],
+    language: 'Korean',
+    runtime: 106,
+    match_score: 95,
+    agent_rationale: 'Exquisite, delicate exploration of love, destiny, and the Korean concept of In-Yun.'
+  },
+  {
+    id: 'm-3idiots',
+    title: '3 Idiots',
+    overview: 'Two friends search for their long lost companion. They revisit their college days and recall the memories of their friend who inspired them to think differently, even as the rest of the world called them "idiots".',
+    poster_path: 'https://image.tmdb.org/t/p/w780/66A9MqXOyVFCssoloscw79z8swQ.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/u78uN3F76YF4l6k5Wp9yP2P8u5c.jpg',
+    release_date: '2009-12-25',
+    vote_average: 8.4,
+    genres: ['Comedy', 'Drama', 'Romance'],
+    language: 'Hindi',
+    runtime: 170,
+    match_score: 98,
+    agent_rationale: 'Beloved Rajkumar Hirani masterpiece celebrating passion, education, and friendship.'
+  },
+  {
+    id: 'm-knivesout',
+    title: 'Knives Out',
+    overview: 'When renowned crime novelist Harlan Thrombey is found dead at his estate, inquisitive Detective Benoit Blanc is mysteriously enlisted to investigate.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/pThyQovXQrw2m0s9x82twj48Jq4.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/4HWAQu28e2yaWrtupFPGFkdNU7V.jpg',
+    release_date: '2019-11-27',
+    vote_average: 7.9,
+    genres: ['Comedy', 'Mystery', 'Crime', 'Thriller'],
+    language: 'English',
+    runtime: 130,
+    match_score: 95,
+    agent_rationale: 'Rian Johnson deliciously entertaining whodunit with star-studded ensemble.'
+  },
+  {
+    id: 'm-grandbudapest',
+    title: 'The Grand Budapest Hotel',
+    overview: 'The adventures of Gustave H, a legendary concierge at a famous European hotel between the wars, and Zero Moustafa, the lobby boy who becomes his most trusted friend.',
+    poster_path: 'https://image.tmdb.org/t/p/w780/eWdyYQreja6JGCzqHWX9NZkt5BW.jpg',
+    backdrop_path: 'https://image.tmdb.org/t/p/original/6cW3K6pQoE3gV3r3Qz6m8kF2P8w.jpg',
+    release_date: '2014-03-07',
+    vote_average: 8.1,
+    genres: ['Comedy', 'Adventure'],
+    language: 'English',
+    runtime: 99,
+    match_score: 96,
+    agent_rationale: 'Wes Anderson visual poetry, symmetrical pastel framing, and madcap caper comedy.'
+  }'''
+
+# Replace `id: 'm-batman', ... }\n];` with movies appended
+target = "  {\n    id: 'm-batman',\n    title: 'The Batman',\n    overview: 'In his second year of fighting crime, Batman uncovers corruption in Gotham City that connects to his own family while facing a serial killer known as the Riddler.',\n    poster_path: 'https://image.tmdb.org/t/p/w780/74xTEgt7R36Fpooo50r9T25onhq.jpg',\n    backdrop_path: 'https://image.tmdb.org/t/p/original/tRS6jvPM9qPrrnx2KRx2ew96Yot.jpg',\n    release_date: '2022-03-04',\n    vote_average: 8.2,\n    genres: ['Action', 'Thriller', 'Drama'],\n    language: 'English',\n    runtime: 176,\n    match_score: 93,\n    agent_rationale: 'Dark atmospheric crime thriller with intense pacing and Michael Giacchino score.'\n  }\n];"
+
+replacement = "  {\n    id: 'm-batman',\n    title: 'The Batman',\n    overview: 'In his second year of fighting crime, Batman uncovers corruption in Gotham City that connects to his own family while facing a serial killer known as the Riddler.',\n    poster_path: 'https://image.tmdb.org/t/p/w780/74xTEgt7R36Fpooo50r9T25onhq.jpg',\n    backdrop_path: 'https://image.tmdb.org/t/p/original/tRS6jvPM9qPrrnx2KRx2ew96Yot.jpg',\n    release_date: '2022-03-04',\n    vote_average: 8.2,\n    genres: ['Action', 'Thriller', 'Drama'],\n    language: 'English',\n    runtime: 176,\n    match_score: 93,\n    agent_rationale: 'Dark atmospheric crime thriller with intense pacing and Michael Giacchino score.'\n  },\n" + NEW_MOVIES_CODE + "\n];"
+
+if target in content:
+    content = content.replace(target, replacement, 1)
+    with open(MOCK_FILE, 'w', encoding='utf-8') as f:
+        f.write(content)
+    print("Successfully enriched MOCK_MOVIES with 23 new blockbuster movies!")
+else:
+    print("Could not find target in mockData.ts")

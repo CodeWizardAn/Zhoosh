@@ -56,7 +56,7 @@ const HERO_MUSIC_SHOWCASE: HeroMusicShowcaseItem[] = [
     streamsStr: '4.1 Billion Streams',
     tagline: 'CAN\'T SLEEP UNTIL I FEEL YOUR TOUCH',
     overview: 'The all-time greatest Billboard Hot 100 hit in history. Fueled by intoxicating 1980s analog synthesizers and heart-racing synthwave drums.',
-    backdropUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1400&auto=format&fit=crop&q=80',
+    backdropUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6f/bc/e6/6fbce6c4-c38c-72d8-4fd0-66cfff32f679/20UMGIM12176.rgb.jpg/600x600bb.jpg',
     coverArtUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6f/bc/e6/6fbce6c4-c38c-72d8-4fd0-66cfff32f679/20UMGIM12176.rgb.jpg/600x600bb.jpg',
     genreVibe: 'Neo-Noir Synthwave',
     audioPreviewGenre: 'Electronic',
@@ -73,28 +73,28 @@ const HERO_MUSIC_SHOWCASE: HeroMusicShowcaseItem[] = [
     streamsStr: '1.4 Billion Streams',
     tagline: 'PLEASE STAY, I WANT YOU, I NEED YOU, OH GOD',
     overview: 'A volcanic explosive rock ballad. Starting as an intimate acoustic confession before detonating into raw arena-sized vocal power.',
-    backdropUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1400&auto=format&fit=crop&q=80',
+    backdropUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/54/f4/92/54f49210-e260-b519-ebbd-f4f40ee710cd/054391342751.jpg/600x600bb.jpg',
     coverArtUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/54/f4/92/54f49210-e260-b519-ebbd-f4f40ee710cd/054391342751.jpg/600x600bb.jpg',
     genreVibe: 'Explosive Arena Rock',
     audioPreviewGenre: 'Rock',
     badgeLabel: 'Global Sensation'
   },
   {
-    id: 'hero-darmiyaan',
-    title: 'Darmiyaan',
-    artist: 'Shafqat Amanat Ali, Clinton Cerejo',
-    album: 'Jodi Breakers',
-    genres: ['Romantic', 'Sufi Rock', 'Bollywood'],
-    year: 2012,
-    durationStr: '5m 49s',
-    streamsStr: '142 Million Streams',
-    tagline: 'KUCH TOH THA TERE MERE DARMIYAAN',
-    overview: 'A timeless romantic gem. Shafqat Amanat Ali\'s soaring classical Sufi vocals intertwined with tender acoustic guitars and deep emotional yearning.',
-    backdropUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1400&auto=format&fit=crop&q=80',
-    coverArtUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music18/v4/dc/53/46/dc534631-17ba-6932-250f-84dd558fc78e/8902894698481_cover.jpg/600x600bb.jpg',
-    genreVibe: 'Soulful Romantic Ballad',
+    id: 'hero-perfect',
+    title: 'Perfect',
+    artist: 'Ed Sheeran',
+    album: '÷ (Divide)',
+    genres: ['Romantic', 'Pop', 'Acoustic'],
+    year: 2017,
+    durationStr: '4m 23s',
+    streamsStr: '2.9 Billion Streams',
+    tagline: 'DARLING, YOU LOOK PERFECT TONIGHT',
+    overview: 'A timeless acoustic waltz masterpiece written for his wife Cherry Seaborn. Celebrating unconditional love with soaring orchestral strings and tender vocals.',
+    backdropUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/15/e6/e8/15e6e8a4-4190-6a8b-86c3-ab4a51b88288/190295851286.jpg/600x600bb.jpg',
+    coverArtUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/15/e6/e8/15e6e8a4-4190-6a8b-86c3-ab4a51b88288/190295851286.jpg/600x600bb.jpg',
+    genreVibe: 'Timeless Romantic Waltz',
     audioPreviewGenre: 'Romantic',
-    badgeLabel: 'All-Time Romantic Classic'
+    badgeLabel: '#1 Global Wedding Anthem'
   },
   {
     id: 'hero-cornfield',
@@ -107,7 +107,7 @@ const HERO_MUSIC_SHOWCASE: HeroMusicShowcaseItem[] = [
     streamsStr: '284 Million Streams',
     tagline: 'LOVE IS THE ONE THING THAT TRANSCENDS TIME AND SPACE',
     overview: 'Recorded on the 1926 Harrison & Harrison pipe organ at Temple Church in London. A sweeping, celestial crescendo of cosmic wonder.',
-    backdropUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1400&auto=format&fit=crop&q=80',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/rAiYTsqJiOuvnRzr5kpXy63WlHn.jpg',
     coverArtUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/f4/5b/73/f45b735a-8d7a-9713-b217-0f8e1593c28b/794043201943.jpg/600x600bb.jpg',
     genreVibe: 'Cinematic Pipe Organ Masterpiece',
     audioPreviewGenre: 'Classical',
@@ -124,7 +124,7 @@ const HERO_MUSIC_SHOWCASE: HeroMusicShowcaseItem[] = [
     streamsStr: '2.9 Billion Streams',
     tagline: 'LOOK WHAT YOU\'VE DONE, I\'M A MOTHERF***IN\' STARBOY',
     overview: 'The iconic collision of French electronic royalty Daft Punk and Abel Tesfaye\'s razor-sharp pop sensibilities. Punchy kicks and vocoder harmonies.',
-    backdropUrl: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=1400&auto=format&fit=crop&q=80',
+    backdropUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b5/92/bb/b592bb72-52e3-e756-9b26-9f56d08f47ab/16UMGIM67864.rgb.jpg/600x600bb.jpg',
     coverArtUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b5/92/bb/b592bb72-52e3-e756-9b26-9f56d08f47ab/16UMGIM67864.rgb.jpg/600x600bb.jpg',
     genreVibe: 'Electro Funk & R&B',
     audioPreviewGenre: 'Electronic',
@@ -141,7 +141,7 @@ const HERO_MUSIC_SHOWCASE: HeroMusicShowcaseItem[] = [
     streamsStr: '310 Million Streams',
     tagline: 'TERA NI TERA LOVER',
     overview: 'The unstoppable Punjabi pop anthem that crossed all borders. Featuring infectious upbeat synth lines, modern bass kicks, and Diljit\'s vibrant vocals.',
-    backdropUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1400&auto=format&fit=crop&q=80',
+    backdropUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8a/89/e4/8a89e445-d2c6-f8ac-a828-27818b0c1afe/859749638209_cover.jpg/600x600bb.jpg',
     coverArtUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8a/89/e4/8a89e445-d2c6-f8ac-a828-27818b0c1afe/859749638209_cover.jpg/600x600bb.jpg',
     genreVibe: 'Modern Punjabi Pop',
     audioPreviewGenre: 'Pop',
@@ -257,20 +257,31 @@ const HeroMusicBillboard: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="absolute inset-0"
+            className="absolute inset-0 overflow-hidden"
           >
+            {/* Ambient Blurred Colored Halo from the Song's Real Album Art */}
             <img
-              src={current.backdropUrl}
+              src={current.coverArtUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover filter blur-3xl scale-125 opacity-40 select-none pointer-events-none"
+            />
+            {/* Main Authentic Atmospheric Layer */}
+            <img
+              src={current.backdropUrl || current.coverArtUrl}
               alt={current.title}
-              className="w-full h-full object-cover object-center"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = current.coverArtUrl;
+              }}
+              className="w-full h-full object-cover object-center opacity-85"
             />
           </motion.div>
         </AnimatePresence>
 
         {/* Cinematic Electric Blue Vignettes */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#05070E] via-[#05070E]/75 via-45% to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#05070E] via-[#05070E]/40 via-30% to-transparent pointer-events-none" />
-        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#05070E]/60 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#05070E] via-[#05070E]/65 via-35% to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#05070E] via-[#05070E]/30 via-25% to-transparent pointer-events-none" />
+        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#05070E]/50 to-transparent pointer-events-none" />
 
         {/* Ambient Electric Blue Aura Flare */}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#0070F3]/25 blur-[120px] pointer-events-none" />
@@ -305,9 +316,20 @@ const HeroMusicBillboard: React.FC = () => {
         </button>
 
         {/* Content Container (Bottom-Left) */}
-        <div className="absolute bottom-6 sm:bottom-10 left-6 sm:left-12 max-w-2xl z-20">
+        <div className="absolute bottom-6 sm:bottom-10 left-6 sm:left-12 max-w-[90%] sm:max-w-[55%] md:max-w-[52%] lg:max-w-[56%] z-20">
+          {/* Mobile Album Art Preview Badge */}
+          <div className="flex sm:hidden items-center gap-3.5 mb-3">
+            <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/30 shadow-2xl shrink-0 bg-black/60 aspect-square">
+              <img src={current.coverArtUrl} alt={current.title} className="w-full h-full object-cover aspect-square" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-white truncate">{current.title}</h3>
+              <p className="text-xs text-gray-300 truncate font-semibold mt-0.5">{current.album}</p>
+            </div>
+          </div>
+
           {/* Big Stylized Music Typography */}
-          <h1 className="font-sans font-black text-3xl sm:text-5xl md:text-6xl tracking-tight text-white uppercase drop-shadow-[0_4px_30px_rgba(0,112,243,0.5)] leading-tight select-none">
+          <h1 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight text-white uppercase drop-shadow-[0_4px_30px_rgba(0,112,243,0.5)] leading-tight select-none">
             {current.title}
           </h1>
 
@@ -333,8 +355,8 @@ const HeroMusicBillboard: React.FC = () => {
             <span className="text-cyan-400 font-mono">{current.streamsStr}</span>
           </div>
 
-          {/* Action Buttons: Play Pill, Add to Playlist, Like */}
-          <div className="flex items-center gap-3">
+          {/* Action Buttons & Badges */}
+          <div className="flex items-center flex-wrap gap-3">
             {/* Play Pill */}
             <button
               onClick={handlePlayHero}
@@ -369,20 +391,62 @@ const HeroMusicBillboard: React.FC = () => {
                 <Heart className="w-4 h-4 hover:fill-current transition-colors" />
               )}
             </button>
+
+            {/* Badges beside buttons on medium screens */}
+            <div className="hidden lg:flex items-center gap-2 ml-1">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-blue-400/20 text-xs font-semibold text-white shadow-lg">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Dolby Atmos</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-blue-400/20 text-xs font-semibold text-white shadow-lg">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>{current.badgeLabel || 'Global Hit'}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* BOTTOM-RIGHT BADGES */}
-        <div className="absolute right-5 sm:right-8 bottom-6 sm:bottom-10 z-20 hidden sm:flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-blue-400/20 text-xs font-semibold text-white shadow-lg">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Dolby Atmos Spatial Audio</span>
-          </div>
+        {/* RIGHT SIDE: Authentic Floating 3D Official Album Art Poster with Vinyl - Fully Visible & Unclipped */}
+        <div className="absolute right-6 sm:right-10 md:right-14 lg:right-16 top-1/2 -translate-y-1/2 hidden sm:flex items-center select-none z-20 pointer-events-none">
+          <motion.div
+            key={`album-showcase-${current.id}`}
+            initial={{ opacity: 0, scale: 0.92, x: 20 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="relative flex items-center justify-center group pointer-events-auto"
+          >
+            {/* Spinning Vinyl Record Disc peeking out behind sleeve */}
+            <motion.div
+              animate={{ rotate: isPlaying && currentTrack?.id === current.id ? 360 : 0 }}
+              transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
+              className="absolute -right-6 md:-right-8 lg:-right-10 w-36 h-36 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full bg-[#111] border-4 border-[#222] shadow-2xl items-center justify-center -z-10 hidden md:flex select-none"
+            >
+              {/* Vinyl Grooves rings */}
+              <div className="w-28 h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 rounded-full border border-white/10 flex items-center justify-center">
+                <div className="w-18 h-18 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full border border-white/10 flex items-center justify-center">
+                  <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full border-2 border-white/20 bg-[#0070F3]/30 overflow-hidden">
+                    <img src={current.coverArtUrl} alt="" className="w-full h-full object-cover opacity-80" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
 
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-blue-400/20 text-xs font-semibold text-white shadow-lg">
-            <Flame className="w-3.5 h-3.5 text-amber-400" />
-            <span>{current.badgeLabel || 'Trending Worldwide'}</span>
-          </div>
+            {/* Ambient Aura matching the track's color */}
+            <div className="absolute -inset-4 rounded-3xl blur-2xl opacity-70 bg-gradient-to-tr from-blue-600/40 via-cyan-500/25 to-purple-600/30 -z-10" />
+
+            {/* Official Album Art Poster Card - 100% Fully Visible, Square, Unclipped */}
+            <div className="relative w-44 h-44 sm:w-52 sm:h-52 md:w-60 md:h-60 lg:w-72 lg:h-72 aspect-square rounded-2xl lg:rounded-3xl overflow-hidden border-2 border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(0,112,243,0.35)] bg-[#0d0f18] transition-transform duration-300 hover:scale-[1.03]">
+              <img
+                src={current.coverArtUrl}
+                alt={current.title}
+                className="w-full h-full object-cover aspect-square"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = current.coverArtUrl;
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10 pointer-events-none" />
+            </div>
+          </motion.div>
         </div>
 
         {/* Carousel Slide Indicators */}
@@ -727,103 +791,303 @@ const CategoryShelf: React.FC<CategoryShelfProps> = ({
   );
 };
 
+// ─── DEDICATED LIKED SONGS SHELF FOR MUSIC SECTION ──────────────────────────
+const LikedSongsShelf: React.FC = () => {
+  const { likedItems, likedIds, setActiveNav, playTrack, addToast } = useAppStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const likedSongs = useMemo(() => {
+    return Object.values(likedItems).filter(
+      (item): item is Song => 'artist' in item && 'album_art' in item && !!likedIds[String(item.id)]
+    );
+  }, [likedItems, likedIds]);
+
+  const scroll = (dir: 'left' | 'right') => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir === 'right' ? 700 : -700, behavior: 'smooth' });
+  };
+
+  const handlePlayAllLiked = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!likedSongs.length) return;
+    playTrack(likedSongs[0], likedSongs);
+    synthEngine.playTrackPreview(likedSongs[0].genre);
+    addToast({
+      title: 'Playing Liked Songs',
+      description: `Starting playback of ${likedSongs.length} saved tracks`,
+      type: 'info'
+    });
+  };
+
+  return (
+    <div className="group/shelf mb-10">
+      {/* Header with quick 'Visit Liked Songs' action */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 sm:px-12 mb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0070F3] to-[#00D2FF] flex items-center justify-center shadow-md shadow-blue-500/30 text-white">
+            <Heart className="w-4 h-4 fill-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                Your Liked Songs
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-cyan-300 border border-blue-400/30">
+                Collection
+              </span>
+            </div>
+            <p className="text-xs text-gray-400">
+              {likedSongs.length > 0
+                ? `${likedSongs.length} favorite ${likedSongs.length === 1 ? 'track' : 'tracks'} saved to your personal library`
+                : 'Save songs with the heart icon to build your personal library'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          {likedSongs.length > 0 && (
+            <button
+              onClick={handlePlayAllLiked}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white hover:bg-white/90 text-black font-bold text-xs shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <Play className="w-3.5 h-3.5 fill-black ml-0.5" />
+              <span>Play All</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setActiveNav('likes')}
+            className="flex items-center gap-1 px-4 py-1.5 rounded-full bg-blue-600/20 hover:bg-blue-600/35 text-cyan-300 hover:text-white border border-blue-500/30 hover:border-blue-400 text-xs font-bold transition-all cursor-pointer shadow-sm hover:scale-105"
+            title="Visit full Liked Songs library"
+          >
+            <span>Visit Liked Songs</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Shelf Body */}
+      <div className="relative">
+        {/* Left Arrow */}
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
+        >
+          <ChevronLeft className="w-6 h-6 text-white drop-shadow" />
+        </button>
+
+        {/* Scroll Track */}
+        <div
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
+        >
+          {/* Card 1: Featured 'Liked Songs' Hero Tile */}
+          <motion.div
+            whileHover={{ scale: 1.04, y: -4 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setActiveNav('likes')}
+            className="relative flex-shrink-0 w-[190px] sm:w-[210px] md:w-[230px] aspect-square rounded-2xl p-5 flex flex-col justify-between cursor-pointer select-none bg-gradient-to-br from-indigo-700 via-blue-600 to-cyan-500 shadow-xl shadow-blue-950/50 border border-white/20 group/tile overflow-hidden"
+          >
+            {/* Ambient Lighting & Glow */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20 blur-2xl pointer-events-none group-hover/tile:scale-125 transition-transform" />
+
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-md">
+                <Heart className="w-5 h-5 fill-white" />
+              </div>
+
+              {likedSongs.length > 0 && (
+                <button
+                  onClick={handlePlayAllLiked}
+                  className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-xl opacity-90 group-hover/tile:opacity-100 group-hover/tile:scale-110 transition-all cursor-pointer"
+                  title="Play all liked tracks"
+                >
+                  <Play className="w-3.5 h-3.5 fill-black ml-0.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="relative z-10">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-200">
+                FAVORITES
+              </span>
+              <h3 className="text-xl font-black text-white tracking-tight leading-tight mt-0.5">
+                Liked Songs
+              </h3>
+              <p className="text-xs font-medium text-blue-100 mt-1">
+                {likedSongs.length} {likedSongs.length === 1 ? 'track saved' : 'tracks saved'}
+              </p>
+
+              <div className="mt-3 pt-2 border-t border-white/15 flex items-center gap-1 text-[11px] font-bold text-white group-hover/tile:text-cyan-200 transition-colors">
+                <span>Visit Collection</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover/tile:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* User's Liked Song Cards */}
+          {likedSongs.map((song) => (
+            <CategorySongCard key={song.id} song={song} />
+          ))}
+
+          {/* Empty state invitation card if user has 0 liked songs */}
+          {likedSongs.length === 0 && (
+            <div className="flex-shrink-0 w-[240px] sm:w-[280px] aspect-square rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-[#0A1020]/80 border border-blue-500/20 shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-blue-500/20 text-cyan-400 flex items-center justify-center mb-3 border border-blue-400/30">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-bold text-white mb-1">Your Liked Songs Hub</h4>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                Click the heart icon on any track across Zhoosh to save it here.
+              </p>
+              <button
+                onClick={() => setActiveNav('likes')}
+                className="px-4 py-1.5 rounded-full bg-[#0070F3] hover:bg-blue-600 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+              >
+                Open Liked Library
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Right Arrow */}
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
+        >
+          <ChevronRight className="w-6 h-6 text-white drop-shadow" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ─── MAIN MUSIC DASHBOARD VIEW ──────────────────────────────────────────────
 export const MusicView: React.FC = () => {
   const { data: songs = [], isLoading } = useMusic();
 
   // Categorize songs into distinct genre shelves
+  // Helper to ensure each music shelf is always populated with at least 8-10 tracks
+  const ensureSongShelfMin = (filteredList: Song[], fallbackPool: Song[], minCount = 8) => {
+    if (filteredList.length >= minCount) return filteredList;
+    const existingIds = new Set(filteredList.map((s) => String(s.id)));
+    const padding = fallbackPool.filter((s) => !existingIds.has(String(s.id)));
+    return [...filteredList, ...padding].slice(0, 16);
+  };
+
   const trendingSongs = useMemo(
     () =>
-      songs.filter(
-        (s) =>
-          s.genre.toLowerCase().includes('trending') ||
-          s.genre.toLowerCase().includes('pop') ||
-          (s.match_score || 0) >= 97
+      ensureSongShelfMin(
+        songs.filter(
+          (s) =>
+            s.genre.toLowerCase().includes('trending') ||
+            s.genre.toLowerCase().includes('pop') ||
+            (s.match_score || 0) >= 97
+        ),
+        songs
       ),
     [songs]
   );
 
   const romanticSongs = useMemo(
     () =>
-      songs.filter(
-        (s) =>
-          s.genre.toLowerCase().includes('romantic') ||
-          s.title.toLowerCase().includes('darmiyaan') ||
-          s.title.toLowerCase().includes('kesariya') ||
-          s.title.toLowerCase().includes('until i found you') ||
-          s.title.toLowerCase().includes('golden hour') ||
-          s.title.toLowerCase().includes('tum hi ho') ||
-          s.title.toLowerCase().includes('perfect')
+      ensureSongShelfMin(
+        songs.filter(
+          (s) =>
+            s.genre.toLowerCase().includes('romantic') ||
+            s.title.toLowerCase().includes('darmiyaan') ||
+            s.title.toLowerCase().includes('kesariya') ||
+            s.title.toLowerCase().includes('until i found you') ||
+            s.title.toLowerCase().includes('golden hour') ||
+            s.title.toLowerCase().includes('tum hi ho') ||
+            s.title.toLowerCase().includes('perfect')
+        ),
+        songs
       ),
     [songs]
   );
 
   const rockSongs = useMemo(
     () =>
-      songs.filter(
-        (s) =>
-          s.genre.toLowerCase().includes('rock') ||
-          s.title.toLowerCase().includes('beautiful things') ||
-          s.title.toLowerCase().includes('in the end') ||
-          s.title.toLowerCase().includes('bohemian') ||
-          s.title.toLowerCase().includes('believer') ||
-          s.title.toLowerCase().includes('sweet child')
+      ensureSongShelfMin(
+        songs.filter(
+          (s) =>
+            s.genre.toLowerCase().includes('rock') ||
+            s.title.toLowerCase().includes('beautiful things') ||
+            s.title.toLowerCase().includes('in the end') ||
+            s.title.toLowerCase().includes('bohemian') ||
+            s.title.toLowerCase().includes('believer') ||
+            s.title.toLowerCase().includes('sweet child')
+        ),
+        songs
       ),
     [songs]
   );
 
   const popSongs = useMemo(
     () =>
-      songs.filter(
-        (s) =>
-          s.genre.toLowerCase().includes('pop') ||
-          s.genre.toLowerCase().includes('synthpop') ||
-          s.title.toLowerCase().includes('senorita') ||
-          s.title.toLowerCase().includes('lover') ||
-          s.title.toLowerCase().includes('levitating') ||
-          s.title.toLowerCase().includes('cruel summer') ||
-          s.title.toLowerCase().includes('bad guy')
+      ensureSongShelfMin(
+        songs.filter(
+          (s) =>
+            s.genre.toLowerCase().includes('pop') ||
+            s.genre.toLowerCase().includes('synthpop') ||
+            s.title.toLowerCase().includes('senorita') ||
+            s.title.toLowerCase().includes('lover') ||
+            s.title.toLowerCase().includes('levitating') ||
+            s.title.toLowerCase().includes('cruel summer') ||
+            s.title.toLowerCase().includes('bad guy')
+        ),
+        songs
       ),
     [songs]
   );
 
   const hipHopSongs = useMemo(
     () =>
-      songs.filter(
-        (s) =>
-          s.genre.toLowerCase().includes('hip-hop') ||
-          s.title.toLowerCase().includes('humble') ||
-          s.title.toLowerCase().includes('sicko mode') ||
-          s.title.toLowerCase().includes('god\'s plan') ||
-          s.title.toLowerCase().includes('goosebumps')
+      ensureSongShelfMin(
+        songs.filter(
+          (s) =>
+            s.genre.toLowerCase().includes('hip-hop') ||
+            s.title.toLowerCase().includes('humble') ||
+            s.title.toLowerCase().includes('sicko mode') ||
+            s.title.toLowerCase().includes('god\'s plan') ||
+            s.title.toLowerCase().includes('goosebumps')
+        ),
+        songs
       ),
     [songs]
   );
 
   const soundtrackSongs = useMemo(
     () =>
-      songs.filter(
-        (s) =>
-          s.genre.toLowerCase().includes('soundtrack') ||
-          s.genre.toLowerCase().includes('classical') ||
-          s.title.toLowerCase().includes('cornfield') ||
-          s.title.toLowerCase().includes('time') ||
-          s.title.toLowerCase().includes('oppenheimer') ||
-          s.title.toLowerCase().includes('can you hear')
+      ensureSongShelfMin(
+        songs.filter(
+          (s) =>
+            s.genre.toLowerCase().includes('soundtrack') ||
+            s.genre.toLowerCase().includes('classical') ||
+            s.title.toLowerCase().includes('cornfield') ||
+            s.title.toLowerCase().includes('time') ||
+            s.title.toLowerCase().includes('oppenheimer') ||
+            s.title.toLowerCase().includes('can you hear')
+        ),
+        songs
       ),
     [songs]
   );
 
   const loFiSongs = useMemo(
     () =>
-      songs.filter(
-        (s) =>
-          s.genre.toLowerCase().includes('lo-fi') ||
-          s.genre.toLowerCase().includes('ambient') ||
-          s.genre.toLowerCase().includes('chillwave') ||
-          s.title.toLowerCase().includes('resonance') ||
-          s.title.toLowerCase().includes('nightcall') ||
-          s.title.toLowerCase().includes('a walk')
+      ensureSongShelfMin(
+        songs.filter(
+          (s) =>
+            s.genre.toLowerCase().includes('lo-fi') ||
+            s.genre.toLowerCase().includes('ambient') ||
+            s.genre.toLowerCase().includes('chillwave') ||
+            s.title.toLowerCase().includes('resonance') ||
+            s.title.toLowerCase().includes('nightcall') ||
+            s.title.toLowerCase().includes('a walk')
+        ),
+        songs
       ),
     [songs]
   );
@@ -856,6 +1120,9 @@ export const MusicView: React.FC = () => {
 
       {/* 2. DASHBOARD CATEGORY ROWS */}
       <div className="relative z-10 mt-3 sm:mt-6 space-y-6">
+        {/* Dedicated Liked Songs Hub Shelf */}
+        <LikedSongsShelf />
+
         {/* Top 10 Tracks Today (Giant typography #1 to #10 with visible track names & electric blue outline) */}
         <Top10MusicShelf songs={songs} />
 

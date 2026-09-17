@@ -337,7 +337,7 @@ const HeroBillboard: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
-  const { openPopover, likedIds, openMovieModal } = useAppStore();
+  const { likedIds, openMovieModal } = useAppStore();
   const likeMutation = useLikeMutation();
 
   const current = HERO_SHOWCASE[currentIndex];
@@ -587,7 +587,7 @@ const getSafeFallbackPoster = (id: string | number) => {
 
 const ContinueWatchingCard: React.FC<{
   item: ContinueWatchingItem;
-  onRemove: (id: string | number, title: string) => void;
+  onRemove: (id: string | number, title: string, movieId?: string | number) => void;
 }> = ({ item, onRemove }) => {
   const { movie, progressPercent, timeLeft, episodeLabel } = item;
   const { likedIds, openMovieModal } = useAppStore();
@@ -612,8 +612,13 @@ const ContinueWatchingCard: React.FC<{
 
   return (
     <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
       whileHover={{ scale: 1.06, y: -6, zIndex: 20 }}
       transition={{ duration: 0.2 }}
+      onClick={() => openMovieModal(movie)}
       className="relative flex-shrink-0 w-[175px] sm:w-[195px] md:w-[220px] cursor-pointer group select-none"
     >
       {/* 2:3 Vertical Container so Posters Fit 100% Correctly */}
@@ -637,16 +642,16 @@ const ContinueWatchingCard: React.FC<{
           }}
         />
 
-        {/* Quick Corner Remove Button */}
+        {/* Quick Corner Remove Button (Permanently remove) */}
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onRemove(item.id, movie.title);
+            onRemove(item.id, movie.title, movie.id);
           }}
-          className="absolute top-2 right-2 z-30 p-1.5 rounded-full bg-black/75 hover:bg-red-600 text-gray-300 hover:text-white border border-white/20 transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-lg"
+          className="absolute top-2 right-2 z-30 p-1.5 rounded-full bg-black/80 hover:bg-red-600 text-gray-200 hover:text-white border border-white/25 transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer shadow-lg hover:scale-110"
           title="Remove from Continue Watching"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-3.5 h-3.5 stroke-[2.5]" />
         </button>
 
         {/* Hover Action Overlay */}
@@ -654,7 +659,7 @@ const ContinueWatchingCard: React.FC<{
           <div className="flex items-center gap-2 mb-2.5">
             <button
               onClick={handleCardPlay}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer"
               title="Resume Play"
             >
               <Play className="w-4 h-4 fill-black ml-0.5" />
@@ -664,7 +669,7 @@ const ContinueWatchingCard: React.FC<{
                 e.stopPropagation();
                 openMovieModal(movie);
               }}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 border border-white/50 text-white flex items-center justify-center hover:border-white transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 border border-white/50 text-white flex items-center justify-center hover:border-white transition-colors cursor-pointer"
               title="More Info"
             >
               <Info className="w-4 h-4" />
@@ -675,7 +680,7 @@ const ContinueWatchingCard: React.FC<{
                 triggerLikeBurst(e.clientX, e.clientY, 'movies');
                 likeMutation.mutate({ item: movie, mode: 'movies' });
               }}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-colors ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${
                 isLiked ? 'bg-[#FF1E56] border-[#FF1E56] text-white' : 'border-white/50 bg-black/60 text-white hover:border-white'
               }`}
               title={isLiked ? 'Unlike' : 'Like'}
@@ -685,7 +690,7 @@ const ContinueWatchingCard: React.FC<{
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onRemove(item.id, movie.title);
+                onRemove(item.id, movie.title, movie.id);
               }}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 border border-white/50 text-gray-300 hover:text-red-400 hover:border-red-500 hover:bg-red-500/20 flex items-center justify-center transition-all cursor-pointer"
               title="Remove from Continue Watching"
@@ -712,6 +717,8 @@ const ContinueWatchingCard: React.FC<{
 
 const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Permanently removed IDs/titles from Continue Watching (stored in localStorage)
   const [removedIds, setRemovedIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('zhoosh_removed_cw_ids');
@@ -721,26 +728,65 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
     }
   });
 
+  // Track active continue watching items so removing an item shrinks the row instead of pulling next catalog movie
+  const [activeCwIds, setActiveCwIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('zhoosh_active_cw_ids');
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    // Initial seed list of continue watching items
+    return ['1', '2', '3', '4', 'm-forrest-gump', 'm-gladiator'];
+  });
+
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: dir === 'right' ? 750 : -750, behavior: 'smooth' });
   };
 
-  const handleRemove = (id: string | number, title: string) => {
+  const handleRemove = (id: string | number, title: string, movieId?: string | number) => {
     const idStr = String(id);
-    const updated = [...removedIds, idStr];
-    setRemovedIds(updated);
+    const movieStr = movieId ? String(movieId) : '';
+    const normTitle = title.toLowerCase().trim();
+
+    // Persist to removedIds in localStorage so it NEVER shows up again
+    const newRemoved = Array.from(
+      new Set([...removedIds, idStr, movieStr, `cw-${movieStr}`, `cw-${idStr}`, normTitle].filter(Boolean))
+    );
+    setRemovedIds(newRemoved);
     try {
-      localStorage.setItem('zhoosh_removed_cw_ids', JSON.stringify(updated));
+      localStorage.setItem('zhoosh_removed_cw_ids', JSON.stringify(newRemoved));
     } catch {}
+
+    // Remove from active list in state & localStorage (no backfilling)
+    setActiveCwIds((prev) => {
+      const next = prev.filter((cwId) => {
+        return (
+          cwId !== idStr &&
+          cwId !== movieStr &&
+          cwId !== `cw-${movieStr}` &&
+          cwId !== `cw-${idStr}` &&
+          cwId !== normTitle
+        );
+      });
+      try {
+        localStorage.setItem('zhoosh_active_cw_ids', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
     useAppStore.getState().addToast({
-      title: `Removed from Continue Watching`,
-      description: `"${title}" removed from your continue watching row.`,
+      title: 'Removed from Continue Watching',
+      description: `"${title}" has been removed and won't appear here again.`,
       type: 'info'
     });
   };
 
   const continueItems: ContinueWatchingItem[] = useMemo(() => {
+    if (!movies.length || !activeCwIds.length) return [];
+
     const timeLabels = ['42m left', '1h 05m left', '24m left', '1h 22m left', '15m left', '52m left'];
     const percentages = [68, 45, 82, 30, 89, 58];
     const episodeLabels = [
@@ -752,33 +798,52 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
       'Mid-Season Special'
     ];
 
-    return movies
-      .filter((m) => !removedIds.includes(`cw-${m.id}`) && !removedIds.includes(String(m.id)))
-      .slice(0, 8)
-      .map((m, idx) => ({
-        id: `cw-${m.id}`,
-        movie: m,
-        progressPercent: percentages[idx % percentages.length],
-        timeLeft: timeLabels[idx % timeLabels.length],
-        episodeLabel: episodeLabels[idx % episodeLabels.length]
-      }));
-  }, [movies, removedIds]);
+    const matched: Movie[] = [];
+    for (const cwId of activeCwIds) {
+      const found = movies.find(
+        (m) =>
+          String(m.id) === cwId ||
+          `cw-${m.id}` === cwId ||
+          m.title.toLowerCase().trim() === cwId.toLowerCase().trim()
+      );
+      if (found) {
+        const isExcluded =
+          removedIds.includes(String(found.id)) ||
+          removedIds.includes(`cw-${found.id}`) ||
+          removedIds.includes(found.title.toLowerCase().trim());
+        if (!isExcluded && !matched.some((item) => String(item.id) === String(found.id))) {
+          matched.push(found);
+        }
+      }
+    }
+
+    return matched.map((m, idx) => ({
+      id: `cw-${m.id}`,
+      movie: m,
+      progressPercent: percentages[idx % percentages.length],
+      timeLeft: timeLabels[idx % timeLabels.length],
+      episodeLabel: episodeLabels[idx % episodeLabels.length]
+    }));
+  }, [movies, activeCwIds, removedIds]);
 
   if (!continueItems.length) return null;
 
   return (
     <div className="group/shelf mb-10">
-      <div className="flex items-center gap-2 px-6 sm:px-12 mb-3">
+      <div className="flex items-center justify-between px-6 sm:px-12 mb-3">
         <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
           Continue Watching for You
         </h2>
+        <span className="text-xs text-gray-400 font-medium">
+          {continueItems.length} {continueItems.length === 1 ? 'title' : 'titles'} in progress
+        </span>
       </div>
 
       <div className="relative">
         {/* Left Arrow */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronLeft className="w-7 h-7 text-white drop-shadow" />
         </button>
@@ -788,15 +853,17 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
           ref={scrollRef}
           className="flex gap-4 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
         >
-          {continueItems.map((item) => (
-            <ContinueWatchingCard key={item.id} item={item} onRemove={handleRemove} />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {continueItems.map((item) => (
+              <ContinueWatchingCard key={item.id} item={item} onRemove={handleRemove} />
+            ))}
+          </AnimatePresence>
         </div>
 
         {/* Right Arrow */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronRight className="w-7 h-7 text-white drop-shadow" />
         </button>
@@ -805,9 +872,8 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
   );
 };
 
-// ─── TOP 10 IN MOVIES TODAY (Signature Netflix Giant Numbered Shelf) ──────────
 const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) => {
-  const { openPopover, likedIds } = useAppStore();
+  const { likedIds, openMovieModal } = useAppStore();
   const isLiked = !!likedIds[String(movie.id)];
   const likeMutation = useLikeMutation();
   const [imgSrc, setImgSrc] = useState(movie.poster_path);
@@ -820,6 +886,7 @@ const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) =>
     <motion.div
       whileHover={{ scale: 1.05, zIndex: 30 }}
       transition={{ duration: 0.2 }}
+      onClick={() => openMovieModal(movie)}
       className="relative flex-shrink-0 flex items-center cursor-pointer group/card select-none"
     >
       {/* Netflix Signature Giant Number (Offset behind poster) */}
@@ -866,7 +933,7 @@ const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) =>
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                openPopover(movie, e.currentTarget.getBoundingClientRect());
+                openMovieModal(movie);
               }}
               className="w-8 h-8 rounded-full bg-black/60 border border-white/50 text-white flex items-center justify-center hover:border-white transition-colors"
               title="More Info"
@@ -953,7 +1020,7 @@ interface CategoryShelfProps {
 }
 
 const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
-  const { openPopover, likedIds } = useAppStore();
+  const { likedIds, openMovieModal } = useAppStore();
   const isLiked = !!likedIds[String(movie.id)];
   const likeMutation = useLikeMutation();
   const [imgSrc, setImgSrc] = useState(movie.poster_path);
@@ -966,6 +1033,7 @@ const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
     <motion.div
       whileHover={{ scale: 1.06, y: -6, zIndex: 20 }}
       transition={{ duration: 0.2 }}
+      onClick={() => openMovieModal(movie)}
       className="relative flex-shrink-0 w-[175px] sm:w-[195px] md:w-[220px] cursor-pointer group/card select-none"
     >
       <div className="relative rounded-lg overflow-hidden bg-[#141414] aspect-[2/3] shadow-lg border border-white/5">
@@ -1004,7 +1072,7 @@ const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                openPopover(movie, e.currentTarget.getBoundingClientRect());
+                openMovieModal(movie);
               }}
               className="w-9 h-9 rounded-full bg-black/60 border border-white/50 text-white flex items-center justify-center hover:border-white transition-colors"
               title="More Info"
@@ -1121,87 +1189,119 @@ export const MoviesView: React.FC = () => {
   const { data: movies = [], isLoading } = useMovies();
 
   // Categorize the master 13,598 movies dataset into diverse shelves
+  // Helper to ensure each category shelf is always richly populated with at least 10 items
+  const ensureShelfMin = (filteredList: Movie[], fallbackPool: Movie[], minCount = 10) => {
+    if (filteredList.length >= minCount) return filteredList.slice(0, 16);
+    const existingIds = new Set(filteredList.map((m) => String(m.id)));
+    const padding = fallbackPool.filter((m) => !existingIds.has(String(m.id)));
+    return [...filteredList, ...padding].slice(0, 16);
+  };
+
   const trendingMovies = useMemo(() => movies.slice(0, 16), [movies]);
 
   const actionMovies = useMemo(
-    () => movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('action'))).slice(0, 16),
+    () =>
+      ensureShelfMin(
+        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('action'))),
+        movies
+      ),
     [movies]
   );
 
   const sciFiMovies = useMemo(
     () =>
-      movies
-        .filter((m) =>
+      ensureShelfMin(
+        movies.filter((m) =>
           m.genres.some((g) => {
             const gl = g.toLowerCase();
             return gl.includes('sci-fi') || gl.includes('science fiction') || gl.includes('fantasy');
           })
-        )
-        .slice(0, 16),
+        ),
+        movies
+      ),
     [movies]
   );
 
   const thrillerMovies = useMemo(
     () =>
-      movies
-        .filter((m) =>
+      ensureShelfMin(
+        movies.filter((m) =>
           m.genres.some((g) => {
             const gl = g.toLowerCase();
             return gl.includes('thriller') || gl.includes('crime') || gl.includes('mystery');
           })
-        )
-        .slice(0, 16),
+        ),
+        movies
+      ),
     [movies]
   );
 
   const comedyMovies = useMemo(
-    () => movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('comedy'))).slice(0, 16),
+    () =>
+      ensureShelfMin(
+        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('comedy'))),
+        movies
+      ),
     [movies]
   );
 
   const dramaMovies = useMemo(
-    () => movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('drama'))).slice(0, 16),
+    () =>
+      ensureShelfMin(
+        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('drama'))),
+        movies
+      ),
     [movies]
   );
 
   const horrorMovies = useMemo(
-    () => movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('horror'))).slice(0, 16),
+    () =>
+      ensureShelfMin(
+        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('horror'))),
+        movies
+      ),
     [movies]
   );
 
   const animeMovies = useMemo(
     () =>
-      movies
-        .filter(
+      ensureShelfMin(
+        movies.filter(
           (m) =>
             m.genres.some((g) => g.toLowerCase().includes('animation')) ||
             (m.language && m.language.toLowerCase() === 'japanese')
-        )
-        .slice(0, 16),
+        ),
+        movies
+      ),
     [movies]
   );
 
   const romanceMovies = useMemo(
-    () => movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('romance'))).slice(0, 16),
+    () =>
+      ensureShelfMin(
+        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('romance'))),
+        movies
+      ),
     [movies]
   );
 
   const internationalMovies = useMemo(
     () =>
-      movies
-        .filter(
+      ensureShelfMin(
+        movies.filter(
           (m) =>
             m.language &&
             ['french', 'spanish', 'korean', 'japanese', 'hindi', 'italian'].includes(
               m.language.toLowerCase()
             )
-        )
-        .slice(0, 16),
+        ),
+        movies
+      ),
     [movies]
   );
 
   const topRatedMasterpieces = useMemo(
-    () => movies.filter((m) => m.vote_average >= 8.2).slice(0, 16),
+    () => ensureShelfMin(movies.filter((m) => m.vote_average >= 8.0), movies),
     [movies]
   );
 

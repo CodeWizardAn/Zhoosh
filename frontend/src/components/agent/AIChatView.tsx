@@ -13,7 +13,8 @@ import {
   ArrowRight,
   ExternalLink,
   ChevronRight,
-  Check
+  Check,
+  Plus
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAgentStore } from '@/store/useAgentStore';
@@ -21,9 +22,137 @@ import { api } from '@/api/client';
 import { Movie, Song } from '@/types';
 import { FadedGridBackdrop } from '../common/FadedGridBackdrop';
 import { triggerLikeBurst } from '@/utils/confetti';
+import { synthEngine } from '@/utils/audioSynth';
 
 // Fallback high-res poster image for movies if image URL fails
 const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&auto=format&fit=crop&q=80';
+
+const SAFE_ALBUM_ARTS = [
+  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=80'
+];
+
+const getSafeAlbumArt = (id: string | number) => {
+  const hash = String(id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return SAFE_ALBUM_ARTS[hash % SAFE_ALBUM_ARTS.length];
+};
+
+const AgentRecommendedSongCard: React.FC<{ song: Song }> = ({ song }) => {
+  const { playTrack, currentTrack, isPlaying, likedIds, toggleLike, openPopover } = useAppStore();
+  const isThisCurrent = currentTrack?.id === song.id;
+  const isLiked = !!likedIds[String(song.id)];
+  const [imgSrc, setImgSrc] = useState(song.album_art || getSafeAlbumArt(song.id));
+
+  useEffect(() => {
+    setImgSrc(song.album_art || getSafeAlbumArt(song.id));
+  }, [song.album_art, song.id]);
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    playTrack(song);
+    synthEngine.playTrackPreview(song.genre);
+  };
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerLikeBurst(e.clientX, e.clientY, 'music');
+    toggleLike(song);
+  };
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    openPopover(song, e.currentTarget.getBoundingClientRect());
+  };
+
+  return (
+    <div
+      onClick={handlePlay}
+      className="group relative flex items-center gap-3.5 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-[#0B1120]/95 via-[#0D1528]/95 to-[#080B14]/95 hover:from-[#111A30] hover:to-[#0F1626] border border-blue-500/20 hover:border-cyan-400/50 transition-all duration-200 cursor-pointer shadow-xl hover:shadow-cyan-500/10 select-none overflow-hidden"
+    >
+      {/* Background soft glow on hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+      {/* Album Art with play overlay & live equalizer */}
+      <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-[#060A14] shadow-md border border-white/10">
+        <img
+          src={imgSrc}
+          alt={song.title}
+          onError={() => setImgSrc(getSafeAlbumArt(song.id))}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+
+        {/* Live Equalizer if playing */}
+        {isThisCurrent && isPlaying ? (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-1">
+            <span className="w-1 h-3.5 bg-cyan-400 rounded-full animate-pulse" />
+            <span className="w-1 h-5 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+            <span className="w-1 h-3 bg-cyan-300 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+              <Play className="w-4 h-4 fill-black text-black ml-0.5" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Song Info */}
+      <div className="flex flex-col min-w-0 flex-1 justify-center space-y-1">
+        <h4 className="text-sm sm:text-base font-extrabold text-white truncate group-hover:text-cyan-300 transition-colors">
+          {song.title}
+        </h4>
+        <p className="text-xs text-gray-300 font-medium truncate">
+          {song.artist}
+        </p>
+
+        <div className="flex items-center gap-2 pt-0.5">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-cyan-300 border border-blue-400/30 truncate max-w-[120px]">
+            {song.genre || 'Music'}
+          </span>
+          {song.duration_sec && (
+            <span className="text-[11px] text-gray-400 font-mono">
+              {Math.floor(song.duration_sec / 60)}:{(song.duration_sec % 60).toString().padStart(2, '0')}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Interactive Actions */}
+      <div className="flex items-center gap-1.5 shrink-0 z-10">
+        <button
+          onClick={handleLike}
+          className={`p-2 rounded-full transition-colors cursor-pointer ${
+            isLiked ? 'text-rose-500 hover:text-rose-400' : 'text-gray-400 hover:text-white hover:bg-white/10'
+          }`}
+          title={isLiked ? 'Unlike' : 'Like'}
+        >
+          <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+        </button>
+
+        <button
+          onClick={handleAdd}
+          className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          title="Add to Playlist"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={handlePlay}
+          className="w-8 h-8 rounded-full bg-blue-600 hover:bg-cyan-400 text-white hover:text-black flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer ml-0.5"
+          title="Play Track"
+        >
+          <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const AIChatView: React.FC = () => {
   const {
@@ -32,6 +161,7 @@ export const AIChatView: React.FC = () => {
     openMovieModal,
     playTrack,
     likedIds,
+    likedItems,
     toggleLike,
     openVoiceSearch,
     addToast
@@ -138,13 +268,16 @@ export const AIChatView: React.FC = () => {
           if (abortRef.current) return;
           attachSongsToLastMessage(songs);
         },
-        mode
+        mode,
+        Object.values(likedItems)
+          .map((item) => ('title' in item ? item.title : (item as any).track_name || ''))
+          .filter(Boolean)
       );
     } catch {
       updateLastAgentMessage('I had a brief glitch retrieving that recommendation. Please try asking again!', true);
       setThinking(false);
     }
-  }, [addMessage, botName, isThinking, messages, setThinking, updateLastAgentMessage, attachMoviesToLastMessage, attachSongsToLastMessage]);
+  }, [addMessage, botName, isThinking, likedItems, messages, mode, setThinking, updateLastAgentMessage, attachMoviesToLastMessage, attachSongsToLastMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -461,65 +594,44 @@ export const AIChatView: React.FC = () => {
                   {/* ══════════════════════════════════════════
                       MUSIC MODE TRACK RECOMMENDATION CARDS
                       ══════════════════════════════════════════ */}
-                  {message.songs && message.songs.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full pt-3"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
-                        <h3 className="text-sm font-bold text-white tracking-wide uppercase">
-                          Recommended Tracks ({message.songs.length})
-                        </h3>
-                      </div>
+                  {message.songs && message.songs.length > 0 && (() => {
+                    const seen = new Set<string>();
+                    const uniqueSongs = message.songs.filter((s: Song) => {
+                      const key = s.title.toLowerCase().trim();
+                      if (seen.has(key)) return false;
+                      seen.add(key);
+                      return true;
+                    });
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
-                        {message.songs.map((song: Song) => (
-                          <div
-                            key={song.id}
-                            onClick={() => playTrack(song)}
-                            className="group flex items-center gap-3 p-2.5 rounded-xl bg-[#091412]/95 border border-emerald-500/25 hover:border-emerald-500 hover:bg-emerald-950/20 transition-all cursor-pointer shadow-lg"
-                          >
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-black/60">
-                              <img
-                                src={song.album_art}
-                                alt={song.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Play className="w-4 h-4 text-white fill-current" />
-                              </div>
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="w-full pt-4"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-3.5 px-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-blue-500/20 text-cyan-400 flex items-center justify-center border border-blue-400/30">
+                              <Sparkles className="w-3.5 h-3.5" />
                             </div>
-
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-xs font-bold text-white truncate group-hover:text-emerald-300">
-                                {song.title}
-                              </span>
-                              <span className="text-[11px] text-gray-400 truncate">
-                                {song.artist}
-                              </span>
-                              <span className="text-[10px] text-cyan-400/80 mt-0.5">
-                                {song.genre}
-                              </span>
-                            </div>
-
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                playTrack(song);
-                              }}
-                              className="p-2 rounded-full bg-blue-600/20 hover:bg-[#0070F3] text-cyan-300 hover:text-white transition-all cursor-pointer"
-                              title="Play Track"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current" />
-                            </button>
+                            <h3 className="text-xs sm:text-sm font-bold text-white tracking-wider uppercase">
+                              Recommended Tracks ({uniqueSongs.length})
+                            </h3>
                           </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
+                          <span className="text-[11px] text-cyan-400/70 font-medium tracking-wide">
+                            Lossless Hi-Fi Audio
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full">
+                          {uniqueSongs.map((song: Song) => (
+                            <AgentRecommendedSongCard key={song.id} song={song} />
+                          ))}
+                        </div>
+                      </motion.div>
+                    );
+                  })()}
                 </div>
               </div>
             </motion.div>

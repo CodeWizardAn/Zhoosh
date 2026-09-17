@@ -27,6 +27,7 @@ class AgentChatRequest(BaseModel):
     message: str
     mode: str = "movies"
     history: List[ConversationMessage] = []
+    liked_titles: Optional[List[str]] = []
 
 class AgentProfileRequest(BaseModel):
     user_id: str
@@ -103,7 +104,8 @@ KNOWN_MUSIC_GENRES = {
     'rap': 'Hip-Hop',
     'romantic': 'Romantic',
     'romance': 'Romantic',
-    'love': 'Romantic',
+    'love songs': 'Romantic',
+    'love song': 'Romantic',
     'rock': 'Rock',
     'pop': 'Pop',
     'soundtrack': 'Soundtrack',
@@ -331,14 +333,200 @@ def detect_person_in_query(query: str):
     return None, None
 
 # ---------------------------------------------------------------------------
+# Conversational Context & Multi-Turn Intelligence Helpers
+# ---------------------------------------------------------------------------
+
+def is_taste_query(query: str) -> bool:
+    """Detects queries like 'what kind of movies do i like', 'what do i like', 'my taste'."""
+    q = query.lower().strip()
+    patterns = [
+        r'\bwhat\s+(kind\s+of\s+)?(movies?|films?|cinema|music|songs?|tracks?)\s+(do\s+i|would\s+i|can\s+i)\s+(like|love|prefer|enjoy)\b',
+        r'\bwhat\s+(movies?|films?|music|songs?)\s+do\s+i\s+like\b',
+        r'\bwhat\s+do\s+i\s+(like|love|prefer|enjoy|watch|listen to)\b',
+        r'\b(my\s+taste|my\s+profile|my\s+preferences|based\s+on\s+my\s+taste|what\s+is\s+my\s+taste)\b',
+        r'\btell\s+me\s+what\s+(i\s+like|my\s+taste\s+is)\b',
+        r'\bwhat\s+should\s+i\s+(watch|listen\s+to)\s+based\s+on\s+my\s+(taste|profile|likes)\b'
+    ]
+    return any(re.search(p, q) for p in patterns)
+
+def is_more_query(query: str) -> bool:
+    """Detects pagination queries like 'more', 'give me more', 'suggest more', 'next'."""
+    q = query.lower().strip()
+    return bool(
+        re.search(r'^(more|more please|give me more|suggest more|show more|show me more|more movies|more songs|more tracks|next|next one|another|another one|others|something else|give more)[.!?]?$', q)
+        or (q.startswith('more ') and len(q.split()) <= 3)
+    )
+
+def extract_context_from_history(history: List[ConversationMessage], current_mode: str = "movies"):
+    """
+    Extracts conversation state from previous turns:
+    - active_genre: e.g. 'Thriller', 'Comedy', 'Science Fiction'
+    - active_music_genre: e.g. 'Lo-Fi', 'Pop', 'Hip-Hop'
+    - active_topic_mode: 'movies' | 'music'
+    - seen_titles: set of titles previously presented
+    - more_count: number of 'more' turns
+    """
+    active_genre = None
+    active_music_genre = None
+    active_artist = None
+    active_director = None
+    active_topic_mode = current_mode
+    seen_titles = set()
+    more_count = 0
+
+    for msg in reversed(history or []):
+        content = msg.content.strip()
+        c_lower = content.lower()
+        if msg.role == 'user':
+            if is_more_query(content):
+                more_count += 1
+            else:
+                if not active_genre:
+                    active_genre = detect_genre_in_query(content)
+                if not active_music_genre:
+                    active_music_genre = detect_music_genre_in_query(content)
+                if not active_artist or not active_director:
+                    pt, pn = detect_person_in_query(content)
+                    if pt == "director" and not active_director:
+                        active_director = pn
+                    elif pt == "actor" and not active_artist:
+                        active_artist = pn
+            if any(w in c_lower for w in ["song", "music", "track", "singer", "artist", "album", "lofi", "lo-fi"]):
+                active_topic_mode = "music"
+            elif any(w in c_lower for w in ["movie", "film", "cinema", "director", "actor"]):
+                active_topic_mode = "movies"
+        elif msg.role in ('agent', 'assistant'):
+            # Extract bold titles or quoted titles from previous agent messages
+            bolds = re.findall(r'\*\*(.*?)\*\*', content)
+            for b in bolds:
+                clean_b = b.strip()
+                if len(clean_b) > 2 and clean_b.lower() not in COMMON_STOPWORDS:
+                    seen_titles.add(clean_b.lower())
+            # Only use agent content for genre if user messages had none
+            if not active_genre and not active_music_genre:
+                u_mgenre = detect_music_genre_in_query(content)
+                if u_mgenre:
+                    active_music_genre = u_mgenre
+                else:
+                    active_genre = detect_genre_in_query(content)
+
+    return {
+        'active_genre': active_genre,
+        'active_music_genre': active_music_genre,
+        'active_artist': active_artist,
+        'active_director': active_director,
+        'active_topic_mode': active_topic_mode or current_mode,
+        'seen_titles': list(seen_titles),
+        'more_count': more_count
+    }
+
+# ---------------------------------------------------------------------------
 # Intelligent Grounded Response Generator
 # ---------------------------------------------------------------------------
 
-def generate_grounded_response(message: str, agent_name: str, mode: str = "movies") -> tuple[str, list, list]:
+def generate_grounded_response(
+    message: str,
+    agent_name: str,
+    mode: str = "movies",
+    history: Optional[List[ConversationMessage]] = None,
+    liked_titles: Optional[List[str]] = None
+) -> tuple[str, list, list]:
     msg_lower = message.lower().strip()
     movies_res = []
     songs_res = []
+    ctx = extract_context_from_history(history or [], current_mode=mode)
     
+    # ── 0. Handle "More" / Pagination across Turns ──
+    if is_more_query(message):
+        effective_mode = ctx['active_topic_mode'] or mode
+        offset = (ctx['more_count'] + 1) * 6
+        seen_titles = ctx['seen_titles']
+        
+        if effective_mode == "music" or ctx['active_music_genre'] is not None:
+            genre = ctx['active_music_genre'] or ctx['active_genre'] or 'Lo-Fi'
+            more_songs = engine.get_music(genre=genre, limit=6, offset=offset, exclude_titles=seen_titles)
+            if not more_songs:
+                more_songs = engine.get_music(limit=6, offset=offset, exclude_titles=seen_titles)
+            return (
+                f"Here are **more {genre}** tracks curated for your vibe on Zhoosh Music:\n\n"
+                f"Click any track below to launch lossless playback! Say **'more'** anytime for another batch.",
+                [],
+                more_songs
+            )
+        else:
+            genre = ctx['active_genre'] or 'Thriller'
+            more_movies = engine.get_top_genre_movies(genre, limit=6, offset=offset, exclude_titles=seen_titles)
+            if not more_movies:
+                more_movies = engine.get_movies(genre=genre, limit=6, offset=offset, exclude_titles=seen_titles)
+            return (
+                f"Here are **more {genre}** movies curated for you on Zhoosh:\n\n"
+                f"Click **Watch / View Movie** on any card below to start streaming! If you want even more, just say **'more'**.",
+                more_movies,
+                []
+            )
+
+    # ── 0.5 Handle Taste Discovery Queries ("what kind of movies do i like", "what do i like", "my taste") ──
+    if is_taste_query(message):
+        effective_mode = "music" if mode == "music" or any(w in msg_lower for w in ["music", "song", "track"]) else "movies"
+        
+        # If user has liked titles passed from client
+        if liked_titles and len(liked_titles) > 0:
+            sample_titles = liked_titles[:2]
+            primary_title = sample_titles[0]
+            if effective_mode == "movies":
+                recs = engine.recommend_movies_for_title(primary_title, top_n=6)
+                if recs:
+                    return (
+                        f"Based on your profile and liked films (including **{primary_title}**), your taste leans towards "
+                        f"immersive, critically acclaimed cinema with deep storytelling and intense atmosphere!\n\n"
+                        f"Here are personalized recommendations calibrated for your taste profile:\n\n"
+                        f"Click **Watch / View Movie** on any card to stream, or say **'more'** if you want more recommendations!",
+                        recs,
+                        []
+                    )
+            else:
+                s_res = engine.search_all(primary_title, mode='music')
+                m_songs = s_res.get('similar_songs') or s_res.get('artist_songs') or s_res.get('music', [])
+                if m_songs:
+                    return (
+                        f"Based on your library and liked tracks (including **{primary_title}**), you love soulful tracks "
+                        f"with rich harmonic depth and captivating rhythm!\n\n"
+                        f"Here are personalized tracks matching your sound signature:\n\n"
+                        f"Click any track to stream in Hi-Fi, or say **'more'** for another batch!",
+                        [],
+                        m_songs[:6]
+                    )
+
+        # If user does NOT have liked titles yet, ask them conversationally as requested
+        if effective_mode == "movies":
+            return (
+                f"To discover and calibrate your personal taste, tell me: **what kind of movies do you like?**\n\n"
+                f"For example, what sounds exciting to you right now?\n"
+                f"• ⚡ **Thriller** — gripping suspense, psychological twists & high stakes\n"
+                f"• 🚀 **Sci-Fi** — mind-bending concepts & deep cosmic journeys\n"
+                f"• 💥 **Action** — high-octane choreography & thrilling spectacles\n"
+                f"• 😂 **Comedy** — sharp humor & feel-good laughs\n"
+                f"• 🎭 **Drama** — profound emotional journeys & powerful performances\n"
+                f"• 👻 **Horror** — spine-chilling atmospheric dread\n\n"
+                f"Just reply with your favorite genre (like *\"Thriller\"* or *\"Sci-Fi\"*), and I will immediately curate the best movies for you!",
+                [],
+                []
+            )
+        else:
+            return (
+                f"To tune into your unique personal frequency, tell me: **what kind of music do you like?**\n\n"
+                f"For example, what's your vibe today?\n"
+                f"• ☕ **Chill & Lo-Fi** — relaxed beats for studying and unwinding\n"
+                f"• ⚡ **Hip-Hop & Rap** — high energy, heavy bass & lyrical flow\n"
+                f"• 🎸 **Rock & Alt** — electric riffs & anthemic power\n"
+                f"• ✨ **Pop & Trending** — infectious hooks & chart-toppers\n"
+                f"• 💖 **Romantic & Soulful** — heartfelt ballads & acoustic warmth\n"
+                f"• 🇮🇳 **Bollywood & Desi** — grand melodies & celebratory beats\n\n"
+                f"Just reply with what you enjoy (like *\"Lo-Fi\"* or *\"Romantic\"*), and I'll queue up the top tracks for you!",
+                [],
+                []
+            )
+
     # ── 1. Determine User Intent: Music vs Cinema ──
     is_explicit_movie = any(w in msg_lower for w in ["movie", "movies", "film", "films", "cinema", "directed by", "director", "actor", "actress", "box office", "theatre"])
     is_explicit_music = any(w in msg_lower for w in ["song", "songs", "track", "tracks", "music", "singer", "singers", "composer", "album", "audio", "soundtrack", "soundtracks", "playlist", "listen", "listen to", "play"])
@@ -359,11 +547,12 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             return (
                 f"Hello! I am **{agent_name}**, your dedicated AI Music & Audio Intelligence guide on Zhoosh.\n\n"
                 f"I have real-time access to our entire catalog of tracks, artists, genres, and audio features (tempo, energy, acousticness, and valence). Here is what you can ask me:\n"
+                f"• _\"What kind of music do I like?\"_ (for personalized taste discovery)\n"
                 f"• _\"Arijit Singh songs\"_ or _\"Coldplay tracks\"_\n"
+                f"• _\"Suggest Lo-Fi songs\"_ (say _\"more\"_ anytime for next batch)\n"
                 f"• _\"Hindi songs\"_ or _\"Punjabi music\"_\n"
                 f"• _\"Sad songs for when you're feeling down\"_\n"
-                f"• _\"High-energy gym tracks\"_ or _\"Romantic melodies\"_\n"
-                f"• _\"Suggest songs like Kesariya or Starboy\"_\n\n"
+                f"• _\"High-energy gym tracks\"_ or _\"Romantic melodies\"_\n\n"
                 f"What vibe or sound are you in the mood for today?",
                 [],
                 []
@@ -375,7 +564,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             if songs_res:
                 return (
                     f"Here are top-streamed tracks by 🎤 **{early_entity_val}** available on Zhoosh:\n\n"
-                    f"Click any track to stream instantly in lossless Hi-Fi audio!",
+                    f"Click any track to stream instantly in lossless Hi-Fi audio! If you want more, just say **'more'**.",
                     [],
                     songs_res
                 )
@@ -385,7 +574,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
         if lang_songs:
             return (
                 f"Here are top {lang_title} tracks curated for you on Zhoosh:\n\n"
-                f"Click any track below to launch instant playback!",
+                f"Click any track below to launch instant playback! If you want more, say **'more'**.",
                 [],
                 lang_songs[:6]
             )
@@ -395,7 +584,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
         if mood_songs:
             return (
                 f"Here are {mood_title} tracks curated for your vibe on Zhoosh:\n\n"
-                f"Click any track below to launch playback!",
+                f"Click any track below to launch playback! If you want more, say **'more'**.",
                 [],
                 mood_songs[:6]
             )
@@ -410,8 +599,8 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
                 
             if songs_res:
                 return (
-                    f"Here are top-streamed 🎵 **{music_genre}** tracks curated for you on Zhoosh:\n\n"
-                    f"Click any track to launch lossless Hi-Fi playback!",
+                    f"You love **{music_genre}**? Then you definitely need to listen to these {music_genre} tracks on Zhoosh Music:\n\n"
+                    f"Click any track below to launch lossless Hi-Fi playback! If you want more, just say **'more'**.",
                     [],
                     songs_res
                 )
@@ -427,7 +616,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             all_songs = [primary] + [r for r in recs if r['id'] != track_id][:5]
             return (
                 f"If you enjoy 🎵 **{track_title}** by {artist}, here are similar tracks with matching acoustic vibes and harmonic energy:\n\n"
-                f"Click any track to listen!",
+                f"Click any track to listen! If you want more, say **'more'**.",
                 [],
                 all_songs
             )
@@ -438,7 +627,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             if trending:
                 return (
                     f"Here are the top trending tracks right now on Zhoosh Music:\n\n"
-                    f"Click on any track to start instant playback with Hi-Fi audio!",
+                    f"Click on any track to start instant playback with Hi-Fi audio! Say **'more'** for another batch.",
                     [],
                     trending
                 )
@@ -496,7 +685,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             movies_res = recs or []
             return (
                 f"If you loved 🎬 **{title}** ({year}), here are exceptional films with matching atmosphere, narrative depth, and critical acclaim:\n\n"
-                f"You can click on any card below to stream directly in 4K Ultra HD on Zhoosh!",
+                f"You can click on any card below to stream directly in 4K Ultra HD on Zhoosh! If you want more, say **'more'**.",
                 movies_res,
                 []
             )
@@ -546,7 +735,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             movies_res = [engine._format_movie_row(row) for _, row in top_works.iterrows()]
             return (
                 f"Here are the top critically acclaimed films directed by **{person_name}** available on Zhoosh:\n\n"
-                f"Click on any film below to watch the trailer or start streaming!",
+                f"Click on any film below to watch the trailer or start streaming! If you want more, say **'more'**.",
                 movies_res,
                 []
             )
@@ -557,7 +746,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             movies_res = [engine._format_movie_row(row) for _, row in top_works.iterrows()]
             return (
                 f"Here are the top films starring **{person_name}** available on Zhoosh:\n\n"
-                f"Click on any movie below to view details and stream in 4K!",
+                f"Click on any movie below to view details and stream in 4K! Say **'more'** for another batch.",
                 movies_res,
                 []
             )
@@ -567,7 +756,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
     if movie_lang_results:
         return (
             f"Here are top-rated {movie_lang_title} films curated for you on Zhoosh:\n\n"
-            f"Click **Watch / View Movie** on any card below to start streaming!",
+            f"Click **Watch / View Movie** on any card below to start streaming! Say **'more'** for more titles.",
             movie_lang_results,
             []
         )
@@ -577,7 +766,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
     if movie_mood_results:
         return (
             f"Here are {movie_mood_title} films curated for you on Zhoosh:\n\n"
-            f"Click **Watch / View Movie** on any card below to launch playback!",
+            f"Click **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.",
             movie_mood_results,
             []
         )
@@ -585,12 +774,14 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
     # 6. Check for Movie Genre Query (Horror, Comedy, Thriller, Sci-Fi, etc.)
     genre = detect_genre_in_query(message)
     if genre:
-        top_genre_movies = engine.get_movies(genre=genre, limit=6)
+        top_genre_movies = engine.get_top_genre_movies(genre, limit=6)
+        if not top_genre_movies:
+            top_genre_movies = engine.get_movies(genre=genre, limit=6)
         if top_genre_movies:
             movies_res = top_genre_movies
             return (
-                f"Here are top-rated 🎬 **{genre}** movies curated for you on Zhoosh:\n\n"
-                f"Click **Watch / View Movie** on any card to dive right in!",
+                f"You like **{genre}**? Then you definitely need to watch these {genre} movies on Zhoosh:\n\n"
+                f"Click **Watch / View Movie** on any card below to start streaming! If you want more, just say **'more'**.",
                 movies_res,
                 []
             )
@@ -602,7 +793,7 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
             movies_res = trending
             return (
                 f"Here are the top trending movies right now on Zhoosh:\n\n"
-                f"Click on any card to view synopsis, trailer, and launch playback!",
+                f"Click on any card to view synopsis, trailer, and launch playback! If you want more, just say **'more'**.",
                 movies_res,
                 []
             )
@@ -612,12 +803,13 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
         return (
             f"Hello! I am **{agent_name}**, your dedicated AI Cinema & Soundtrack Intelligence guide on Zhoosh.\n\n"
             f"I have real-time access to our entire catalog of films, directors, ratings, and soundtracks. Here is what you can ask me:\n"
-            f"• _\"Suggest some horror movies\"_\n"
-            f"• _\"Suggest comedy movies\"_\n"
-            f"• _\"Suggest movies like Inception\" (or any movie you like)_\n"
+            f"• _\"What kind of movies do I like?\"_ (for personalized taste discovery)\n"
+            f"• _\"Suggest some thriller movies\"_ (and say _\"more\"_ for the next batch)\n"
+            f"• _\"Suggest comedy movies\"_ or _\"Sci-Fi films\"_\n"
+            f"• _\"Suggest movies like Inception\"_\n"
             f"• _\"Hindi movies\"_ or _\"Mind-bending movies\"_\n"
             f"• _\"Who directed Interstellar?\"_\n\n"
-            f"What would you like to watch or explore today?",
+            f"What would you like to explore today?",
             [],
             []
         )
@@ -628,16 +820,16 @@ def generate_grounded_response(message: str, agent_name: str, mode: str = "movie
         movies_res = search_res['movies'][:6]
         return (
             f"Based on \"{message}\", here are the closest matches in our cinema library:\n\n"
-            f"Click any title below to begin streaming!",
+            f"Click any title below to begin streaming! Say **'more'** for more matches.",
             movies_res,
             []
         )
 
     return (
         f"I'm here to help you navigate Zhoosh's cinema and music catalog!\n\n"
-        f"You can ask me to suggest movies by genre (such as **Horror**, **Comedy**, **Sci-Fi**, or **Thriller**), "
+        f"You can ask me to suggest movies by genre (such as **Thriller**, **Comedy**, **Sci-Fi**, or **Horror**), "
         f"explore films by director (like **Christopher Nolan** or **Quentin Tarantino**), "
-        f"or request titles matching your mood (like **Sad movies** or **Mind-bending films**).",
+        f"or ask _\"What kind of movies do I like?\"_ to calibrate your personal taste.",
         [],
         []
     )
@@ -655,10 +847,16 @@ async def stream_text_words(text: str, delay_ms: int = 25):
         await asyncio.sleep(delay_ms / 1000.0)
     yield f"data: {json.dumps({'type': 'done', 'intent': 'done'})}\n\n"
 
-async def groq_stream(message: str, history: List[ConversationMessage], agent_name: str, intent: str, mode: str = "movies"):
+async def groq_stream(message: str, history: List[ConversationMessage], agent_name: str, intent: str, mode: str = "movies", liked_titles: Optional[List[str]] = None):
     """Stream grounded response via Groq if available, or dataset-backed engine."""
     # Dataset-grounded intelligent response with structured movies & songs
-    response_text, movies, songs = generate_grounded_response(message, agent_name, mode=mode)
+    response_text, movies, songs = generate_grounded_response(
+        message,
+        agent_name,
+        mode=mode,
+        history=history,
+        liked_titles=liked_titles
+    )
     
     if movies:
         yield f"data: {json.dumps({'type': 'movies', 'movies': movies})}\n\n"
@@ -677,7 +875,7 @@ async def groq_stream(message: str, history: List[ConversationMessage], agent_na
 async def agent_chat(req: AgentChatRequest):
     """Stream agent response word-by-word via SSE."""
     return StreamingResponse(
-        groq_stream(req.message, req.history, req.agent_name, "chat", mode=req.mode),
+        groq_stream(req.message, req.history, req.agent_name, "chat", mode=req.mode, liked_titles=req.liked_titles),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

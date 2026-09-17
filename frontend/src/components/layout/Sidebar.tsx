@@ -11,7 +11,8 @@ import {
   Compass,
   Bookmark,
   Disc,
-  Library
+  Library,
+  Trash2
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { AppMode } from '@/types';
@@ -26,13 +27,17 @@ export const Sidebar: React.FC = () => {
     activeNav,
     setActiveNav,
     likedIds,
+    likedItems,
     playlists,
     createPlaylist,
+    deletePlaylist,
     addToast,
     openOnboarding
   } = useAppStore();
 
-  const totalLikes = Object.values(likedIds).filter(Boolean).length;
+  const likedSongsCount = Object.values(likedItems).filter((i) => 'artist' in i && !!likedIds[String(i.id)]).length;
+  const likedMoviesCount = Object.values(likedItems).filter((i) => !('artist' in i) && !!likedIds[String(i.id)]).length;
+  const activeLikesCount = mode === 'music' ? likedSongsCount : likedMoviesCount;
 
   const handleCreateNewPlaylist = () => {
     const pl = createPlaylist(
@@ -47,23 +52,17 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-60 shrink-0 h-screen sticky top-0 bg-[#07070B] border-r border-purple-950/30 flex flex-col justify-between p-3 select-none z-30 font-sans shadow-2xl">
       <div className="space-y-4">
-        {/* Zhoosh Brand Header */}
+        {/* Zhoosh Brand Header (Name only in Dashboard) */}
         <div
           onClick={() => {
             try {
               zhooshAudio.playZhooshIntroSound();
             } catch {}
           }}
-          className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:opacity-95 transition-opacity"
+          className="flex items-center px-2.5 py-2 cursor-pointer hover:opacity-95 transition-opacity"
           title="Click to play Zhoosh signature sound"
         >
-          <ZhooshLogo size="sm" variant="emblem" showText={false} animated={true} />
-          <div>
-            <h1 className="font-black text-lg text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E56] via-[#E50914] to-[#A855F7] tracking-tight leading-tight uppercase italic" style={{ transform: 'skewX(-6deg)' }}>
-              Zhoosh
-            </h1>
-            <p className="text-[10px] text-purple-300/60 font-mono tracking-wider uppercase">Cinema × Audio</p>
-          </div>
+          <ZhooshLogo size="sm" variant="wordmark" />
         </div>
 
         {/* Mode Switcher Segmented Control: Red (Movies) vs Purple (Music) */}
@@ -175,13 +174,13 @@ export const Sidebar: React.FC = () => {
             >
               <div className="flex items-center gap-3">
                 <div className={`w-5 h-5 rounded flex items-center justify-center ${
-                  mode === 'movies' ? 'bg-[#FF1E56]/20 text-[#FF1E56]' : 'bg-[#A855F7]/20 text-[#A855F7]'
+                  mode === 'movies' ? 'bg-[#FF1E56]/20 text-[#FF1E56]' : 'bg-[#0070F3]/20 text-[#0070F3]'
                 }`}>
                   <Heart className="w-3 h-3 fill-current" />
                 </div>
-                <span>Liked Items</span>
+                <span>{mode === 'music' ? 'Liked Songs' : 'Liked Movies'}</span>
               </div>
-              <span className="text-xs text-[#727272]">{totalLikes}</span>
+              <span className="text-xs text-[#727272]">{activeLikesCount}</span>
             </button>
 
             <button
@@ -205,13 +204,26 @@ export const Sidebar: React.FC = () => {
           {/* User Playlists list */}
           <div className="mt-3 px-3 space-y-1 max-h-44 overflow-y-auto no-scrollbar">
             {playlists.map((pl) => (
-              <button
-                key={pl.id}
-                onClick={() => setActiveNav('playlists')}
-                className="w-full text-left py-1 text-xs text-[#A7A7A7] hover:text-white truncate block transition-colors"
-              >
-                {pl.title}
-              </button>
+              <div key={pl.id} className="w-full flex items-center justify-between group/sidepl py-0.5">
+                <button
+                  onClick={() => setActiveNav('playlists')}
+                  className="flex-1 text-left text-xs text-[#A7A7A7] hover:text-white truncate block transition-colors cursor-pointer pr-1"
+                  title={pl.title}
+                >
+                  {pl.title}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deletePlaylist(pl.id);
+                    addToast({ title: `Deleted playlist "${pl.title}"`, type: 'info' });
+                  }}
+                  className="opacity-0 group-hover/sidepl:opacity-100 p-1 text-gray-500 hover:text-rose-400 transition-opacity cursor-pointer shrink-0"
+                  title={`Delete "${pl.title}"`}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
             ))}
           </div>
         </div>

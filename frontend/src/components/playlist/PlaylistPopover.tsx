@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Plus, FolderPlus, X } from 'lucide-react';
+import { Check, Plus, FolderPlus, X, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 
 export const PlaylistPopover: React.FC = () => {
@@ -8,6 +8,7 @@ export const PlaylistPopover: React.FC = () => {
     popoverTarget,
     closePopover,
     playlists,
+    deletePlaylist,
     addItemToPlaylist,
     removeItemFromPlaylist,
     mode,
@@ -86,29 +87,47 @@ export const PlaylistPopover: React.FC = () => {
               relevantPlaylists.map((playlist) => {
                 const isSelected = playlist.items.some((i) => String(i.id) === String(item.id));
                 return (
-                  <button
+                  <div
                     key={playlist.id}
-                    onClick={() => toggleItemInPlaylist(playlist.id)}
-                    className="w-full flex items-center justify-between p-2 rounded-xl text-left hover:bg-white/5 transition-colors group"
+                    className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group"
                   >
-                    <div className="flex-1 truncate pr-2">
-                      <p className="text-sm font-medium text-gray-200 group-hover:text-white truncate">
-                        {playlist.title}
-                      </p>
-                      <p className="text-[11px] text-gray-400">{playlist.items.length} items</p>
-                    </div>
-                    <div
-                      className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
-                        isSelected
-                          ? mode === 'movies'
-                            ? 'bg-amber-500 border-amber-500 text-black'
-                            : 'bg-emerald-500 border-emerald-500 text-black'
-                          : 'border-white/20 group-hover:border-white/40'
-                      }`}
+                    <button
+                      onClick={() => toggleItemInPlaylist(playlist.id)}
+                      className="flex-1 flex items-center justify-between text-left truncate pr-2 cursor-pointer"
                     >
-                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                    </div>
-                  </button>
+                      <div className="truncate pr-2">
+                        <p className="text-sm font-medium text-gray-200 group-hover:text-white truncate">
+                          {playlist.title}
+                        </p>
+                        <p className="text-[11px] text-gray-400">{playlist.items.length} items</p>
+                      </div>
+                      <div
+                        className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+                          isSelected
+                            ? mode === 'movies'
+                              ? 'bg-amber-500 border-amber-500 text-black'
+                              : 'bg-emerald-500 border-emerald-500 text-black'
+                            : 'border-white/20 group-hover:border-white/40'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                      </div>
+                    </button>
+
+                    {/* Quick Delete Playlist Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deletePlaylist(playlist.id);
+                        addToast({ title: `Deleted playlist "${playlist.title}"`, type: 'info' });
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 ml-1 text-gray-400 hover:text-rose-400 hover:bg-rose-500/20 rounded-md transition-all cursor-pointer"
+                      title={`Delete "${playlist.title}" playlist`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 );
               })
             )}
