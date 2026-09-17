@@ -3,8 +3,6 @@
 > **One subscription. Unlimited movies. 100M+ tracks.**  
 > Zhoosh is a premium AI-powered streaming platform combining Netflix-style cinema with Spotify-style music discovery — all in one seamless experience.
 
-![Zhoosh Banner](frontend/public/zhoosh-logo-ref.jpg)
-
 ---
 
 ## ✨ Features
