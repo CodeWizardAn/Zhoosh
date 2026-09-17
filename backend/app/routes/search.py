@@ -6,4 +6,4 @@ router = APIRouter(prefix="/search", tags=["Search"])
 
 @router.get("")
 def search(q: str = Query(..., description="Search query string"), mode: str = Query("movies")):
-    return engine.search_all(q)
+    return engine.search_all(q, mode=mode)

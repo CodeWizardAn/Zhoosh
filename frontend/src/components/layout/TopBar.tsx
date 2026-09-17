@@ -45,10 +45,15 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const NAV_ITEMS = ['Home', 'assistant', 'My Zhoosh'];
+  // Dynamic Navigation Items based on active mode
+  const NAV_ITEMS = mode === 'movies'
+    ? ['Home', 'assistant', 'My Zhoosh']
+    : ['Home', 'Playlist', 'assistant'];
 
   const handleNavClick = (item: string) => {
-    if (item === 'My Zhoosh' || item === 'Zhoosh' || item === 'My List') {
+    if (item === 'Playlist') {
+      setActiveNav('playlists');
+    } else if (item === 'My Zhoosh' || item === 'Zhoosh' || item === 'My List') {
       setActiveNav('likes');
     } else if (item === 'assistant') {
       setActiveNav('agent-ai');
@@ -58,6 +63,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
   };
 
   const isNavActive = (item: string) => {
+    if (item === 'Playlist' && activeNav === 'playlists') return true;
     if ((item === 'My Zhoosh' || item === 'Zhoosh') && activeNav === 'likes') return true;
     if (item === 'assistant' && activeNav === 'agent-ai') return true;
     if (item === 'Home' && (activeNav === 'discover' || activeNav === 'trending')) return true;
@@ -90,17 +96,21 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                     ? isAIItem
                       ? mode === 'movies'
                         ? 'bg-[#E50914] text-white font-bold rounded-full shadow-md shadow-red-950/60'
-                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-full shadow-md'
+                        : 'bg-[#0070F3] text-white font-bold rounded-full shadow-md shadow-blue-600/50'
+                      : mode === 'music'
+                      ? 'bg-blue-600/30 border border-blue-500/50 text-white font-semibold rounded-full shadow-sm'
                       : 'bg-white/20 text-white font-semibold rounded-full shadow-sm'
                     : isAIItem
                     ? mode === 'movies'
                       ? 'text-red-400 hover:text-white font-semibold'
-                      : 'text-emerald-400 hover:text-white font-semibold'
+                      : 'text-blue-400 hover:text-white font-semibold'
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
                 {isAIItem && (
-                  <div className="w-4 h-4 rounded-full overflow-hidden shrink-0 border border-white/40 bg-purple-900/60">
+                  <div className={`w-4 h-4 rounded-full overflow-hidden shrink-0 border ${
+                    mode === 'movies' ? 'border-red-400/40 bg-purple-900/60' : 'border-blue-400/60 bg-blue-950/80'
+                  }`}>
                     <img
                       src={agentProfile?.avatarUrl || '/agent-avatar.jpg'}
                       alt={assistantName}
@@ -125,6 +135,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
               onClick={() => {
                 if (mode !== 'movies') {
                   setMode('movies');
+                  if (activeNav === 'playlists') {
+                    setActiveNav('discover');
+                  }
                 }
               }}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
@@ -141,11 +154,14 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
               onClick={() => {
                 if (mode !== 'music') {
                   setMode('music');
+                  if (activeNav === 'likes') {
+                    setActiveNav('playlists');
+                  }
                 }
               }}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 mode === 'music'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                  ? 'bg-[#0070F3] text-white shadow-md shadow-blue-600/40'
                   : 'text-gray-400 hover:text-white'
               }`}
               title="Music Mode"
@@ -161,7 +177,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
               {searchOpen && (
                 <motion.div
                   initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 220, opacity: 1 }}
+                  animate={{ width: 240, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="relative overflow-hidden mr-1"
@@ -169,10 +185,10 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Search movies, shows..."
+                    placeholder={mode === 'movies' ? 'Search movies, genres...' : 'Search songs, singers, romantic...'}
                     value={searchValue}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full bg-black/80 border border-white/30 rounded px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/60"
+                    className="w-full bg-black/80 border border-white/30 rounded px-3 py-1.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-white/60"
                   />
                   {searchValue && (
                     <button
@@ -203,7 +219,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                 className="flex items-center gap-2 group p-1 rounded-full hover:bg-white/5 transition-all cursor-pointer"
                 title="Account & Profile"
               >
-                <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 group-hover:ring-[#FF1E56] transition-all shadow-md shadow-black/40 flex items-center justify-center bg-black/40">
+                <div className={`w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 transition-all shadow-md shadow-black/40 flex items-center justify-center bg-black/40 ${
+                  mode === 'movies' ? 'group-hover:ring-[#FF1E56]' : 'group-hover:ring-[#0070F3]'
+                }`}>
                   <img
                     src={sanitizeAvatar(user.avatar)}
                     alt={user.name}
@@ -231,7 +249,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
 
                     {/* Active Profile Info */}
                     <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.05] border border-white/10 mb-2">
-                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#FF1E56]/40 shrink-0 shadow-md">
+                      <div className={`w-10 h-10 rounded-full overflow-hidden ring-2 shrink-0 shadow-md ${
+                        mode === 'movies' ? 'ring-[#FF1E56]/40' : 'ring-[#0070F3]/40'
+                      }`}>
                         <img
                           src={sanitizeAvatar(user.avatar)}
                           alt={user.name}

@@ -137,7 +137,8 @@ export const AIChatView: React.FC = () => {
         (songs) => {
           if (abortRef.current) return;
           attachSongsToLastMessage(songs);
-        }
+        },
+        mode
       );
     } catch {
       updateLastAgentMessage('I had a brief glitch retrieving that recommendation. Please try asking again!', true);
@@ -164,7 +165,7 @@ export const AIChatView: React.FC = () => {
 
   return (
     <div className="relative h-full flex-1 w-full flex flex-col justify-between overflow-hidden bg-[#07070b]">
-      {/* ── 1. Signature Black & Red Faded Grid Layer (Matching MoviesView & Other Pages) ── */}
+      {/* ── 1. Signature Black & Red / Black & Blue Faded Grid Layer ── */}
       <div className="absolute inset-0 pointer-events-none select-none z-0">
         {/* Geometric Grid Mesh */}
         <div
@@ -176,27 +177,27 @@ export const AIChatView: React.FC = () => {
                   linear-gradient(to bottom, rgba(229, 9, 20, 0.14) 1px, transparent 1px)
                 `
               : `
-                  linear-gradient(to right, rgba(16, 185, 129, 0.14) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgba(16, 185, 129, 0.14) 1px, transparent 1px)
+                  linear-gradient(to right, rgba(0, 140, 255, 0.14) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgba(0, 140, 255, 0.14) 1px, transparent 1px)
                 `,
             backgroundSize: '40px 40px'
           }}
         />
 
-        {/* Ambient Aura Glows (Matching MoviesView) */}
+        {/* Ambient Aura Glows (Matching MoviesView & MusicView) */}
         <div
           className={`absolute top-0 left-1/2 -translate-x-1/2 w-[90vw] max-w-[1200px] h-[450px] rounded-full blur-[120px] pointer-events-none ${
-            isMovieMode ? 'bg-[#E50914]/15' : 'bg-[#10B981]/15'
+            isMovieMode ? 'bg-[#E50914]/15' : 'bg-[#0070F3]/16'
           }`}
         />
         <div
           className={`absolute top-[35%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none ${
-            isMovieMode ? 'bg-[#B81D24]/12' : 'bg-[#0D9488]/12'
+            isMovieMode ? 'bg-[#B81D24]/12' : 'bg-[#00D2FF]/12'
           }`}
         />
         <div
           className={`absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none ${
-            isMovieMode ? 'bg-[#E50914]/10' : 'bg-[#10B981]/10'
+            isMovieMode ? 'bg-[#E50914]/10' : 'bg-[#1D4ED8]/12'
           }`}
         />
 
@@ -204,7 +205,9 @@ export const AIChatView: React.FC = () => {
         <div
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse at 50% 20%, transparent 40%, rgba(5,5,8,0.75) 85%)'
+            background: isMovieMode
+              ? 'radial-gradient(ellipse at 50% 20%, transparent 40%, rgba(5,5,8,0.75) 85%)'
+              : 'radial-gradient(ellipse at 50% 20%, transparent 40%, rgba(5,7,14,0.85) 85%)'
           }}
         />
       </div>
@@ -227,10 +230,10 @@ export const AIChatView: React.FC = () => {
             {/* Assistant Hero Avatar */}
             <div className="relative group">
               <div
-                className={`w-20 h-20 rounded-2xl overflow-hidden shadow-2xl relative border-2 transition-transform duration-300 group-hover:scale-105 bg-[#120D1A] ${
+                className={`w-20 h-20 rounded-2xl overflow-hidden shadow-2xl relative border-2 transition-transform duration-300 group-hover:scale-105 ${
                   isMovieMode
-                    ? 'border-red-500/50 shadow-red-950/60 ring-2 ring-red-500/20'
-                    : 'border-emerald-500/50 shadow-emerald-950/60 ring-2 ring-emerald-500/20'
+                    ? 'border-red-500/50 shadow-red-950/60 ring-2 ring-red-500/20 bg-[#120D1A]'
+                    : 'border-blue-500/50 shadow-blue-950/60 ring-2 ring-blue-500/20 bg-[#060C1B]'
                 }`}
               >
                 <img
@@ -244,7 +247,7 @@ export const AIChatView: React.FC = () => {
               </div>
               <div
                 className={`absolute -inset-1.5 rounded-2xl blur-md -z-10 opacity-50 ${
-                  isMovieMode ? 'bg-[#E50914]/40' : 'bg-emerald-500/40'
+                  isMovieMode ? 'bg-[#E50914]/40' : 'bg-[#0070F3]/40'
                 }`}
               />
             </div>
@@ -280,7 +283,7 @@ export const AIChatView: React.FC = () => {
                     className={`w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-md mt-1 border ${
                       isMovieMode
                         ? 'border-red-500/40 shadow-red-950/50'
-                        : 'border-emerald-500/40 shadow-emerald-950/50'
+                        : 'border-blue-500/40 shadow-blue-950/50'
                     }`}
                   >
                     <img
@@ -312,7 +315,7 @@ export const AIChatView: React.FC = () => {
                         ? 'bg-gradient-to-r from-[#1C162E] to-[#251A3A] border border-purple-500/20 text-white self-end rounded-tr-xs'
                         : isMovieMode
                         ? 'bg-[#0B060C]/90 border border-red-500/25 text-gray-100 rounded-tl-xs backdrop-blur-md shadow-black/80'
-                        : 'bg-[#060D0C]/90 border border-emerald-500/25 text-gray-100 rounded-tl-xs backdrop-blur-md shadow-black/80'
+                        : 'bg-[#060B18]/90 border border-blue-500/25 text-gray-100 rounded-tl-xs backdrop-blur-md shadow-black/80'
                     }`}
                   >
                     <div className="whitespace-pre-wrap leading-relaxed space-y-2">
@@ -322,7 +325,7 @@ export const AIChatView: React.FC = () => {
                           animate={{ opacity: [1, 0, 1] }}
                           transition={{ duration: 0.8, repeat: Infinity }}
                           className={`inline-block w-1.5 h-4 ml-1 rounded-sm align-middle ${
-                            isMovieMode ? 'bg-[#E50914]' : 'bg-emerald-400'
+                            isMovieMode ? 'bg-[#E50914]' : 'bg-cyan-400'
                           }`}
                         />
                       )}
@@ -497,7 +500,7 @@ export const AIChatView: React.FC = () => {
                               <span className="text-[11px] text-gray-400 truncate">
                                 {song.artist}
                               </span>
-                              <span className="text-[10px] text-emerald-400/80 mt-0.5">
+                              <span className="text-[10px] text-cyan-400/80 mt-0.5">
                                 {song.genre}
                               </span>
                             </div>
@@ -507,7 +510,7 @@ export const AIChatView: React.FC = () => {
                                 e.stopPropagation();
                                 playTrack(song);
                               }}
-                              className="p-2 rounded-full bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white transition-all cursor-pointer"
+                              className="p-2 rounded-full bg-blue-600/20 hover:bg-[#0070F3] text-cyan-300 hover:text-white transition-all cursor-pointer"
                               title="Play Track"
                             >
                               <Play className="w-3.5 h-3.5 fill-current" />
@@ -528,7 +531,7 @@ export const AIChatView: React.FC = () => {
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <div
               className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs animate-pulse ${
-                isMovieMode ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
+                isMovieMode ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-cyan-400'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -550,7 +553,7 @@ export const AIChatView: React.FC = () => {
             className={`relative flex items-center gap-2 p-2 rounded-2xl bg-[#0C0814]/90 border transition-all duration-200 shadow-inner ${
               isMovieMode
                 ? 'border-white/15 focus-within:border-red-500/70 focus-within:shadow-[0_0_25px_rgba(229,9,20,0.25)]'
-                : 'border-white/15 focus-within:border-emerald-500/70 focus-within:shadow-[0_0_25px_rgba(16,185,129,0.25)]'
+                : 'border-white/15 focus-within:border-blue-500/70 focus-within:shadow-[0_0_25px_rgba(0,112,243,0.3)]'
             }`}
           >
             {/* Voice Search Integration */}
@@ -585,7 +588,7 @@ export const AIChatView: React.FC = () => {
                 input.trim() && !isThinking
                   ? isMovieMode
                     ? 'bg-[#E50914] text-white shadow-lg shadow-red-950/60 hover:bg-[#FF1E56]'
-                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-950/60 hover:brightness-110'
+                    : 'bg-[#0070F3] hover:bg-blue-600 text-white shadow-lg shadow-blue-600/50 hover:brightness-110'
                   : 'bg-white/5 text-gray-600 cursor-not-allowed'
               }`}
               title="Send message"

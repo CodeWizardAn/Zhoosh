@@ -24,9 +24,11 @@ class ApiClient {
     }
   }
 
-  async fetchMusic(genre?: string): Promise<Song[]> {
+  async fetchMusic(genre?: string, limit: number = 100): Promise<Song[]> {
     try {
-      const url = genre ? `${this.baseUrl}/music?genre=${encodeURIComponent(genre)}` : `${this.baseUrl}/music`;
+      const url = genre
+        ? `${this.baseUrl}/music?genre=${encodeURIComponent(genre)}&limit=${limit}`
+        : `${this.baseUrl}/music?limit=${limit}`;
       const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
@@ -87,11 +89,61 @@ class ApiClient {
 
       const isInterstellar = q.includes('interstellar');
       const isThriller = q.includes('thriller');
+      const isRomanticQuery = ['romantic', 'romance', 'love'].some(t => q.includes(t));
 
       let primary_movie: Movie | null = null;
       let similar_movies: Movie[] = [];
       let genre_top_movies: Movie[] = [];
-      let search_type: 'title_match' | 'genre_match' | 'general' = 'general';
+      let search_type: 'title_match' | 'genre_match' | 'song_match' | 'artist_match' | 'romantic_match' | 'general' = 'general';
+
+      let primary_song: Song | null = null;
+      let artist_name: string | null = null;
+      let artist_songs: Song[] = [];
+      let similar_songs: Song[] = [];
+      let similar_romantic_songs: Song[] = [];
+
+      // Check Artist Match (Singer, Band, Composer)
+      const matchedArtistSongs = MOCK_SONGS.filter(s => s.artist.toLowerCase().includes(q));
+      if (matchedArtistSongs.length > 0) {
+        artist_songs = matchedArtistSongs;
+        artist_name = matchedArtistSongs[0].artist.split(',')[0].trim();
+        if (mode === 'music' || matchedArtistSongs.length >= 2) {
+          search_type = 'artist_match';
+        }
+        similar_songs = MOCK_SONGS.filter(s => !artist_songs.some(as => as.id === s.id)).slice(0, 6);
+      }
+
+      // Check Specific Song Match
+      const matchedSong = MOCK_SONGS.find(s => s.title.toLowerCase() === q || s.title.toLowerCase().includes(q));
+      if (matchedSong) {
+        primary_song = matchedSong;
+        if (mode === 'music' || !isInterstellar) {
+          search_type = 'song_match';
+        }
+        const isSongRomantic = matchedSong.genre.toLowerCase() === 'romantic' ||
+          ['kesariya', 'tum hi ho', 'darmiyaan', 'perfect', 'until i found you', 'golden hour', 'die with a smile', 'all of me'].some(t => matchedSong.title.toLowerCase().includes(t));
+        
+        if (isSongRomantic) {
+          similar_romantic_songs = MOCK_SONGS.filter(
+            s => s.id !== matchedSong.id && (s.genre.toLowerCase() === 'romantic' || s.title.toLowerCase().includes('kesariya') || s.title.toLowerCase().includes('tum hi ho'))
+          ).slice(0, 8);
+        }
+        similar_songs = MOCK_SONGS.filter(s => s.id !== matchedSong.id && s.genre === matchedSong.genre).slice(0, 6);
+        
+        const mainArtist = matchedSong.artist.split(',')[0].trim();
+        if (artist_songs.length === 0) {
+          artist_name = mainArtist;
+          artist_songs = MOCK_SONGS.filter(s => s.id !== matchedSong.id && s.artist.toLowerCase().includes(mainArtist.toLowerCase())).slice(0, 8);
+        }
+      }
+
+      // Check Romantic Query
+      if (isRomanticQuery) {
+        similar_romantic_songs = MOCK_SONGS.filter(s => s.genre.toLowerCase() === 'romantic').slice(0, 10);
+        if (mode === 'music') {
+          search_type = 'romantic_match';
+        }
+      }
 
       if (isInterstellar) {
         primary_movie = MOCK_MOVIES.find((m) => m.title.toLowerCase().includes('interstellar')) || MOCK_MOVIES[0];
@@ -107,10 +159,16 @@ class ApiClient {
       return {
         query,
         search_type,
+        mode,
         primary_movie,
         similar_movies,
-        genre: isThriller ? 'Thriller' : null,
+        genre: isThriller ? 'Thriller' : isRomanticQuery ? 'Romance' : null,
         genre_top_movies,
+        primary_song,
+        artist_name,
+        artist_songs,
+        similar_songs,
+        similar_romantic_songs,
         movies: filteredMovies,
         music: filteredMusic
       };
@@ -209,7 +267,8 @@ class ApiClient {
     onDone: (intent: string) => void,
     onError: () => void,
     onMovies?: (movies: Movie[]) => void,
-    onSongs?: (songs: Song[]) => void
+    onSongs?: (songs: Song[]) => void,
+    mode: AppMode = 'movies'
   ): Promise<void> {
     try {
       const res = await fetch(`${this.baseUrl}/agent/chat`, {
@@ -219,6 +278,7 @@ class ApiClient {
           user_id: 'u-101',
           agent_name: agentName,
           message,
+          mode,
           history: history.slice(-10),
         }),
       });
@@ -268,35 +328,60 @@ class ApiClient {
       let attachedSongs: Song[] = [];
       let replyText = '';
 
-      if (msg.includes('horror')) {
-        intent = 'horror';
-        replyText = "Here are top-rated 🎬 **Horror** movies curated for you on Zhoosh. Click **Watch / View Movie** on any card below to start streaming!";
-        attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('horror') || g.toLowerCase().includes('thriller'))).slice(0, 6);
-        if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 5);
-      } else if (msg.includes('comedy')) {
-        intent = 'comedy';
-        replyText = "Here are acclaimed 🎬 **Comedy** movies to brighten your day on Zhoosh. Click any card below to launch playback!";
-        attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('comedy') || g.toLowerCase().includes('adventure') || g.toLowerCase().includes('animation'))).slice(0, 6);
-        if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 5);
-      } else if (msg.includes('inception') || msg.includes('similar') || (msg.includes('like') && !msg.includes('predicted'))) {
-        intent = 'similar';
-        replyText = "If you love mind-bending cinema like 🎬 **Inception**, here are exceptional films tailored with matching atmosphere and high ratings:";
-        attachedMovies = MOCK_MOVIES.filter(m => !m.title.toLowerCase().includes('inception')).slice(0, 6);
-      } else if (msg.includes('predict') || msg.includes('tomorrow') || msg.includes('yesterday')) {
-        intent = 'predicted';
-        replyText = "🔮 **Predictive Neural Cinema Match**:\n\nBased on your predictive viewing history and taste profile, here are the top predicted feature films ready for you to stream today:";
-        attachedMovies = [...MOCK_MOVIES].sort((a, b) => (b.match_score || 0) - (a.match_score || 0)).slice(0, 6);
-      } else if (msg.includes('music') || msg.includes('song') || msg.includes('track') || msg.includes('soundtrack')) {
-        intent = 'music';
-        replyText = "Here are trending tracks and soundtrack scores on Zhoosh right now. Click any track to listen instantly!";
-        attachedSongs = MOCK_SONGS.slice(0, 6);
-      } else if (msg.includes('hi') || msg.includes('hello') || msg.includes('hey') || msg.includes('name') || msg.includes('who are you')) {
-        intent = 'conversational';
-        replyText = `Hello! I'm **${agentName}**, your personal cinema and soundtrack intelligence assistant on Zhoosh.\n\nAsk me for movie recommendations by genre (like **Horror** or **Comedy**), similar titles to **Inception**, or movies based on what was predicted for you!`;
+      if (mode === 'music') {
+        // Music mode fallback
+        if (/\b(hip hop|hip-hop|hiphop|rap)\b/i.test(msg)) {
+          intent = 'hiphop';
+          replyText = "Here are top-streamed 🎵 **Hip-Hop** tracks on Zhoosh Music. Click any track to launch playback!";
+          attachedSongs = MOCK_SONGS.filter(s => s.genre.toLowerCase().includes('hip-hop') || s.genre.toLowerCase().includes('pop')).slice(0, 6);
+        } else if (/\b(romantic|romance|love)\b/i.test(msg)) {
+          intent = 'romantic';
+          replyText = "Here are soulful 🎵 **Romantic** melodies curated for you on Zhoosh. Click any track to listen!";
+          attachedSongs = MOCK_SONGS.filter(s => s.genre.toLowerCase().includes('romantic')).slice(0, 6);
+        } else if (/\b(rock|pop|soundtrack|lo-fi|chill)\b/i.test(msg)) {
+          intent = 'genre';
+          replyText = "Here are top-streamed tracks matching your vibe on Zhoosh Music. Click any track to stream instantly!";
+          attachedSongs = MOCK_SONGS.slice(0, 6);
+        } else if (/\b(hi|hello|hey|who are you|help)\b/i.test(msg)) {
+          intent = 'conversational';
+          replyText = `Hello! I'm **${agentName}**, your personal AI Music & Audio Intelligence assistant on Zhoosh.\n\nAsk me for song recommendations by genre (like **Hip-Hop**, **Romantic**, or **Rock**), tracks by artists like **Arijit Singh** or **Coldplay**, or trending songs!`;
+        } else {
+          intent = 'music';
+          replyText = "Here are top trending tracks curated for your taste on Zhoosh Music:";
+          attachedSongs = MOCK_SONGS.slice(0, 6);
+        }
       } else {
-        intent = 'recommendation';
-        replyText = "Here are top-tier cinematic recommendations curated for your taste on Zhoosh:";
-        attachedMovies = MOCK_MOVIES.slice(0, 6);
+        // Cinema mode fallback
+        if (msg.includes('horror')) {
+          intent = 'horror';
+          replyText = "Here are top-rated 🎬 **Horror** movies curated for you on Zhoosh. Click **Watch / View Movie** on any card below to start streaming!";
+          attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('horror') || g.toLowerCase().includes('thriller'))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 5);
+        } else if (msg.includes('comedy')) {
+          intent = 'comedy';
+          replyText = "Here are acclaimed 🎬 **Comedy** movies to brighten your day on Zhoosh. Click any card below to launch playback!";
+          attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('comedy') || g.toLowerCase().includes('adventure') || g.toLowerCase().includes('animation'))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 5);
+        } else if (msg.includes('inception') || msg.includes('similar') || (msg.includes('like') && !msg.includes('predicted'))) {
+          intent = 'similar';
+          replyText = "If you love mind-bending cinema like 🎬 **Inception**, here are exceptional films tailored with matching atmosphere and high ratings:";
+          attachedMovies = MOCK_MOVIES.filter(m => !m.title.toLowerCase().includes('inception')).slice(0, 6);
+        } else if (msg.includes('predict') || msg.includes('tomorrow') || msg.includes('yesterday')) {
+          intent = 'predicted';
+          replyText = "🔮 **Predictive Neural Cinema Match**:\n\nBased on your predictive viewing history and taste profile, here are the top predicted feature films ready for you to stream today:";
+          attachedMovies = [...MOCK_MOVIES].sort((a, b) => (b.match_score || 0) - (a.match_score || 0)).slice(0, 6);
+        } else if (msg.includes('music') || msg.includes('song') || msg.includes('track') || msg.includes('soundtrack')) {
+          intent = 'music';
+          replyText = "Here are trending tracks and soundtrack scores on Zhoosh right now. Click any track to listen instantly!";
+          attachedSongs = MOCK_SONGS.slice(0, 6);
+        } else if (/\b(hi|hello|hey|who are you|what is your name|help)\b/i.test(msg)) {
+          intent = 'conversational';
+          replyText = `Hello! I'm **${agentName}**, your personal cinema and soundtrack intelligence assistant on Zhoosh.\n\nAsk me for movie recommendations by genre (like **Horror** or **Comedy**), similar titles to **Inception**, or movies based on what was predicted for you!`;
+        } else {
+          intent = 'recommendation';
+          replyText = "Here are top-tier cinematic recommendations curated for your taste on Zhoosh:";
+          attachedMovies = MOCK_MOVIES.slice(0, 6);
+        }
       }
 
       if (attachedMovies.length > 0 && onMovies) onMovies(attachedMovies);
@@ -313,3 +398,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
+

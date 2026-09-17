@@ -79,11 +79,17 @@ export interface AgentProfile {
 
 export interface SearchResult {
   query?: string;
-  search_type?: 'title_match' | 'genre_match' | 'general';
+  search_type?: 'title_match' | 'genre_match' | 'song_match' | 'artist_match' | 'romantic_match' | 'general';
+  mode?: AppMode;
   primary_movie?: Movie | null;
   similar_movies?: Movie[];
   genre?: string | null;
   genre_top_movies?: Movie[];
+  primary_song?: Song | null;
+  artist_name?: string | null;
+  artist_songs?: Song[];
+  similar_songs?: Song[];
+  similar_romantic_songs?: Song[];
   movies: Movie[];
   music: Song[];
 }

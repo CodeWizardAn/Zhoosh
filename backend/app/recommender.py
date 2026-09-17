@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -25,8 +26,8 @@ class RecommendationEngine:
         self.music_scaler: Optional[MinMaxScaler] = None
         self.music_feature_matrix = None
         self.music_feature_cols = [
-            'danceability', 'energy', 'speechiness',
-            'acousticness', 'instrumentalness', 'valence', 'tempo'
+            'danceability', 'energy', 'loudness', 'speechiness',
+            'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'popularity'
         ]
         
         self.load_and_train()
@@ -65,10 +66,11 @@ class RecommendationEngine:
             self.music_df = pd.read_csv(music_path)
             self.music_scaler = MinMaxScaler()
             
-            # Scale features to [0, 1]
-            raw_features = self.music_df[self.music_feature_cols].copy()
+            # Scale features to [0, 1] following Spotify recommendation architecture
+            avail_cols = [c for c in self.music_feature_cols if c in self.music_df.columns]
+            raw_features = self.music_df[avail_cols].copy().fillna(0)
             self.music_feature_matrix = self.music_scaler.fit_transform(raw_features)
-            print(f"[ML Engine] Scaled Music Audio Feature matrix: {self.music_feature_matrix.shape}")
+            print(f"[ML Engine] Scaled Music Audio Feature matrix: {self.music_feature_matrix.shape} across {len(self.music_df)} tracks")
 
     def _format_movie_row(self, row, match_pct: int = 95, rationale: Optional[str] = None) -> Dict[str, Any]:
         genres_list = [g.strip() for g in str(row.get('genres_str', row.get('genres', ''))).split(',') if g.strip()]
@@ -220,6 +222,22 @@ class RecommendationEngine:
             ))
         return results
 
+    def _format_song_row(self, row, match_pct: int = 95, rationale: Optional[str] = None) -> Dict[str, Any]:
+        duration_sec = int(row.get('duration_ms', 210000)) // 1000
+        genre_str = str(row.get('track_genre', 'Music')).title()
+        return {
+            'id': str(row['track_id']),
+            'title': str(row['track_name']),
+            'artist': str(row['artists']),
+            'album': str(row.get('album_name', '')),
+            'album_art': str(row['album_art']),
+            'duration_sec': duration_sec,
+            'genre': genre_str,
+            'plays': f"{int(row.get('popularity', 85)) * 24_000_000:,}",
+            'match_score': match_pct,
+            'agent_rationale': rationale or f"High harmonic resonance and {genre_str} pacing based on audio feature profile."
+        }
+
     def get_music(self, genre: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
         if self.music_df is None:
             return []
@@ -230,50 +248,101 @@ class RecommendationEngine:
             
         results = []
         for _, row in df.head(limit).iterrows():
-            duration_sec = int(row['duration_ms']) // 1000
-            results.append({
-                'id': str(row['track_id']),
-                'title': str(row['track_name']),
-                'artist': str(row['artists']),
-                'album': str(row['album_name']),
-                'album_art': str(row['album_art']),
-                'duration_sec': duration_sec,
-                'genre': str(row['track_genre']).title(),
-                'plays': f"{int(row['popularity']) * 24_000_000:,}",
-                'match_score': int(min(99, max(80, int(row['popularity'])))),
-                'agent_rationale': f"Calibrated for high harmonic resonance and {row['track_genre']} pacing."
-            })
+            results.append(self._format_song_row(
+                row,
+                match_pct=int(min(99, max(80, int(row.get('popularity', 85))))),
+                rationale=f"Calibrated for high harmonic resonance and {row.get('track_genre', 'genre')} pacing."
+            ))
         return results
 
-    def recommend_music_by_audio_features(self, target_track_id: str, top_n: int = 5) -> List[Dict[str, Any]]:
+    def get_songs_by_artist(self, artist_query: str, limit: int = 12) -> List[Dict[str, Any]]:
+        """Finds songs of the same singer, band, or composer."""
+        if self.music_df is None:
+            return []
+            
+        q = artist_query.strip().lower()
+        matches = self.music_df[self.music_df['artists'].str.lower().str.contains(q, na=False)].copy()
+        if matches.empty:
+            return []
+            
+        if 'popularity' in matches.columns:
+            matches = matches.sort_values(by='popularity', ascending=False)
+            
+        results = []
+        for _, row in matches.head(limit).iterrows():
+            results.append(self._format_song_row(
+                row,
+                match_pct=98,
+                rationale=f"Track by {row['artists']} · Signature acoustic timbre and musical style."
+            ))
+        return results
+
+    def get_romantic_recommendations(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Returns top romantic tracks ordered by popularity and acoustic warmth."""
+        if self.music_df is None:
+            return []
+            
+        matches = self.music_df[
+            (self.music_df['track_genre'].str.lower() == 'romantic') |
+            (self.music_df['acousticness'] >= 0.35)
+        ].copy()
+        
+        if matches.empty:
+            matches = self.music_df.copy()
+            
+        if 'popularity' in matches.columns:
+            matches = matches.sort_values(by='popularity', ascending=False)
+            
+        results = []
+        for idx, (_, row) in enumerate(matches.head(limit).iterrows()):
+            score = max(90, 99 - idx)
+            results.append(self._format_song_row(
+                row,
+                match_pct=score,
+                rationale=f"Ranked #{idx+1} soulful romantic ballad with rich melodic intimacy."
+            ))
+        return results
+
+    def recommend_music_by_audio_features(self, target_track_id: str, top_n: int = 6, filter_romantic: bool = False) -> List[Dict[str, Any]]:
+        """Spotify Cosine Similarity on standardized audio features (Vatsal Mavani methodology)."""
         if self.music_df is None or self.music_feature_matrix is None:
             return []
             
-        matches = self.music_df[self.music_df['track_id'] == target_track_id]
+        matches = self.music_df[self.music_df['track_id'].astype(str) == str(target_track_id)]
         if matches.empty:
             return self.get_music(limit=top_n)
             
         idx = matches.index[0]
+        target_track = matches.iloc[0]
         target_vec = self.music_feature_matrix[idx].reshape(1, -1)
         sim_scores = cosine_similarity(target_vec, self.music_feature_matrix).flatten()
         
-        similar_indices = sim_scores.argsort()[::-1][1:top_n+1]
+        # Sort indices descending by cosine similarity
+        sorted_indices = sim_scores.argsort()[::-1]
+        
         results = []
-        for s_idx in similar_indices:
+        for s_idx in sorted_indices:
             row = self.music_df.iloc[s_idx]
-            match_pct = int(min(99, max(75, sim_scores[s_idx] * 100)))
-            results.append({
-                'id': str(row['track_id']),
-                'title': str(row['track_name']),
-                'artist': str(row['artists']),
-                'album': str(row['album_name']),
-                'album_art': str(row['album_art']),
-                'duration_sec': int(row['duration_ms']) // 1000,
-                'genre': str(row['track_genre']).title(),
-                'plays': f"{int(row['popularity']) * 24_000_000:,}",
-                'match_score': match_pct,
-                'agent_rationale': f"Acoustic feature similarity with {matches.iloc[0]['track_name']} (tempo & energy match)."
-            })
+            if str(row['track_id']) == str(target_track_id):
+                continue
+                
+            if filter_romantic:
+                is_romantic = (
+                    str(row.get('track_genre', '')).lower() == 'romantic' or
+                    float(row.get('acousticness', 0)) >= 0.30
+                )
+                if not is_romantic:
+                    continue
+                    
+            match_pct = int(min(99, max(82, int(sim_scores[s_idx] * 100))))
+            rationale = (
+                f"Harmonic & acoustic similarity with '{target_track['track_name']}' "
+                f"({match_pct}% audio feature match on acousticness, tempo, and valence)."
+            )
+            results.append(self._format_song_row(row, match_pct=match_pct, rationale=rationale))
+            if len(results) >= top_n:
+                break
+                
         return results
 
     def cross_modal_recommend(self, mode: str = 'movies') -> List[Dict[str, Any]]:
@@ -284,72 +353,196 @@ class RecommendationEngine:
         else:
             return self.get_music(limit=8)
 
-    def search_all(self, query: str) -> Dict[str, Any]:
+    def search_all(self, query: str, mode: str = 'movies') -> Dict[str, Any]:
         q = query.lower().strip()
         
-        # Standard genres to detect
-        KNOWN_GENRES = {
-            'thriller': 'Thriller',
-            'action': 'Action',
-            'sci-fi': 'Science Fiction',
-            'scifi': 'Science Fiction',
-            'science fiction': 'Science Fiction',
-            'space': 'Science Fiction',
-            'comedy': 'Comedy',
-            'romance': 'Romance',
-            'romantic': 'Romance',
-            'horror': 'Horror',
-            'drama': 'Drama',
-            'crime': 'Crime',
-            'adventure': 'Adventure',
-            'animation': 'Animation',
-            'anime': 'Animation',
-            'mystery': 'Mystery',
-            'fantasy': 'Fantasy',
-            'documentary': 'Documentary',
-            'family': 'Family',
-            'war': 'War',
-            'western': 'Western'
-        }
-        
-        detected_genre = KNOWN_GENRES.get(q)
         search_type = 'general'
         primary_movie = None
         similar_movies = []
         genre_top_movies = []
         matched_genre_title = None
-
-        # 1. Check for genre match (e.g. "thriller", "action", "sci-fi")
-        if detected_genre:
-            search_type = 'genre_match'
-            matched_genre_title = detected_genre
-            genre_top_movies = self.get_top_genre_movies(detected_genre, limit=12)
-
-        # 2. Check for strong title match (e.g. "Interstellar") if not already a pure genre query
-        elif self.movies_df is not None:
-            # Check exact or near-exact title match
-            exact_matches = self.movies_df[self.movies_df['title'].str.lower() == q]
-            if exact_matches.empty:
-                # Check contains title match with high vote count
-                contains_matches = self.movies_df[self.movies_df['title'].str.lower().str.contains(r'\b' + q + r'\b', regex=True, na=False)]
-                if not contains_matches.empty:
-                    exact_matches = contains_matches.sort_values(by='vote_count', ascending=False)
-                    
-            if not exact_matches.empty:
-                primary_row = exact_matches.iloc[0]
-                primary_movie = self._format_movie_row(
-                    primary_row,
-                    match_pct=99,
-                    rationale=f"Exact title match: '{primary_row['title']}' directed by {primary_row.get('director', 'Visionary Director')}."
-                )
-                search_type = 'title_match'
-                similar_movies = self.recommend_movies_for_title(str(primary_row['title']), top_n=8, exclude_id=str(primary_row['id']))
-
-        # 3. Standard substring matches for general results
         matched_movies = []
-        matched_music = []
         
-        if self.movies_df is not None:
+        primary_song = None
+        matched_artist_name = None
+        artist_songs = []
+        similar_songs = []
+        similar_romantic_songs = []
+        matched_music = []
+
+        # ═════════════════════════════════════════════════════════════════════
+        # 🎵 MUSIC SEARCH MODE (STRICT ISOLATION - NO MOVIES RETURNED)
+        # ═════════════════════════════════════════════════════════════════════
+        if mode == 'music' and self.music_df is not None:
+            # ── 1. Check for Mood & Cultural Queries ──
+            is_romantic_query = any(term in q for term in ['romantic', 'romance', 'love songs', 'love song', 'ballad'])
+            is_hindi_query = any(term in q for term in ['hindi', 'bollywood', 'desi', 'indian'])
+            is_sad_query = any(term in q for term in ['sad', 'emotional', 'heartbreak', 'crying', 'cry', 'depressed', 'melancholy'])
+            is_party_query = any(term in q for term in ['party', 'dance', 'club', 'gym', 'workout', 'banger', 'hype'])
+
+            if is_romantic_query:
+                search_type = 'romantic_match'
+                similar_romantic_songs = self.get_romantic_recommendations(limit=12)
+            elif is_hindi_query:
+                search_type = 'hindi_match'
+                hindi_kw = ['arijit', 'pritam', 'mithoon', 'rahman', 'mohit chauhan', 'sukhwinder', 'chinmayi', 'javed ali', 'antara mitra', 'anuv jain', 'diljit', 'jasleen']
+                h_df = self.music_df[self.music_df['artists'].str.lower().apply(lambda a: any(k in a for k in hindi_kw))]
+                similar_songs = [self._format_song_row(r, match_pct=98, rationale=f"Bollywood & Hindi chartbuster: '{r['track_name']}'.") for _, r in h_df.iterrows()]
+            elif is_sad_query:
+                search_type = 'mood_match'
+                sad_priority = ['tum hi ho', 'channa mereya', 'fix you', 'the scientist', 'all of me', 'darmiyaan', 'beautiful things', 'until i found you', 'photograph', 'numb', 'in the end']
+                selected_rows = []
+                seen_ids = set()
+                for s_name in sad_priority:
+                    m = self.music_df[self.music_df['track_name'].str.lower() == s_name]
+                    for _, r in m.iterrows():
+                        if r['track_id'] not in seen_ids:
+                            selected_rows.append(r)
+                            seen_ids.add(r['track_id'])
+                low_v = self.music_df[
+                    (~self.music_df['track_id'].isin(seen_ids)) &
+                    (self.music_df['valence'] <= 0.35)
+                ].sort_values(by='valence', ascending=True)
+                for _, r in low_v.iterrows():
+                    selected_rows.append(r)
+                similar_songs = [self._format_song_row(r, match_pct=98, rationale=f"Soulful melancholic resonance: '{r['track_name']}'.") for r in selected_rows[:12]]
+            elif is_party_query:
+                search_type = 'mood_match'
+                p_df = self.music_df[(self.music_df['danceability'] >= 0.70) | (self.music_df['energy'] >= 0.75)]
+                similar_songs = [self._format_song_row(r, match_pct=99, rationale=f"High-energy anthem: '{r['track_name']}'.") for _, r in p_df.iterrows()]
+
+            # ── 2. Check for Specific Singer / Band / Composer (e.g. "Arijit Singh", "The Weeknd", "Coldplay") ──
+            q_clean = re.sub(r'\b(songs|song|tracks|track|music|audio|hits|playlist|all|by|from|listen|play|sing)\b', '', q).strip()
+            search_artist_q = q_clean if q_clean else q
+
+            artist_matches = self.music_df[self.music_df['artists'].str.lower().str.contains(search_artist_q, na=False)]
+            if artist_matches.empty and len(search_artist_q) >= 4:
+                for tok in search_artist_q.split():
+                    if len(tok) >= 4:
+                        tok_m = self.music_df[self.music_df['artists'].str.lower().str.contains(tok, na=False)]
+                        if not tok_m.empty:
+                            artist_matches = tok_m
+                            search_artist_q = tok
+                            break
+
+            if not artist_matches.empty:
+                first_match_artist = artist_matches.iloc[0]['artists']
+                artists_split = [a.strip() for a in str(first_match_artist).split(',')]
+                matched_name = next((a for a in artists_split if search_artist_q in a.lower()), artists_split[0])
+                matched_artist_name = matched_name
+                artist_songs = self.get_songs_by_artist(search_artist_q, limit=12)
+                search_type = 'artist_match'
+                if artist_songs:
+                    similar_songs = self.recommend_music_by_audio_features(artist_songs[0]['id'], top_n=6)
+
+            # ── 3. Check for Track Title or Album Match (e.g. "Tum Hi Ho", "Aashiqui 2", "Ashi", "Kesariya") ──
+            song_exact = self.music_df[self.music_df['track_name'].str.lower() == q]
+            if song_exact.empty:
+                song_exact = self.music_df[self.music_df['track_name'].str.lower().str.contains(r'\b' + q + r'\b', regex=True, na=False)]
+            if song_exact.empty and len(q) >= 3:
+                song_exact = self.music_df[self.music_df['track_name'].str.lower().str.contains(q, na=False)]
+            
+            # If no track name match, check album name (e.g. "Aashiqui 2" matches "Ashi" or "Aashiqui")
+            if song_exact.empty and len(q) >= 3 and 'album_name' in self.music_df.columns:
+                album_exact = self.music_df[self.music_df['album_name'].str.lower().str.contains(q, na=False)]
+                if not album_exact.empty:
+                    song_exact = album_exact
+
+            if not song_exact.empty:
+                s_row = song_exact.iloc[0]
+                primary_song = self._format_song_row(
+                    s_row,
+                    match_pct=99,
+                    rationale=f"Featured match: '{s_row['track_name']}' from '{s_row.get('album_name', 'Album')}' by {s_row['artists']}."
+                )
+                search_type = 'song_match'
+                
+                # If song is romantic or acoustic, compute similar romantic songs
+                is_song_romantic = (
+                    str(s_row.get('track_genre', '')).lower() == 'romantic' or
+                    float(s_row.get('acousticness', 0)) >= 0.30 or
+                    any(t in str(s_row['track_name']).lower() for t in ['kesariya', 'tum hi ho', 'darmiyaan', 'perfect', 'until i found you', 'golden hour', 'all of me', 'lover'])
+                )
+                if is_song_romantic:
+                    similar_romantic_songs = self.recommend_music_by_audio_features(
+                        str(s_row['track_id']), top_n=8, filter_romantic=True
+                    )
+                    
+                similar_songs = self.recommend_music_by_audio_features(str(s_row['track_id']), top_n=8)
+                
+                # Also include other songs by the same artist
+                primary_artist = str(s_row['artists']).split(',')[0].strip()
+                if not artist_songs:
+                    matched_artist_name = primary_artist
+                    artist_songs = [
+                        s for s in self.get_songs_by_artist(primary_artist, limit=8)
+                        if str(s['id']) != str(s_row['track_id'])
+                    ]
+
+            # ── 4. General Substring Matching for Music ──
+            has_album = 'album_name' in self.music_df.columns
+            album_filter = self.music_df['album_name'].str.lower().str.contains(q, na=False) if has_album else False
+            s_matches = self.music_df[
+                self.music_df['track_name'].str.lower().str.contains(q, na=False) |
+                self.music_df['artists'].str.lower().str.contains(q, na=False) |
+                self.music_df['track_genre'].str.lower().str.contains(q, na=False) |
+                album_filter
+            ]
+            for _, row in s_matches.head(16).iterrows():
+                if primary_song and str(row['track_id']) == str(primary_song['id']):
+                    continue
+                matched_music.append(self._format_song_row(row, match_pct=94))
+
+        # ═════════════════════════════════════════════════════════════════════
+        # 🎬 MOVIES SEARCH MODE (STRICT ISOLATION - NO MUSIC RETURNED)
+        # ═════════════════════════════════════════════════════════════════════
+        elif mode == 'movies' and self.movies_df is not None:
+            KNOWN_GENRES = {
+                'thriller': 'Thriller',
+                'action': 'Action',
+                'sci-fi': 'Science Fiction',
+                'scifi': 'Science Fiction',
+                'science fiction': 'Science Fiction',
+                'space': 'Science Fiction',
+                'comedy': 'Comedy',
+                'romance': 'Romance',
+                'horror': 'Horror',
+                'drama': 'Drama',
+                'crime': 'Crime',
+                'adventure': 'Adventure',
+                'animation': 'Animation',
+                'anime': 'Animation',
+                'mystery': 'Mystery',
+                'fantasy': 'Fantasy',
+                'documentary': 'Documentary',
+                'family': 'Family',
+                'war': 'War',
+                'western': 'Western'
+            }
+
+            detected_movie_genre = KNOWN_GENRES.get(q)
+            if detected_movie_genre:
+                search_type = 'genre_match'
+                matched_genre_title = detected_movie_genre
+                genre_top_movies = self.get_top_genre_movies(detected_movie_genre, limit=12)
+            else:
+                exact_matches = self.movies_df[self.movies_df['title'].str.lower() == q]
+                if exact_matches.empty:
+                    contains_matches = self.movies_df[self.movies_df['title'].str.lower().str.contains(r'\b' + q + r'\b', regex=True, na=False)]
+                    if not contains_matches.empty:
+                        exact_matches = contains_matches.sort_values(by='vote_count', ascending=False)
+                        
+                if not exact_matches.empty:
+                    primary_row = exact_matches.iloc[0]
+                    primary_movie = self._format_movie_row(
+                        primary_row,
+                        match_pct=99,
+                        rationale=f"Exact title match: '{primary_row['title']}' directed by {primary_row.get('director', 'Visionary Director')}."
+                    )
+                    search_type = 'title_match'
+                    similar_movies = self.recommend_movies_for_title(str(primary_row['title']), top_n=8, exclude_id=str(primary_row['id']))
+
+            # Standard Substring Matches for Movies
             m_matches = self.movies_df[
                 self.movies_df['title'].str.lower().str.contains(q, na=False) |
                 self.movies_df['genres_str'].str.lower().str.contains(q, na=False) |
@@ -359,39 +552,32 @@ class RecommendationEngine:
                 m_matches = m_matches.sort_values(by='vote_count', ascending=False)
                 
             for _, row in m_matches.head(15).iterrows():
-                # Avoid duplicating primary_movie in regular list
                 if primary_movie and str(row['id']) == str(primary_movie['id']):
                     continue
                 matched_movies.append(self._format_movie_row(row, match_pct=94))
 
-        if self.music_df is not None:
-            s_matches = self.music_df[
-                self.music_df['track_name'].str.lower().str.contains(q, na=False) |
-                self.music_df['artists'].str.lower().str.contains(q, na=False) |
-                self.music_df['track_genre'].str.lower().str.contains(q, na=False)
-            ]
-            for _, row in s_matches.head(8).iterrows():
-                matched_music.append({
-                    'id': str(row['track_id']),
-                    'title': str(row['track_name']),
-                    'artist': str(row['artists']),
-                    'album': str(row['album_name']),
-                    'album_art': str(row['album_art']),
-                    'duration_sec': int(row['duration_ms']) // 1000,
-                    'genre': str(row['track_genre']).title(),
-                    'match_score': 94
-                })
-
         return {
             'query': query,
             'search_type': search_type,
+            'mode': mode,
             'primary_movie': primary_movie,
             'similar_movies': similar_movies,
             'genre': matched_genre_title,
             'genre_top_movies': genre_top_movies,
+            'primary_song': primary_song,
+            'artist_name': matched_artist_name,
+            'artist_songs': artist_songs,
+            'similar_songs': similar_songs,
+            'similar_romantic_songs': similar_romantic_songs,
             'movies': matched_movies,
             'music': matched_music
         }
+
+    def reload_datasets(self):
+        """Forces reloading of movies.csv and spotify_tracks.csv from disk into memory."""
+        self.load_and_train()
+        print(f"[ML Engine] Reloaded datasets. Music tracks in memory: {len(self.music_df) if self.music_df is not None else 0}")
+        return {"status": "ok", "tracks_loaded": len(self.music_df) if self.music_df is not None else 0}
 
 # Global singleton
 engine = RecommendationEngine()

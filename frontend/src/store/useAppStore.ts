@@ -61,7 +61,8 @@ interface AppState {
 
   // Playlists (optimistic state)
   playlists: Playlist[];
-  createPlaylist: (title: string, description: string, mode: AppMode) => Playlist;
+  createPlaylist: (title: string, description: string, mode: AppMode, customCover?: string) => Playlist;
+  deletePlaylist: (playlistId: string) => void;
   addItemToPlaylist: (playlistId: string, item: Movie | Song) => void;
   removeItemFromPlaylist: (playlistId: string, itemId: string | number) => void;
   reorderPlaylistItems: (playlistId: string, newItems: Array<Movie | Song>) => void;
@@ -111,7 +112,49 @@ const getInitialLikes = (): { likedIds: Record<string, boolean>; likedItems: Rec
   return { likedIds: defaultIds, likedItems: defaultItems };
 };
 
+const DEFAULT_PLAYLISTS: Playlist[] = [
+  {
+    id: 'pl-trending-vibes',
+    title: 'Trending Neon Hits',
+    description: 'Chart-topping hits and midnight electric synth jams.',
+    mode: 'music',
+    items: MOCK_SONGS.slice(0, 4),
+    created_at: '2026-03-10',
+    cover_art: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'pl-romantic-escape',
+    title: 'Soulful & Romantic',
+    description: 'Heartfelt melodies, acoustic ballads, and late night romance.',
+    mode: 'music',
+    items: MOCK_SONGS.filter((s) => s.genre === 'Romantic').slice(0, 4),
+    created_at: '2026-03-12',
+    cover_art: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80'
+  },
+  {
+    id: 'pl-cinematic',
+    title: 'Deep Sci-Fi & Cyberpunk',
+    description: 'Mind-bending high concept futures and neon atmospheres.',
+    mode: 'movies',
+    items: [],
+    created_at: '2026-01-15',
+    cover_art: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80'
+  }
+];
+
+const getInitialPlaylists = (): Playlist[] => {
+  try {
+    const saved = localStorage.getItem('zhoosh_user_playlists');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return DEFAULT_PLAYLISTS;
+};
+
 const initialLikes = getInitialLikes();
+const initialPlaylists = getInitialPlaylists();
 
 export const useAppStore = create<AppState>((set, get) => ({
   mode: 'movies',
@@ -119,11 +162,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ mode });
     document.documentElement.style.setProperty(
       '--accent-current',
-      mode === 'movies' ? '#FF1E56' : '#A855F7'
+      mode === 'movies' ? '#FF1E56' : '#0070F3'
     );
     document.documentElement.style.setProperty(
       '--accent-glow',
-      mode === 'movies' ? 'rgba(255, 30, 86, 0.35)' : 'rgba(168, 85, 247, 0.35)'
+      mode === 'movies' ? 'rgba(255, 30, 86, 0.35)' : 'rgba(0, 112, 243, 0.45)'
     );
   },
   activeNav: 'discover',
@@ -272,27 +315,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     return nextState;
   },
 
-  playlists: [
-    {
-      id: 'pl-cinematic',
-      title: 'Deep Sci-Fi & Cyberpunk',
-      description: 'Mind-bending high concept futures and neon atmospheres.',
-      mode: 'movies',
-      items: [],
-      created_at: '2025-01-15',
-      cover_art: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'pl-focus',
-      title: 'Midnight Coding Flow',
-      description: 'Deep synthwave, ambient lofi, and focus grooves.',
-      mode: 'music',
-      items: [],
-      created_at: '2025-02-01',
-      cover_art: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80'
-    }
-  ],
-  createPlaylist: (title, description, mode) => {
+  playlists: initialPlaylists,
+  createPlaylist: (title, description, mode, customCover) => {
     const newPlaylist: Playlist = {
       id: `pl-${Date.now()}`,
       title,
@@ -300,30 +324,47 @@ export const useAppStore = create<AppState>((set, get) => ({
       mode,
       items: [],
       created_at: new Date().toISOString().split('T')[0],
-      cover_art: mode === 'movies'
+      cover_art: customCover || (mode === 'movies'
         ? 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80'
-        : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80'
+        : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80')
     };
-    set((state) => ({
-      playlists: [newPlaylist, ...state.playlists]
-    }));
+    set((state) => {
+      const updated = [newPlaylist, ...state.playlists];
+      try {
+        localStorage.setItem('zhoosh_user_playlists', JSON.stringify(updated));
+      } catch {}
+      return { playlists: updated };
+    });
     return newPlaylist;
   },
+  deletePlaylist: (playlistId) => {
+    set((state) => {
+      const updated = state.playlists.filter((pl) => pl.id !== playlistId);
+      try {
+        localStorage.setItem('zhoosh_user_playlists', JSON.stringify(updated));
+      } catch {}
+      return { playlists: updated };
+    });
+  },
   addItemToPlaylist: (playlistId, item) => {
-    set((state) => ({
-      playlists: state.playlists.map((pl) => {
+    set((state) => {
+      const updated = state.playlists.map((pl) => {
         if (pl.id === playlistId) {
           const exists = pl.items.some((i) => String(i.id) === String(item.id));
           if (exists) return pl;
           return { ...pl, items: [...pl.items, item] };
         }
         return pl;
-      })
-    }));
+      });
+      try {
+        localStorage.setItem('zhoosh_user_playlists', JSON.stringify(updated));
+      } catch {}
+      return { playlists: updated };
+    });
   },
   removeItemFromPlaylist: (playlistId, itemId) => {
-    set((state) => ({
-      playlists: state.playlists.map((pl) => {
+    set((state) => {
+      const updated = state.playlists.map((pl) => {
         if (pl.id === playlistId) {
           return {
             ...pl,
@@ -331,18 +372,26 @@ export const useAppStore = create<AppState>((set, get) => ({
           };
         }
         return pl;
-      })
-    }));
+      });
+      try {
+        localStorage.setItem('zhoosh_user_playlists', JSON.stringify(updated));
+      } catch {}
+      return { playlists: updated };
+    });
   },
   reorderPlaylistItems: (playlistId, newItems) => {
-    set((state) => ({
-      playlists: state.playlists.map((pl) => {
+    set((state) => {
+      const updated = state.playlists.map((pl) => {
         if (pl.id === playlistId) {
           return { ...pl, items: newItems };
         }
         return pl;
-      })
-    }));
+      });
+      try {
+        localStorage.setItem('zhoosh_user_playlists', JSON.stringify(updated));
+      } catch {}
+      return { playlists: updated };
+    });
   },
 
   popoverTarget: null,

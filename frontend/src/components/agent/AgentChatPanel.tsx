@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Send, Trash2, Settings, RotateCcw, Sparkles } from 'lucide-react';
 import { useAgentStore } from '@/store/useAgentStore';
+import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/api/client';
 import { AgentAvatar } from './AgentAvatar';
 import { AgentMessage } from './AgentMessage';
@@ -18,19 +19,22 @@ interface AgentChatPanelProps {
 }
 
 export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
+  const { mode } = useAppStore();
   const {
     profile,
     messages,
     isThinking,
     addMessage,
     updateLastAgentMessage,
+    attachMoviesToLastMessage,
+    attachSongsToLastMessage,
     setThinking,
     clearHistory,
     updateAgentName,
   } = useAgentStore();
 
   const shouldReduceMotion = useReducedMotion();
-  const agentName = profile?.name || 'Nova';
+  const agentName = profile?.name || (mode === 'music' ? 'SonicBot' : 'Nova');
 
   const [input, setInput] = useState('');
   const [avatarState, setAvatarState] = useState<'idle' | 'thinking' | 'responding'>('idle');
@@ -63,7 +67,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
     addMessage({ role: 'user', content: trimmed });
 
     // Add placeholder agent message
-    const placeholderMsg = addMessage({ role: 'agent', content: '', isStreaming: true });
+    addMessage({ role: 'agent', content: '', isStreaming: true });
 
     setThinking(true);
     setAvatarState('thinking');
@@ -91,14 +95,23 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
           updateLastAgentMessage('Sorry, I ran into an issue. Please try again.', true);
           setThinking(false);
           setAvatarState('idle');
-        }
+        },
+        (movies) => {
+          if (abortRef.current) return;
+          attachMoviesToLastMessage(movies);
+        },
+        (songs) => {
+          if (abortRef.current) return;
+          attachSongsToLastMessage(songs);
+        },
+        mode
       );
     } catch {
       updateLastAgentMessage('Sorry, something went wrong. Please try again.', true);
       setThinking(false);
       setAvatarState('idle');
     }
-  }, [addMessage, agentName, isThinking, messages, setThinking, updateLastAgentMessage]);
+  }, [addMessage, agentName, attachMoviesToLastMessage, attachSongsToLastMessage, isThinking, messages, mode, setThinking, updateLastAgentMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

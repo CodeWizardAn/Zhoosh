@@ -141,7 +141,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     );
   }
 
-  // SPOTIFY-STYLE SONG CARD
+  // ELECTRIC BLUE MUSIC CARD
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96 }}
@@ -155,9 +155,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleCardClick}
-      className="group p-3 rounded-lg bg-[#181818] hover:bg-[#282828] transition-colors cursor-pointer select-none w-40 sm:w-48 shrink-0 flex flex-col"
+      className="group p-3 rounded-xl bg-[#080D1A]/90 hover:bg-[#0E162B] border border-blue-500/15 hover:border-blue-400/40 transition-all cursor-pointer select-none w-full flex flex-col shadow-lg"
     >
-      <div className="relative w-full aspect-square rounded-md overflow-hidden mb-3 shadow-lg">
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden mb-3 shadow-md border border-white/10">
         <img
           src={posterImage}
           alt={title}
@@ -165,7 +165,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           className="w-full h-full object-cover"
         />
 
-        {/* Spotify Signature Floating Green Play Button on Hover */}
+        {/* Floating Electric Blue Play Button on Hover */}
         <motion.button
           initial={{ opacity: 0, y: 8 }}
           animate={
@@ -174,33 +174,44 @@ export const MediaCard: React.FC<MediaCardProps> = ({
               : { opacity: 0, y: 8 }
           }
           transition={{ duration: 0.15 }}
-          className="absolute right-2 bottom-2 w-11 h-11 rounded-full bg-gradient-to-r from-[#FF1E56] to-[#A855F7] hover:scale-110 text-white flex items-center justify-center shadow-xl shadow-[#A855F7]/30 transition-transform"
+          className="absolute right-2 bottom-2 w-10 h-10 rounded-full bg-[#0070F3] hover:bg-blue-600 hover:scale-110 text-white flex items-center justify-center shadow-xl shadow-blue-600/40 transition-transform"
         >
           {isCurrentSongPlaying ? (
             <Volume2 className="w-5 h-5 text-white animate-pulse" />
           ) : (
-            <Play className="w-5 h-5 fill-white ml-0.5 text-white" />
+            <Play className="w-4 h-4 fill-white ml-0.5 text-white" />
           )}
         </motion.button>
       </div>
 
       <div className="flex items-start justify-between gap-1">
-        <div className="min-w-0">
-          <h4 className="font-bold text-sm text-white truncate hover:underline">{title}</h4>
-          <p className="text-xs text-[#B3B3B3] hover:underline truncate mt-0.5">{subtitle}</p>
+        <div className="min-w-0 flex-1">
+          <h4 className="font-bold text-sm text-white truncate hover:text-cyan-300 transition-colors">{title}</h4>
+          <p className="text-xs text-gray-400 truncate mt-0.5">{subtitle}</p>
         </div>
 
-        <motion.button
-          onClick={handleLike}
-          animate={likeBouncing ? { scale: [1, 1.35, 0.95, 1] } : { scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className={`p-1 transition-opacity ${
-            isLiked ? 'opacity-100 text-[#A855F7]' : 'opacity-0 group-hover:opacity-100 text-[#B3B3B3] hover:text-white'
-          }`}
-          title={isLiked ? 'Unlike' : 'Like'}
-        >
-          <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
-        </motion.button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            ref={addBtnRef}
+            onClick={handleOpenPlaylist}
+            className="p-1 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-opacity"
+            title="Add to Playlist"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+
+          <motion.button
+            onClick={handleLike}
+            animate={likeBouncing ? { scale: [1, 1.35, 0.95, 1] } : { scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className={`p-1 transition-opacity ${
+              isLiked ? 'opacity-100 text-[#0070F3]' : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white'
+            }`}
+            title={isLiked ? 'Unlike' : 'Like'}
+          >
+            <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );
