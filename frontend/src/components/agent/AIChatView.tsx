@@ -169,16 +169,22 @@ export const AIChatView: React.FC = () => {
 
   const {
     profile,
-    messages,
+    messagesByMode,
+    memoryByMode,
     isThinking,
     addMessage,
     updateLastAgentMessage,
     attachMoviesToLastMessage,
     attachSongsToLastMessage,
     setThinking,
-    clearHistory,
+    clearChatScreen,
     loadFromStorage
   } = useAgentStore();
+
+  const isMovieMode = mode === 'movies';
+  const activeMode: 'movies' | 'music' = isMovieMode ? 'movies' : 'music';
+  const messages = messagesByMode?.[activeMode] || [];
+  const currentMemory = memoryByMode?.[activeMode];
 
   const shouldReduceMotion = useReducedMotion();
   const [input, setInput] = useState('');
@@ -188,7 +194,6 @@ export const AIChatView: React.FC = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<boolean>(false);
 
-  const isMovieMode = mode === 'movies';
   const botName = profile?.name || (isMovieMode ? 'Nova' : 'SonicBot');
   const botAvatar = profile?.avatarUrl || '/agent-avatar.jpg';
 
@@ -229,11 +234,11 @@ export const AIChatView: React.FC = () => {
     setInput('');
     abortRef.current = false;
 
-    // Add user message
-    addMessage({ role: 'user', content: query });
+    // Add user message to active mode
+    addMessage({ role: 'user', content: query }, activeMode);
 
-    // Add placeholder streaming agent message
-    addMessage({ role: 'agent', content: '', isStreaming: true });
+    // Add placeholder streaming agent message to active mode
+    addMessage({ role: 'agent', content: '', isStreaming: true }, activeMode);
 
     setThinking(true);
     let accumulated = '';
@@ -249,35 +254,40 @@ export const AIChatView: React.FC = () => {
         (token) => {
           if (abortRef.current) return;
           accumulated += token;
-          updateLastAgentMessage(accumulated, false);
+          updateLastAgentMessage(accumulated, false, activeMode);
         },
         (_intent) => {
           if (abortRef.current) return;
-          updateLastAgentMessage(accumulated, true);
+          updateLastAgentMessage(accumulated, true, activeMode);
           setThinking(false);
         },
         () => {
-          updateLastAgentMessage('Sorry, I ran into an issue connecting. Please try again.', true);
+          updateLastAgentMessage('Sorry, I ran into an issue connecting. Please try again.', true, activeMode);
           setThinking(false);
         },
         (movies) => {
           if (abortRef.current) return;
-          attachMoviesToLastMessage(movies);
+          if (activeMode === 'movies') {
+            attachMoviesToLastMessage(movies, 'movies');
+          }
         },
         (songs) => {
           if (abortRef.current) return;
-          attachSongsToLastMessage(songs);
+          if (activeMode === 'music') {
+            attachSongsToLastMessage(songs, 'music');
+          }
         },
-        mode,
+        activeMode,
         Object.values(likedItems)
           .map((item) => ('title' in item ? item.title : (item as any).track_name || ''))
-          .filter(Boolean)
+          .filter(Boolean),
+        currentMemory
       );
     } catch {
-      updateLastAgentMessage('I had a brief glitch retrieving that recommendation. Please try asking again!', true);
+      updateLastAgentMessage('I had a brief glitch retrieving that recommendation. Please try asking again!', true, activeMode);
       setThinking(false);
     }
-  }, [addMessage, botName, isThinking, likedItems, messages, mode, setThinking, updateLastAgentMessage, attachMoviesToLastMessage, attachSongsToLastMessage]);
+  }, [activeMode, addMessage, botName, currentMemory, isThinking, likedItems, messages, setThinking, updateLastAgentMessage, attachMoviesToLastMessage, attachSongsToLastMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -287,11 +297,11 @@ export const AIChatView: React.FC = () => {
   };
 
   const handleClear = () => {
-    clearHistory();
+    clearChatScreen(activeMode);
     setShowClearConfirm(false);
     addToast({
-      title: 'Chat History Cleared',
-      description: 'Conversation context reset for a fresh start.',
+      title: `${isMovieMode ? 'Cinema' : 'Music'} Chat Cleared`,
+      description: `Screen refreshed. ${botName}'s memory and taste profile remain safely stored!`,
       type: 'info'
     });
   };
@@ -345,6 +355,125 @@ export const AIChatView: React.FC = () => {
         />
       </div>
 
+      {/* ── 2. Top Chat Status & Action Strip (Clear Chat & Memory Preserved) ── */}
+      <div className="shrink-0 z-20 w-full px-4 sm:px-8 py-2.5 bg-[#08080d]/80 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+          {/* Left: Agent Info & Memory Status */}
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div
+                className={`w-8 h-8 rounded-xl overflow-hidden border ${
+                  isMovieMode ? 'border-red-500/50 bg-red-950/40' : 'border-blue-500/50 bg-blue-950/40'
+                }`}
+              >
+                <img
+                  src={botAvatar}
+                  alt={botName}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/agent-avatar.jpg';
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#08080d]" />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-white tracking-wide">{botName}</span>
+              <span
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                  isMovieMode
+                    ? 'border-red-500/30 bg-red-500/10 text-red-300'
+                    : 'border-blue-500/30 bg-blue-500/10 text-cyan-300'
+                }`}
+              >
+                {isMovieMode ? 'Cinema AI' : 'Music AI'}
+              </span>
+            </div>
+
+            {/* Stored Memory Badge (Preserved even when chat is cleared) */}
+            <div
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium cursor-help select-none ${
+                isMovieMode
+                  ? 'border-purple-500/30 bg-purple-950/30 text-purple-300 hover:border-purple-400/50'
+                  : 'border-cyan-500/30 bg-cyan-950/30 text-cyan-300 hover:border-cyan-400/50'
+              }`}
+              title={`${isMovieMode ? 'Cinema' : 'Music'} memory active: ${(currentMemory?.preferredGenres || []).join(', ') || 'Taste profile stored'}`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>
+                🧠 {isMovieMode ? 'Cinema' : 'Music'} Memory Preserved
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Clear Chat Action */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              disabled={messages.length === 0}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                messages.length > 0
+                  ? isMovieMode
+                    ? 'border-red-500/30 bg-red-950/25 text-red-300 hover:bg-red-500/20 hover:border-red-400 hover:text-white shadow-sm'
+                    : 'border-blue-500/30 bg-blue-950/25 text-blue-300 hover:bg-blue-500/20 hover:border-cyan-400 hover:text-white shadow-sm'
+                  : 'border-white/5 bg-white/5 text-gray-500 cursor-not-allowed opacity-50'
+              }`}
+              title="Clear all messages from screen (keeps long-term memory intact)"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear Chat</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Clear Chat Confirmation Modal */}
+      <AnimatePresence>
+        {showClearConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm rounded-2xl bg-[#0F0A18] border border-white/15 p-5 space-y-4 shadow-2xl"
+            >
+              <div className="flex items-center gap-3 text-red-400">
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Clear {isMovieMode ? 'Cinema' : 'Music'} Chat?</h4>
+                  <p className="text-xs text-gray-400">Removes messages from this screen</p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-xs text-purple-200 leading-relaxed flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Memory is preserved:</strong> {botName} will still remember your taste profile, favorite genres, and calibrated preferences for future recommendations!
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClear}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#E50914] hover:bg-red-600 text-white shadow-md shadow-red-950/60 transition-all cursor-pointer"
+                >
+                  Clear Screen
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* ══════════════════════════════════════════
           CHAT MESSAGES SCROLL VIEW
           ══════════════════════════════════════════ */}
@@ -391,9 +520,39 @@ export const AIChatView: React.FC = () => {
               </h2>
               <p className="text-sm text-gray-400 leading-relaxed">
                 {isMovieMode
-                  ? `I'm ${botName}, with direct real-time intelligence over thousands of movies. Ask me to suggest horror, comedy, films like Inception, or what was predicted for your taste.`
+                  ? `I'm ${botName}, with direct real-time intelligence over thousands of movies. Ask me to suggest romance, horror, comedy, films like Inception, or what was predicted for your taste.`
                   : `I'm ${botName}, connected to thousands of studio tracks and cinematic scores. Ask for genres, artist recommendations, or songs like your favorites.`}
               </p>
+            </div>
+
+            {/* Quick Starter Suggestion Pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1 max-w-lg">
+              {(isMovieMode
+                ? [
+                    'Suggest romantic movies',
+                    'Movies like Inception',
+                    'Top rated thrillers',
+                    'Who directed Interstellar?'
+                  ]
+                : [
+                    'Suggest romantic songs',
+                    'Top trending global hits',
+                    'Chill lo-fi study beats',
+                    'Songs by Arijit Singh'
+                  ]
+              ).map((chip) => (
+                <button
+                  key={chip}
+                  onClick={() => handleSendMessage(chip)}
+                  className={`text-xs px-3.5 py-1.5 rounded-full border transition-all cursor-pointer font-medium ${
+                    isMovieMode
+                      ? 'border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/25 hover:border-red-400 shadow-sm'
+                      : 'border-blue-500/30 bg-blue-500/10 text-cyan-200 hover:bg-blue-500/25 hover:border-cyan-400 shadow-sm'
+                  }`}
+                >
+                  {chip}
+                </button>
+              ))}
             </div>
           </motion.div>
         )}
@@ -462,14 +621,42 @@ export const AIChatView: React.FC = () => {
                           }`}
                         />
                       )}
+
+                      {/* Quick Interactive Switcher when user asks about the other medium */}
+                      {!isUser && message.content.includes('switch to **Music mode**') && (
+                        <div className="pt-2">
+                          <button
+                            onClick={() => setMode('music')}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-900/50 transition-all hover:scale-105 cursor-pointer"
+                          >
+                            <Music2 className="w-4 h-4" />
+                            <span>Switch to Music Mode</span>
+                            <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      {!isUser && message.content.includes('switch to **Cinema mode**') && (
+                        <div className="pt-2">
+                          <button
+                            onClick={() => setMode('movies')}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#E50914] to-red-600 hover:from-red-600 hover:to-red-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-red-950/60 transition-all hover:scale-105 cursor-pointer"
+                          >
+                            <Film className="w-4 h-4" />
+                            <span>Switch to Cinema Mode</span>
+                            <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* ══════════════════════════════════════════
                       ENTIRE SCREEN FULL MOVIE RECOMMENDATION CARDS
                       Name, Poster, Description, Watch/Redirect Link
+                      (STRICTLY CINEMA MODE ONLY)
                       ══════════════════════════════════════════ */}
-                  {message.movies && message.movies.length > 0 && (
+                  {isMovieMode && message.movies && message.movies.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -593,8 +780,9 @@ export const AIChatView: React.FC = () => {
 
                   {/* ══════════════════════════════════════════
                       MUSIC MODE TRACK RECOMMENDATION CARDS
+                      (STRICTLY MUSIC MODE ONLY)
                       ══════════════════════════════════════════ */}
-                  {message.songs && message.songs.length > 0 && (() => {
+                  {!isMovieMode && message.songs && message.songs.length > 0 && (() => {
                     const seen = new Set<string>();
                     const uniqueSongs = message.songs.filter((s: Song) => {
                       const key = s.title.toLowerCase().trim();

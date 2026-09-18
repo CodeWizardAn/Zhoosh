@@ -283,7 +283,8 @@ class ApiClient {
     onMovies?: (movies: Movie[]) => void,
     onSongs?: (songs: Song[]) => void,
     mode: AppMode = 'movies',
-    likedTitles?: string[]
+    likedTitles?: string[],
+    memory?: any
   ): Promise<void> {
     try {
       let res: Response;
@@ -294,6 +295,7 @@ class ApiClient {
         mode,
         history: history.slice(-12),
         liked_titles: likedTitles || [],
+        memory: memory || {},
       });
 
       try {
@@ -358,7 +360,12 @@ class ApiClient {
 
       if (mode === 'music') {
         // Music mode fallback
-        if (/\b(hip hop|hip-hop|hiphop|rap)\b/i.test(msg)) {
+        if (/\b(movie|movies|film|films|cinema|director|actor)\b/i.test(msg)) {
+          intent = 'mode_switch';
+          replyText = `🎵 **You are currently in Music mode with ${agentName}!**\n\nTo explore movies, watch trailers, or check director filmographies, please switch to **Cinema mode** using the toggle in the top bar 🎬.`;
+          attachedMovies = [];
+          attachedSongs = [];
+        } else if (/\b(hip hop|hip-hop|hiphop|rap)\b/i.test(msg)) {
           intent = 'hiphop';
           replyText = "Here are top-streamed 🎵 **Hip-Hop** tracks on Zhoosh Music. Click any track to launch playback!";
           attachedSongs = MOCK_SONGS.filter(s => s.genre.toLowerCase().includes('hip-hop') || s.genre.toLowerCase().includes('pop')).slice(0, 6);
@@ -379,8 +386,18 @@ class ApiClient {
           attachedSongs = MOCK_SONGS.slice(0, 6);
         }
       } else {
-        // Cinema mode fallback
-        if (msg.includes('horror')) {
+        // Cinema mode fallback (Strictly Movies, ZERO Songs)
+        if (/\b(song|songs|track|tracks|music|singer|album|playlist)\b/i.test(msg)) {
+          intent = 'mode_switch';
+          replyText = `🎬 **You are currently in Cinema mode with ${agentName}!**\n\nTo discover music tracks, browse artist discographies, and stream lossless audio, please switch to **Music mode** using the toggle in the top bar 🎵.\n\nWould you like me to recommend a movie instead?`;
+          attachedMovies = [];
+          attachedSongs = [];
+        } else if (/\b(romantic|romance|love|heartfelt)\b/i.test(msg)) {
+          intent = 'romance';
+          replyText = "Here are acclaimed 💖 **Romantic & Heartfelt** films curated for you on Zhoosh. Click **Watch / View Movie** on any card below to start streaming!";
+          attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('romance') || g.toLowerCase().includes('drama'))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 5);
+        } else if (msg.includes('horror')) {
           intent = 'horror';
           replyText = "Here are top-rated 🎬 **Horror** movies curated for you on Zhoosh. Click **Watch / View Movie** on any card below to start streaming!";
           attachedMovies = MOCK_MOVIES.filter(m => m.genres.some(g => g.toLowerCase().includes('horror') || g.toLowerCase().includes('thriller'))).slice(0, 6);
@@ -398,13 +415,9 @@ class ApiClient {
           intent = 'predicted';
           replyText = "🔮 **Predictive Neural Cinema Match**:\n\nBased on your predictive viewing history and taste profile, here are the top predicted feature films ready for you to stream today:";
           attachedMovies = [...MOCK_MOVIES].sort((a, b) => (b.match_score || 0) - (a.match_score || 0)).slice(0, 6);
-        } else if (msg.includes('music') || msg.includes('song') || msg.includes('track') || msg.includes('soundtrack')) {
-          intent = 'music';
-          replyText = "Here are trending tracks and soundtrack scores on Zhoosh right now. Click any track to listen instantly!";
-          attachedSongs = MOCK_SONGS.slice(0, 6);
         } else if (/\b(hi|hello|hey|who are you|what is your name|help)\b/i.test(msg)) {
           intent = 'conversational';
-          replyText = `Hello! I'm **${agentName}**, your personal cinema and soundtrack intelligence assistant on Zhoosh.\n\nAsk me for movie recommendations by genre (like **Horror** or **Comedy**), similar titles to **Inception**, or movies based on what was predicted for you!`;
+          replyText = `Hello! I'm **${agentName}**, your personal cinema and storytelling intelligence assistant on Zhoosh.\n\nAsk me for movie recommendations by genre (like **Romance**, **Horror**, or **Comedy**), similar titles to **Inception**, or movies based on what was predicted for you!`;
         } else {
           intent = 'recommendation';
           replyText = "Here are top-tier cinematic recommendations curated for your taste on Zhoosh:";
@@ -412,8 +425,8 @@ class ApiClient {
         }
       }
 
-      if (attachedMovies.length > 0 && onMovies) onMovies(attachedMovies);
-      if (attachedSongs.length > 0 && onSongs) onSongs(attachedSongs);
+      if (mode === 'movies' && attachedMovies.length > 0 && onMovies) onMovies(attachedMovies);
+      if (mode === 'music' && attachedSongs.length > 0 && onSongs) onSongs(attachedSongs);
 
       const words = replyText.split(' ');
       for (const word of words) {

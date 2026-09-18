@@ -28,6 +28,7 @@ class AgentChatRequest(BaseModel):
     mode: str = "movies"
     history: List[ConversationMessage] = []
     liked_titles: Optional[List[str]] = []
+    memory: Optional[dict] = {}
 
 class AgentProfileRequest(BaseModel):
     user_id: str
@@ -273,7 +274,12 @@ def detect_movie_mood_in_query(query: str):
     q_lower = query.lower()
     if engine.movies_df is None or engine.movies_df.empty:
         return None, None
-    if any(k in q_lower for k in ['mind-bending', 'mind bending', 'twist', 'psychological', 'puzzle', 'confusing', 'complex']):
+    if any(k in q_lower for k in ['romantic', 'romance', 'love', 'couple', 'heartfelt', 'valentine', 'relationship', 'ballad']):
+        matches = engine.movies_df[engine.movies_df['genres_str'].str.lower().str.contains('romance', na=False)]
+        if not matches.empty:
+            top_m = matches.sort_values(by='vote_count', ascending=False).head(6)
+            return "💖 **Romantic & Heartfelt Cinema**", [engine._format_movie_row(r) for _, r in top_m.iterrows()]
+    elif any(k in q_lower for k in ['mind-bending', 'mind bending', 'twist', 'psychological', 'puzzle', 'confusing', 'complex']):
         mb_titles = ['inception', 'interstellar', 'shutter island', 'the prestige', 'fight club', 'memento', 'matrix', 'arrival']
         matches = engine.movies_df[engine.movies_df['title'].str.lower().apply(lambda t: any(m in t for m in mb_titles))]
         if not matches.empty:
@@ -429,7 +435,8 @@ def generate_grounded_response(
     agent_name: str,
     mode: str = "movies",
     history: Optional[List[ConversationMessage]] = None,
-    liked_titles: Optional[List[str]] = None
+    liked_titles: Optional[List[str]] = None,
+    memory: Optional[dict] = None
 ) -> tuple[str, list, list]:
     msg_lower = message.lower().strip()
     movies_res = []
@@ -497,6 +504,37 @@ def generate_grounded_response(
                         m_songs[:6]
                     )
 
+        # Check stored memory if liked_titles is empty
+        mem_genres = (memory or {}).get('preferredGenres', []) if memory else []
+        mem_entities = (memory or {}).get('favoriteEntities', []) if memory else []
+        if mem_genres or mem_entities:
+            if effective_mode == "movies":
+                genre_to_use = mem_genres[0] if mem_genres else "Thriller"
+                recs = engine.get_top_genre_movies(genre_to_use, limit=6)
+                if not recs:
+                    recs = engine.get_movies(genre=genre_to_use, limit=6)
+                entity_text = f" and works by **{', '.join(mem_entities[:2])}**" if mem_entities else ""
+                return (
+                    f"🧠 **Stored Cinema Memory**:\n\n"
+                    f"Even with a fresh chat screen, I remember your taste for **{genre_to_use}** films{entity_text}!\n\n"
+                    f"Here are personalized recommendations based on your stored cinema profile:\n\n"
+                    f"Click **Watch / View Movie** on any card below to launch playback!",
+                    recs,
+                    []
+                )
+            else:
+                genre_to_use = mem_genres[0] if mem_genres else "Lo-Fi"
+                m_songs = engine.get_music(genre=genre_to_use, limit=6)
+                artist_text = f" and artists like **{', '.join(mem_entities[:2])}**" if mem_entities else ""
+                return (
+                    f"🧠 **Stored Music Memory**:\n\n"
+                    f"Even with a fresh chat screen, I remember you love **{genre_to_use}** tracks{artist_text}!\n\n"
+                    f"Here are personalized tracks calibrated to your saved audio profile:\n\n"
+                    f"Click any track below to start playback!",
+                    [],
+                    m_songs
+                )
+
         # If user does NOT have liked titles yet, ask them conversationally as requested
         if effective_mode == "movies":
             return (
@@ -531,17 +569,22 @@ def generate_grounded_response(
     is_explicit_movie = any(w in msg_lower for w in ["movie", "movies", "film", "films", "cinema", "directed by", "director", "actor", "actress", "box office", "theatre"])
     is_explicit_music = any(w in msg_lower for w in ["song", "songs", "track", "tracks", "music", "singer", "singers", "composer", "album", "audio", "soundtrack", "soundtracks", "playlist", "listen", "listen to", "play"])
 
-    # Check artist/song match early
-    early_entity_type, early_entity_val = find_track_or_artist_in_query(message)
-    if early_entity_type == "artist" or early_entity_type == "track":
-        is_explicit_music = True
-
-    is_music_intent = (mode == "music" and not is_explicit_movie) or (is_explicit_music and not is_explicit_movie)
-
     # =========================================================================
-    # A. MUSIC INTENT INTELLIGENCE
+    # A. MUSIC INTENT INTELLIGENCE (Strictly when mode == "music")
     # =========================================================================
-    if is_music_intent:
+    if mode == "music":
+        # Check if user explicitly asked for movies while in Music mode
+        if is_explicit_movie and not is_explicit_music:
+            return (
+                f"🎵 **You are currently in Music mode with {agent_name}!**\n\n"
+                f"To explore movies, watch trailers, or check director filmographies, please switch to **Cinema mode** using the toggle in the top bar 🎬.\n\n"
+                f"Here in Music mode, I can queue up trending hits, curated genres (like **Lo-Fi**, **Hip-Hop**, or **Rock**), and artist discographies for you!",
+                [],
+                []
+            )
+
+        early_entity_type, early_entity_val = find_track_or_artist_in_query(message)
+
         # 1. Greetings
         if re.search(r'\b(hello|hi|hey|who are you|what is your name|your name|what\'s your name|help|who r u)\b', msg_lower):
             return (
@@ -654,8 +697,18 @@ def generate_grounded_response(
         )
 
     # =========================================================================
-    # B. CINEMA INTENT INTELLIGENCE
+    # B. CINEMA INTENT INTELLIGENCE (Strictly Cinema mode, NO songs returned)
     # =========================================================================
+    # Check if user explicitly asked for music / songs while in Cinema mode
+    early_entity_type, early_entity_val = find_track_or_artist_in_query(message)
+    if (is_explicit_music and not is_explicit_movie) or (early_entity_type == "artist" and not is_explicit_movie):
+        return (
+            f"🎬 **You are currently in Cinema mode with {agent_name}!**\n\n"
+            f"To discover music tracks, browse artist discographies, and stream lossless audio, please switch to **Music mode** using the toggle in the top bar 🎵.\n\n"
+            f"Here in Cinema mode, I can recommend acclaimed feature films, actors, directors, and storylines! What genre (like **Romance**, **Sci-Fi**, or **Thriller**) sounds good to you today?",
+            [],
+            []
+        )
     # 1. Check for predicted / temporal queries
     if any(w in msg_lower for w in ["predict", "predicted", "forecast", "tomorrow", "yesterday"]):
         trending = engine.get_movies(limit=6) if engine else []
@@ -847,7 +900,7 @@ async def stream_text_words(text: str, delay_ms: int = 25):
         await asyncio.sleep(delay_ms / 1000.0)
     yield f"data: {json.dumps({'type': 'done', 'intent': 'done'})}\n\n"
 
-async def groq_stream(message: str, history: List[ConversationMessage], agent_name: str, intent: str, mode: str = "movies", liked_titles: Optional[List[str]] = None):
+async def groq_stream(message: str, history: List[ConversationMessage], agent_name: str, intent: str, mode: str = "movies", liked_titles: Optional[List[str]] = None, memory: Optional[dict] = None):
     """Stream grounded response via Groq if available, or dataset-backed engine."""
     # Dataset-grounded intelligent response with structured movies & songs
     response_text, movies, songs = generate_grounded_response(
@@ -855,7 +908,8 @@ async def groq_stream(message: str, history: List[ConversationMessage], agent_na
         agent_name,
         mode=mode,
         history=history,
-        liked_titles=liked_titles
+        liked_titles=liked_titles,
+        memory=memory
     )
     
     if movies:
@@ -875,7 +929,7 @@ async def groq_stream(message: str, history: List[ConversationMessage], agent_na
 async def agent_chat(req: AgentChatRequest):
     """Stream agent response word-by-word via SSE."""
     return StreamingResponse(
-        groq_stream(req.message, req.history, req.agent_name, "chat", mode=req.mode, liked_titles=req.liked_titles),
+        groq_stream(req.message, req.history, req.agent_name, "chat", mode=req.mode, liked_titles=req.liked_titles, memory=req.memory),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

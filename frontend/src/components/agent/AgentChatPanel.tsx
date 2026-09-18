@@ -7,11 +7,18 @@ import { api } from '@/api/client';
 import { AgentAvatar } from './AgentAvatar';
 import { AgentMessage } from './AgentMessage';
 
-const EXAMPLE_QUERIES = [
-  { icon: '🎬', label: 'Top 5 trending movies' },
-  { icon: '🎵', label: 'Top trending songs right now' },
+const CINEMA_EXAMPLE_QUERIES = [
+  { icon: '🎬', label: 'Top trending movies' },
+  { icon: '💖', label: 'Suggest romantic movies' },
   { icon: '✨', label: 'Recommend based on my taste' },
   { icon: '🔍', label: 'Is Inception available?' },
+];
+
+const MUSIC_EXAMPLE_QUERIES = [
+  { icon: '🎵', label: 'Top trending songs right now' },
+  { icon: '💖', label: 'Suggest romantic songs' },
+  { icon: '☕', label: 'Chill lo-fi study beats' },
+  { icon: '🎤', label: 'Songs by Arijit Singh' },
 ];
 
 interface AgentChatPanelProps {
@@ -20,9 +27,10 @@ interface AgentChatPanelProps {
 
 export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
   const { mode, likedItems } = useAppStore();
+  const activeMode: 'movies' | 'music' = mode === 'music' ? 'music' : 'movies';
   const {
     profile,
-    messages,
+    messagesByMode,
     isThinking,
     addMessage,
     updateLastAgentMessage,
@@ -32,6 +40,9 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
     clearHistory,
     updateAgentName,
   } = useAgentStore();
+
+  const messages = messagesByMode?.[activeMode] || [];
+  const exampleQueries = activeMode === 'movies' ? CINEMA_EXAMPLE_QUERIES : MUSIC_EXAMPLE_QUERIES;
 
   const shouldReduceMotion = useReducedMotion();
   const agentName = profile?.name || (mode === 'music' ? 'SonicBot' : 'Nova');
@@ -63,11 +74,11 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
     setInput('');
     abortRef.current = false;
 
-    // Add user message
-    addMessage({ role: 'user', content: trimmed });
+    // Add user message to active mode
+    addMessage({ role: 'user', content: trimmed }, activeMode);
 
-    // Add placeholder agent message
-    addMessage({ role: 'agent', content: '', isStreaming: true });
+    // Add placeholder agent message to active mode
+    addMessage({ role: 'agent', content: '', isStreaming: true }, activeMode);
 
     setThinking(true);
     setAvatarState('thinking');
@@ -82,39 +93,43 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
         (token) => {
           if (abortRef.current) return;
           accumulated += token;
-          updateLastAgentMessage(accumulated, false);
+          updateLastAgentMessage(accumulated, false, activeMode);
         },
         (_intent) => {
           if (abortRef.current) return;
-          updateLastAgentMessage(accumulated, true);
+          updateLastAgentMessage(accumulated, true, activeMode);
           setThinking(false);
           setAvatarState('responding');
           setTimeout(() => setAvatarState('idle'), 800);
         },
         () => {
-          updateLastAgentMessage('Sorry, I ran into an issue. Please try again.', true);
+          updateLastAgentMessage('Sorry, I ran into an issue. Please try again.', true, activeMode);
           setThinking(false);
           setAvatarState('idle');
         },
         (movies) => {
           if (abortRef.current) return;
-          attachMoviesToLastMessage(movies);
+          if (activeMode === 'movies') {
+            attachMoviesToLastMessage(movies, 'movies');
+          }
         },
         (songs) => {
           if (abortRef.current) return;
-          attachSongsToLastMessage(songs);
+          if (activeMode === 'music') {
+            attachSongsToLastMessage(songs, 'music');
+          }
         },
-        mode,
+        activeMode,
         Object.values(likedItems)
           .map((item) => ('title' in item ? item.title : (item as any).track_name || ''))
           .filter(Boolean)
       );
     } catch {
-      updateLastAgentMessage('Sorry, something went wrong. Please try again.', true);
+      updateLastAgentMessage('Sorry, something went wrong. Please try again.', true, activeMode);
       setThinking(false);
       setAvatarState('idle');
     }
-  }, [addMessage, agentName, attachMoviesToLastMessage, attachSongsToLastMessage, isThinking, likedItems, messages, mode, setThinking, updateLastAgentMessage]);
+  }, [activeMode, addMessage, agentName, attachMoviesToLastMessage, attachSongsToLastMessage, isThinking, likedItems, messages, setThinking, updateLastAgentMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -135,7 +150,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
   };
 
   const handleClearHistory = () => {
-    clearHistory();
+    clearHistory(activeMode);
     setShowClearConfirm(false);
     setShowSettings(false);
   };
@@ -279,7 +294,7 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
             </div>
 
             <div className="w-full grid grid-cols-2 gap-2">
-              {EXAMPLE_QUERIES.map((q, i) => (
+              {exampleQueries.map((q, i) => (
                 <motion.button
                   key={q.label}
                   initial={{ opacity: 0, y: 8 }}
