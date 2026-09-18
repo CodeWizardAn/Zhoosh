@@ -407,11 +407,11 @@ const HeroBillboard: React.FC = () => {
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 pt-4 pb-6">
+    <div className="w-full px-2 sm:px-6 md:px-8 pt-2 sm:pt-4 pb-4 sm:pb-6">
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative w-full h-[74vh] sm:h-[80vh] min-h-[500px] max-h-[740px] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl select-none"
+        className="relative w-full h-[62vh] sm:h-[80vh] min-h-[440px] max-h-[740px] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl select-none"
       >
         {/* Background Image Carousel with Cross-Fade */}
         <AnimatePresence mode="wait">
@@ -438,42 +438,42 @@ const HeroBillboard: React.FC = () => {
         </AnimatePresence>
 
         {/* Cinematic Vignette Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 via-45% to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 via-30% to-transparent pointer-events-none" />
-        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 via-55% to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 via-35% to-transparent pointer-events-none" />
+        <div className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
 
-        {/* TOP-RIGHT: Speaker Audio Toggle Button (Screenshot 1) */}
+        {/* TOP-RIGHT: Speaker Audio Toggle Button */}
         <button
           onClick={toggleSound}
-          className="absolute right-5 sm:right-7 top-5 sm:top-7 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-lg cursor-pointer"
+          className="absolute right-3 sm:right-7 top-3 sm:top-7 z-30 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-lg cursor-pointer"
           title={isMuted ? 'Unmute preview audio' : 'Mute preview audio'}
         >
-          {isMuted ? <VolumeX className="w-5 h-5 text-gray-200" /> : <Volume2 className="w-5 h-5 text-[#46D369]" />}
+          {isMuted ? <VolumeX className="w-4 sm:w-5 h-4 sm:h-5 text-gray-200" /> : <Volume2 className="w-4 sm:w-5 h-4 sm:h-5 text-[#46D369]" />}
         </button>
 
-        {/* Left/Right Carousel Chevrons on Hover */}
+        {/* Left/Right Carousel Chevrons on Hover (Desktop only) */}
         <button
           onClick={handlePrev}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-white/20 text-white flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-80 transition-opacity backdrop-blur-sm cursor-pointer"
+          className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-white/20 text-white items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-80 transition-opacity backdrop-blur-sm cursor-pointer"
           title="Previous blockbuster"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
         <button
           onClick={handleNext}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-white/20 text-white flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-80 transition-opacity backdrop-blur-sm cursor-pointer"
+          className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-white/20 text-white items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-80 transition-opacity backdrop-blur-sm cursor-pointer"
           title="Next blockbuster"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
 
         {/* Content Container (Bottom-Left) */}
-        <div className="absolute bottom-6 sm:bottom-10 left-6 sm:left-12 max-w-2xl z-20">
+        <div className="absolute bottom-5 sm:bottom-10 left-4 sm:left-12 right-4 sm:right-auto max-w-2xl z-20">
           {/* Big Stylized Logo Treatment */}
           <MovieLogoTreatment item={current} />
 
           {/* Clean Metadata Line (Series • Drama • 2008 • 5 Seasons • A) matching Screenshot 1 */}
-          <div className="flex items-center flex-wrap gap-2 text-xs font-semibold text-gray-200 mb-3 sm:mb-4 drop-shadow">
+          <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-gray-200 mb-2.5 sm:mb-4 drop-shadow">
             {current.mediaTypeLabel && (
               <>
                 <span className="font-bold">{current.mediaTypeLabel}</span>
@@ -489,8 +489,8 @@ const HeroBillboard: React.FC = () => {
             <span className="font-bold">{current.rating}</span>
           </div>
 
-          {/* Action Buttons: Play Pill & More Info Pill (Screenshot 1) */}
-          <div className="flex items-center gap-3">
+          {/* Action Buttons: Play Pill & More Info Pill */}
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Play Pill */}
             <button
               onClick={() => {
@@ -501,16 +501,16 @@ const HeroBillboard: React.FC = () => {
                   type: 'info'
                 });
               }}
-              className="flex items-center gap-2 px-6 sm:px-7 py-2.5 rounded-full bg-white hover:bg-white/90 text-black font-extrabold text-sm sm:text-base shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-5 sm:px-7 py-2 sm:py-2.5 rounded-full bg-white hover:bg-white/90 text-black font-extrabold text-xs sm:text-base shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <Play className="w-4 h-4 fill-black ml-0.5" />
+              <Play className="w-3.5 sm:w-4 h-3.5 sm:h-4 fill-black ml-0.5" />
               Play
             </button>
 
             {/* More Info Pill */}
             <button
               onClick={handleMoreInfo}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-bold text-sm sm:text-base backdrop-blur-md transition-all duration-200 border border-white/20 cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-base backdrop-blur-md transition-all duration-200 border border-white/20 cursor-pointer"
             >
               More Info
             </button>
@@ -518,14 +518,14 @@ const HeroBillboard: React.FC = () => {
             {/* Add to List / Heart Toggle */}
             <button
               onClick={handleLike}
-              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 cursor-pointer ${
+              className={`w-8 sm:w-10 h-8 sm:h-10 rounded-full border flex items-center justify-center transition-all duration-200 cursor-pointer ${
                 isLiked
                   ? 'border-[#FF1E56] bg-[#FF1E56] text-white shadow-lg shadow-[#FF1E56]/40 scale-105'
                   : 'border-white/40 hover:border-white bg-black/40 hover:bg-black/60 text-white backdrop-blur-md'
               }`}
               title={isLiked ? 'Remove from My List' : 'Add to My List'}
             >
-              {isLiked ? <Check className="w-4 h-4 stroke-[3]" /> : <Plus className="w-4 h-4" />}
+              {isLiked ? <Check className="w-3.5 sm:w-4 h-3.5 sm:w-4 stroke-[3]" /> : <Plus className="w-3.5 sm:w-4 h-3.5 sm:w-4" />}
             </button>
           </div>
         </div>
@@ -619,7 +619,7 @@ const ContinueWatchingCard: React.FC<{
       whileHover={{ scale: 1.06, y: -6, zIndex: 20 }}
       transition={{ duration: 0.2 }}
       onClick={() => openMovieModal(movie)}
-      className="relative flex-shrink-0 w-[175px] sm:w-[195px] md:w-[220px] cursor-pointer group select-none"
+      className="relative flex-shrink-0 w-[130px] sm:w-[195px] md:w-[220px] cursor-pointer group select-none"
     >
       {/* 2:3 Vertical Container so Posters Fit 100% Correctly */}
       <div className="relative rounded-lg overflow-hidden bg-[#141414] aspect-[2/3] shadow-xl border border-white/5">
@@ -840,10 +840,10 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
       </div>
 
       <div className="relative">
-        {/* Left Arrow */}
+        {/* Left Arrow (Desktop only) */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
+          className="hidden md:flex absolute left-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-r from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronLeft className="w-7 h-7 text-white drop-shadow" />
         </button>
@@ -851,7 +851,7 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
         {/* Scroll Track */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
+          className="flex gap-2.5 sm:gap-4 overflow-x-auto no-scrollbar px-3 sm:px-12 pb-2 scroll-smooth"
         >
           <AnimatePresence mode="popLayout">
             {continueItems.map((item) => (
@@ -860,10 +860,10 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
           </AnimatePresence>
         </div>
 
-        {/* Right Arrow */}
+        {/* Right Arrow (Desktop only) */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
+          className="hidden md:flex absolute right-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-l from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronRight className="w-7 h-7 text-white drop-shadow" />
         </button>
@@ -890,14 +890,14 @@ const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) =>
       className="relative flex-shrink-0 flex items-center cursor-pointer group/card select-none"
     >
       {/* Netflix Signature Giant Number (Offset behind poster) */}
-      <div className="w-16 sm:w-24 flex items-center justify-center flex-shrink-0 z-0 select-none">
-        <span className="text-7xl sm:text-9xl font-black netflix-rank-number tracking-tighter">
+      <div className="w-12 sm:w-24 flex items-center justify-center flex-shrink-0 z-0 select-none">
+        <span className="text-6xl sm:text-9xl font-black netflix-rank-number tracking-tighter">
           {rank}
         </span>
       </div>
 
       {/* Vertical Poster Card */}
-      <div className="-ml-7 sm:-ml-10 relative w-[145px] sm:w-[170px] md:w-[190px] aspect-[2/3] rounded-lg overflow-hidden bg-[#141414] shadow-2xl z-10 border border-white/10">
+      <div className="-ml-5 sm:-ml-10 relative w-[120px] sm:w-[170px] md:w-[190px] aspect-[2/3] rounded-lg overflow-hidden bg-[#141414] shadow-2xl z-10 border border-white/10">
         <img
           src={imgSrc}
           alt={movie.title}
@@ -987,14 +987,14 @@ const Top10Shelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
       <div className="relative">
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#050508] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute left-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-r from-[#050508] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronLeft className="w-7 h-7 text-white" />
         </button>
 
         <div
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
+          className="flex gap-2 overflow-x-auto no-scrollbar px-3 sm:px-12 pb-2 scroll-smooth"
         >
           {top10List.map((movie, idx) => (
             <Top10Card key={movie.id} movie={movie} rank={idx + 1} />
@@ -1003,7 +1003,7 @@ const Top10Shelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
 
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#050508] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute right-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-l from-[#050508] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronRight className="w-7 h-7 text-white" />
         </button>
@@ -1034,7 +1034,7 @@ const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
       whileHover={{ scale: 1.06, y: -6, zIndex: 20 }}
       transition={{ duration: 0.2 }}
       onClick={() => openMovieModal(movie)}
-      className="relative flex-shrink-0 w-[175px] sm:w-[195px] md:w-[220px] cursor-pointer group/card select-none"
+      className="relative flex-shrink-0 w-[130px] sm:w-[195px] md:w-[220px] cursor-pointer group/card select-none"
     >
       <div className="relative rounded-lg overflow-hidden bg-[#141414] aspect-[2/3] shadow-lg border border-white/5">
         <img
@@ -1159,14 +1159,14 @@ const CategoryShelf: React.FC<CategoryShelfProps> = ({
       <div className="relative">
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute left-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-r from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronLeft className="w-6 h-6 text-white" />
         </button>
 
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
+          className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar px-3 sm:px-12 pb-2 scroll-smooth"
         >
           {movies.map((movie) => (
             <CategoryMovieCard key={movie.id} movie={movie} />
@@ -1175,7 +1175,7 @@ const CategoryShelf: React.FC<CategoryShelfProps> = ({
 
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute right-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-l from-[#050508] via-[#050508]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronRight className="w-6 h-6 text-white" />
         </button>

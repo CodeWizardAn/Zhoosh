@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { useAgentStore } from '@/store/useAgentStore';
 import { TopBar } from './TopBar';
+import { MobileBottomBar } from './MobileBottomBar';
 import { TopProgress } from '../common/TopProgress';
 import { PlayerBar } from '../player/PlayerBar';
 import { VoiceSearchBar } from '../voice/VoiceSearchBar';
@@ -24,7 +25,7 @@ import { NavThemeTransition } from '../common/NavThemeTransition';
 import { DEFAULT_AVATAR } from '@/utils/avatars';
 
 export const AppShell: React.FC = () => {
-  const { mode, activeNav, isOnboardingOpen, closeOnboarding, setUser, addToast } = useAppStore();
+  const { mode, activeNav, currentTrack, isOnboardingOpen, closeOnboarding, setUser, addToast } = useAppStore();
   const { profile: agentProfile, setProfile: setAgentProfile, loadFromStorage } = useAgentStore();
   const shouldReduceMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,7 +90,7 @@ export const AppShell: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-[#07070b] text-white flex flex-col relative font-sans ${activeNav === 'agent-ai' ? 'h-screen overflow-hidden' : 'overflow-x-hidden'}`}>
+    <div className={`min-h-screen bg-[#07070b] text-white flex flex-col relative font-sans ${activeNav === 'agent-ai' ? 'h-screen overflow-hidden' : 'overflow-x-clip'}`}>
       {/* 1. Global Clean Background */}
       <FadedGridBackdrop intensity="subtle" showPosters={false} />
 
@@ -100,8 +101,20 @@ export const AppShell: React.FC = () => {
       <TopBar onSearchChange={setSearchQuery} searchValue={searchQuery} />
 
       {/* 3. Main Full-Width Streaming Experience */}
-      <div className={`flex-1 w-full pt-16 flex flex-col z-10 ${activeNav === 'agent-ai' ? 'h-[calc(100vh)] overflow-hidden' : ''}`}>
-        <main className={`flex-1 w-full flex flex-col ${activeNav === 'agent-ai' ? 'h-[calc(100vh-64px)] overflow-hidden' : 'min-h-[calc(100vh-64px)]'}`}>
+      <div className={`flex-1 w-full pt-14 sm:pt-16 flex flex-col z-10 ${activeNav === 'agent-ai' ? 'h-full max-h-screen overflow-hidden' : ''}`}>
+        <main
+          className={`flex-1 w-full flex flex-col ${
+            activeNav === 'agent-ai'
+              ? `h-[calc(100vh-56px)] sm:h-[calc(100vh-64px)] overflow-hidden ${
+                  mode === 'music' && currentTrack
+                    ? 'pb-28 md:pb-24'
+                    : 'pb-16 md:pb-0'
+                }`
+              : mode === 'music' && currentTrack
+              ? 'pb-36 md:pb-24 min-h-[calc(100vh-64px)]'
+              : 'pb-20 md:pb-0 min-h-[calc(100vh-64px)]'
+          }`}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={`${mode}-${activeNav}-${searchQuery ? 'searching' : 'content'}`}
@@ -116,12 +129,19 @@ export const AppShell: React.FC = () => {
           </AnimatePresence>
         </main>
 
-        {/* Global Fixed Directory Footer (hidden in full-screen AI chat) */}
-        {activeNav !== 'agent-ai' && <FixedFooter />}
+        {/* Global Fixed Directory Footer (hidden in full-screen AI chat and on mobile) */}
+        {activeNav !== 'agent-ai' && (
+          <div className="hidden md:block">
+            <FixedFooter />
+          </div>
+        )}
       </div>
 
       {/* Bottom Player for Audio */}
       <PlayerBar />
+
+      {/* Native Mobile Bottom Navigation Bar */}
+      <MobileBottomBar />
 
       {/* Overlays & Modals */}
       <VoiceSearchBar />

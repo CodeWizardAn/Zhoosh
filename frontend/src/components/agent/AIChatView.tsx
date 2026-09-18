@@ -198,17 +198,12 @@ export const AIChatView: React.FC = () => {
 
   useEffect(() => {
     loadFromStorage();
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 120);
+    return () => clearTimeout(timer);
   }, [loadFromStorage]);
 
-  // Lock window/body scroll on mount so top navbar never hides or overlaps
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, []);
 
   // Container-isolated auto-scroll: strictly scrolls the chat container, NEVER window
   const scrollToBottom = useCallback((smooth = true) => {
@@ -372,7 +367,6 @@ export const AIChatView: React.FC = () => {
           ══════════════════════════════════════════ */}
       <div
         ref={scrollContainerRef}
-        data-lenis-prevent
         className="flex-1 min-h-0 w-full max-w-5xl mx-auto px-4 sm:px-8 py-4 space-y-6 overflow-y-auto z-10 flex flex-col"
       >
         {/* Welcome Empty State */}
@@ -463,7 +457,7 @@ export const AIChatView: React.FC = () => {
               className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full`}
             >
               {/* Message Bubble Container */}
-              <div className={`max-w-full sm:max-w-4xl flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[95%] sm:max-w-4xl flex gap-2 sm:gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
                 {!isUser && (
                   <div
                     className={`w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-md mt-1 border ${
@@ -740,20 +734,20 @@ export const AIChatView: React.FC = () => {
       {/* ══════════════════════════════════════════
           DOCKED BOTTOM INPUT BAR
           ══════════════════════════════════════════ */}
-      <div className="shrink-0 z-30 w-full px-4 sm:px-8 py-3 bg-[#07070b]/95 backdrop-blur-xl border-t border-white/10 shadow-2xl">
+      <div className="shrink-0 z-30 w-full px-3 sm:px-8 py-2.5 sm:py-3 bg-[#07070b]/95 backdrop-blur-xl border-t border-white/10 shadow-2xl">
         <div className="max-w-4xl mx-auto space-y-2">
           {/* Main Input Pill */}
           <div
-            className={`relative flex items-center gap-2 p-2 rounded-2xl bg-[#0C0814]/90 border transition-all duration-200 shadow-inner ${
+            className={`relative flex items-center gap-2 px-3 py-2 rounded-2xl bg-[#0F0B18] border-2 transition-all duration-200 shadow-xl ${
               isMovieMode
-                ? 'border-white/15 focus-within:border-red-500/70 focus-within:shadow-[0_0_25px_rgba(229,9,20,0.25)]'
-                : 'border-white/15 focus-within:border-blue-500/70 focus-within:shadow-[0_0_25px_rgba(0,112,243,0.3)]'
+                ? 'border-white/20 focus-within:border-[#E50914] focus-within:shadow-[0_0_25px_rgba(229,9,20,0.35)] ring-1 ring-white/5'
+                : 'border-white/20 focus-within:border-[#0070F3] focus-within:shadow-[0_0_25px_rgba(0,112,243,0.35)] ring-1 ring-white/5'
             }`}
           >
             {/* Voice Search Integration */}
             <button
               onClick={() => openVoiceSearch()}
-              className="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
               title="Speak with Voice"
             >
               <Mic className="w-4 h-4" />
@@ -768,10 +762,10 @@ export const AIChatView: React.FC = () => {
               onKeyDown={handleKeyDown}
               placeholder={
                 isMovieMode
-                  ? "Ask anything... 'Suggest horror movies', 'movies like Inception', 'who directed Interstellar'..."
-                  : "Ask anything... 'Suggest chill songs', 'tracks like Blinding Lights', 'synthwave vibes'..."
+                  ? "Type your message to Nova here... e.g. 'Recommend dark thrillers', 'films like Inception'..."
+                  : "Type your message to SonicBot here... e.g. 'Chill lo-fi study tracks', 'songs like Blinding Lights'..."
               }
-              className="w-full bg-transparent text-sm text-white placeholder-gray-500 resize-none focus:outline-none max-h-32 py-1 leading-relaxed"
+              className="w-full bg-transparent text-sm sm:text-base text-white placeholder-gray-400 resize-none focus:outline-none max-h-32 py-1 leading-relaxed"
             />
 
             {/* Send Button */}
@@ -781,8 +775,8 @@ export const AIChatView: React.FC = () => {
               className={`p-2.5 rounded-xl font-bold flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                 input.trim() && !isThinking
                   ? isMovieMode
-                    ? 'bg-[#E50914] text-white shadow-lg shadow-red-950/60 hover:bg-[#FF1E56]'
-                    : 'bg-[#0070F3] hover:bg-blue-600 text-white shadow-lg shadow-blue-600/50 hover:brightness-110'
+                    ? 'bg-[#E50914] text-white shadow-lg shadow-red-950/60 hover:bg-[#FF1E56] scale-105'
+                    : 'bg-[#0070F3] hover:bg-blue-600 text-white shadow-lg shadow-blue-600/50 hover:brightness-110 scale-105'
                   : 'bg-white/5 text-gray-600 cursor-not-allowed'
               }`}
               title="Send message"

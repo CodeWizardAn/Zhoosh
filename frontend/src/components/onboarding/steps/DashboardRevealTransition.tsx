@@ -101,7 +101,7 @@ export const DashboardRevealTransition: React.FC<DashboardRevealTransitionProps>
                   </span>
                 </div>
                 <div className="text-xs text-gray-400 mt-0.5">
-                  ${selectedPlan.priceMonthly}/mo • {selectedPlan.simultaneousStreams} Concurrent Screens • Cancel anytime
+                  {selectedPlan.priceMonthly === 0 ? 'Forever Free' : `₹${selectedPlan.priceMonthly}/mo`} • {selectedPlan.simultaneousStreams} {selectedPlan.simultaneousStreams === 1 ? 'Screen' : 'Concurrent Screens'} • Cancel anytime
                 </div>
               </div>
             </div>

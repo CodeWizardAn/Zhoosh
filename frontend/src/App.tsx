@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SplashScreen } from './components/common/SplashScreen';
 import { AppShell } from './components/layout/AppShell';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
-import { SmoothScrollProvider } from './components/common/SmoothScroll';
 import { useAppStore } from './store/useAppStore';
 import { useAgentStore } from './store/useAgentStore';
 import { DEFAULT_AVATAR } from './utils/avatars';
@@ -147,9 +146,7 @@ export default function App() {
           }}
         />
       ) : (
-        <SmoothScrollProvider>
-          <AppShell />
-        </SmoothScrollProvider>
+        <AppShell />
       )}
     </div>
   );

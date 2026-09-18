@@ -10,11 +10,18 @@
     --accent-purple: #A855F7;
   }
 
+  html {
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background-color: #050508;
     color: #FFFFFF;
     font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
+    min-height: 100vh;
+    -webkit-overflow-scrolling: touch;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

@@ -100,27 +100,30 @@ export const MovieDetailsModal: React.FC = () => {
           className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
         />
 
-        {/* Modal Window */}
+        {/* Modal Window / Mobile Bottom Sheet */}
         <motion.div
           ref={modalContentRef}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 40 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-[#181818] text-white rounded-none sm:rounded-2xl shadow-2xl border border-white/10 z-10 custom-scrollbar"
+          className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-[#181818] text-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-white/10 z-10 custom-scrollbar mt-auto sm:my-8"
         >
+          {/* Mobile Sheet Drag Indicator */}
+          <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto sm:hidden mt-3 -mb-1" />
+
           {/* Close Button */}
           <button
             onClick={closeMovieModal}
-            className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 transition-all hover:scale-105"
+            className="absolute top-4 right-4 z-30 w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 transition-all hover:scale-105 cursor-pointer"
             title="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 sm:w-5 h-4 sm:h-5" />
           </button>
 
           {/* Hero Banner with Backdrop */}
-          <div className="relative w-full h-[320px] sm:h-[400px] md:h-[440px] overflow-hidden bg-black select-none">
+          <div className="relative w-full h-[260px] sm:h-[400px] md:h-[440px] overflow-hidden bg-black select-none">
             <img
               src={backdropImage}
               alt={selectedMovie.title}
@@ -135,37 +138,37 @@ export const MovieDetailsModal: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
 
             {/* Banner Floating Metadata & Play Controls */}
-            <div className="absolute bottom-6 left-6 right-6 z-20 flex flex-col justify-end space-y-3">
+            <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 z-20 flex flex-col justify-end space-y-2 sm:space-y-3">
               <div className="flex items-center gap-2">
                 <span className="bg-[#E50914] text-white text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded">
                   ZHOOSH ORIGINAL
                 </span>
               </div>
 
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-lg leading-tight">
+              <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-lg leading-tight">
                 {selectedMovie.title}
               </h2>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="flex items-center gap-2.5 pt-1 sm:pt-2">
                 <button
                   onClick={handlePlay}
-                  className="px-6 py-2.5 rounded-md bg-white hover:bg-white/90 text-black font-bold text-sm sm:text-base flex items-center gap-2 transition-transform hover:scale-105 shadow-xl"
+                  className="flex-1 sm:flex-initial justify-center px-6 py-2.5 rounded-md bg-white hover:bg-white/90 text-black font-bold text-sm sm:text-base flex items-center gap-2 transition-transform active:scale-95 shadow-xl cursor-pointer"
                 >
-                  <Play className="w-5 h-5 fill-black" />
+                  <Play className="w-4 sm:w-5 h-4 sm:h-5 fill-black" />
                   <span>Play</span>
                 </button>
 
                 <button
                   onClick={handleLike}
-                  className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                  className={`w-9 sm:w-10 h-9 sm:h-10 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
                     isLiked
                       ? 'border-[#E50914] bg-[#E50914] text-white'
                       : 'border-white/40 hover:border-white text-white bg-black/60 hover:bg-black/90'
                   }`}
                   title={isLiked ? 'Unlike' : 'Like'}
                 >
-                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-white' : ''}`} />
+                  <Heart className={`w-4 sm:w-5 h-4 sm:h-5 ${isLiked ? 'fill-white' : ''}`} />
                 </button>
 
                 <div className="hidden sm:flex items-center gap-2 text-xs text-gray-300 ml-auto bg-black/40 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-sm">

@@ -7,7 +7,7 @@ export type OnboardingStep =
   | 'reveal';
 
 export interface SubscriptionPlan {
-  id: 'basic' | 'standard' | 'premium';
+  id: 'free' | 'basic' | 'standard' | 'premium';
   name: string;
   tagline: string;
   priceMonthly: number;
@@ -45,18 +45,37 @@ export interface OnboardingUserData {
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
+    id: 'free',
+    name: 'Zhoosh Free',
+    tagline: 'Essential free streaming with standard catalog',
+    priceMonthly: 0,
+    quality: 'Standard HD',
+    resolution: '720p',
+    simultaneousStreams: 1,
+    accentColor: '#10B981',
+    badge: 'FREE FOREVER',
+    features: [
+      'Access to standard cinema & music catalog',
+      'Lossless audio streaming at 160 kbps',
+      'Stream on phone, tablet, or laptop',
+      'Smart personalized recommendations',
+      'Zero cost, no credit card required'
+    ]
+  },
+  {
     id: 'basic',
     name: 'Zhoosh Core',
-    tagline: 'Essential cinematic & acoustic experience',
-    priceMonthly: 8.99,
+    tagline: 'Ad-free cinema & acoustic experience',
+    priceMonthly: 199,
     quality: 'Good HD',
     resolution: '720p',
     simultaneousStreams: 1,
     accentColor: '#7C3AED',
     features: [
-      'Access to standard cinema catalog',
-      'Lossless music streaming at 160 kbps',
+      'Full ad-free cinema & music catalog',
+      'Lossless music streaming at 256 kbps',
       'Watch on phone, tablet, and laptop',
+      'Download up to 30 titles offline',
       'Ad-free audio track skips'
     ]
   },
@@ -64,7 +83,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     id: 'standard',
     name: 'Standard Zhoosh',
     tagline: 'High-definition dual cinema & spatial audio',
-    priceMonthly: 14.99,
+    priceMonthly: 499,
     quality: 'Full HD 1080p',
     resolution: '1080p',
     simultaneousStreams: 2,
@@ -83,7 +102,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     id: 'premium',
     name: 'Zhoosh VIP Ultra',
     tagline: 'Ultimate 4K HDR + Dolby Atmos acoustic sanctuary',
-    priceMonthly: 21.99,
+    priceMonthly: 799,
     quality: 'Ultra HD 4K + HDR',
     resolution: '4K HDR',
     simultaneousStreams: 4,

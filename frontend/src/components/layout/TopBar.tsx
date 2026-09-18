@@ -45,6 +45,14 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  React.useEffect(() => {
+    const handleOpenSearch = () => {
+      setSearchOpen(true);
+    };
+    window.addEventListener('zhoosh:open-search', handleOpenSearch);
+    return () => window.removeEventListener('zhoosh:open-search', handleOpenSearch);
+  }, []);
+
   // Dynamic Navigation Items based on active mode
   const NAV_ITEMS = mode === 'movies'
     ? ['Home', 'assistant', 'My Zhoosh']
@@ -72,12 +80,12 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-50 h-16 flex items-center px-4 sm:px-8 gap-4 sm:gap-6 select-none bg-[#050508]/95 backdrop-blur-md border-b border-white/10 transition-colors">
+      <header className="fixed top-0 inset-x-0 z-50 h-14 sm:h-16 flex items-center px-3 sm:px-8 gap-2 sm:gap-6 select-none bg-[#050508]/95 backdrop-blur-md border-b border-white/10 transition-colors">
         {/* LEFT: Zhoosh Brand Logo & Navigation Links */}
-        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-6 shrink-0">
           <button
             onClick={() => setActiveNav('discover')}
-            className="shrink-0 flex items-center pr-2 cursor-pointer group"
+            className="shrink-0 flex items-center pr-1 sm:pr-2 cursor-pointer group"
             title="Zhoosh Home"
           >
             <ZhooshLogo size="sm" variant="wordmark" />
@@ -156,7 +164,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                   }
                 }
               }}
-              className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
+              className={`relative flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
                 mode === 'movies'
                   ? 'text-white font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]'
                   : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
@@ -185,7 +193,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                   }
                 }
               }}
-              className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
+              className={`relative flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
                 mode === 'music'
                   ? 'text-white font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]'
                   : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
@@ -210,7 +218,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
               {searchOpen && (
                 <motion.div
                   initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 240, opacity: 1 }}
+                  animate={{ width: typeof window !== 'undefined' && window.innerWidth < 640 ? 140 : 240, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="relative overflow-hidden mr-1"

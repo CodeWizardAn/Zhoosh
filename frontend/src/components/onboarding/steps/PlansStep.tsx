@@ -40,7 +40,7 @@ export const PlansStep: React.FC<PlansStepProps> = ({
       <FadedGridBackdrop intensity="vibrant" showPosters={true} />
 
       {/* Top Header Bar */}
-      <div className="w-full max-w-6xl flex items-center justify-between z-10 mb-6">
+      <div className="w-full max-w-7xl flex items-center justify-between z-10 mb-6">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5"
@@ -48,22 +48,15 @@ export const PlansStep: React.FC<PlansStepProps> = ({
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Welcome</span>
         </button>
-
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#FF1E56] animate-pulse" />
-          <span className="text-xs font-mono font-bold tracking-wider text-gray-300 uppercase">
-            Step 1 of 3: Membership Tier
-          </span>
-        </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="w-full max-w-6xl z-10 flex flex-col items-center my-auto">
+      <div className="w-full max-w-7xl z-10 flex flex-col items-center my-auto">
         {/* Title Header */}
         <div className="text-center max-w-xl mx-auto mb-8 space-y-2">
 
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight font-serif text-white">
-            Choose Your Zhoosh Cinema Tier
+            Choose Your Zhoosh Tier
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 font-sans">
             Switch or cancel anytime. All plans feature unified AI curation and lossless audio.
@@ -99,13 +92,15 @@ export const PlansStep: React.FC<PlansStepProps> = ({
           </div>
         </div>
 
-        {/* Three Tall Cards (Basic / Standard / Premium) - Staggered 80ms apart */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch max-w-5xl">
+        {/* Four Cards (Free / Core / Standard / VIP Ultra) */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 items-stretch max-w-7xl">
           {SUBSCRIPTION_PLANS.map((plan, index) => {
             const isSelected = selectedPlanId === plan.id;
-            const price = billingCycle === 'yearly' 
-              ? (plan.priceMonthly * 0.8).toFixed(2) 
-              : plan.priceMonthly.toFixed(2);
+            const price = plan.priceMonthly === 0
+              ? 0
+              : billingCycle === 'yearly' 
+              ? Math.round(plan.priceMonthly * 0.8) 
+              : plan.priceMonthly;
 
             return (
               <motion.div
@@ -208,12 +203,12 @@ export const PlansStep: React.FC<PlansStepProps> = ({
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-5 pb-5 border-b border-white/10 flex items-baseline gap-1 font-mono"
                   >
-                    <span className="text-xl font-bold text-gray-400">$</span>
+                    <span className="text-xl font-bold text-gray-400">₹</span>
                     <span className="text-4xl font-black tracking-tight text-white">
                       {price}
                     </span>
                     <span className="text-xs text-gray-400 font-sans">
-                      / month
+                      {plan.priceMonthly === 0 ? 'Forever Free' : '/ month'}
                     </span>
                   </motion.div>
 
@@ -299,7 +294,9 @@ export const PlansStep: React.FC<PlansStepProps> = ({
                   {selectedPlan.name} Tier Selected
                 </div>
                 <div className="text-[11px] text-gray-400 font-mono">
-                  ${selectedPlan.priceMonthly}/mo • {selectedPlan.resolution} • Cancel anytime
+                  {selectedPlan.priceMonthly === 0
+                    ? 'Forever Free • 720p HD • No Card Required'
+                    : `₹${billingCycle === 'yearly' ? Math.round(selectedPlan.priceMonthly * 0.8) : selectedPlan.priceMonthly}/mo • ${selectedPlan.resolution} • Cancel anytime`}
                 </div>
               </div>
             </div>

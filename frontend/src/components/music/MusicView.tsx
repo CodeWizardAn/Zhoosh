@@ -243,11 +243,11 @@ const HeroMusicBillboard: React.FC = () => {
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 pt-4 pb-6">
+    <div className="w-full px-2 sm:px-6 md:px-8 pt-2 sm:pt-4 pb-4 sm:pb-6">
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative w-full h-[72vh] sm:h-[78vh] min-h-[480px] max-h-[720px] rounded-2xl sm:rounded-3xl overflow-hidden border border-blue-500/20 shadow-[0_0_50px_rgba(0,112,243,0.2)] select-none bg-[#05070E]"
+        className="relative w-full h-[62vh] sm:h-[78vh] min-h-[440px] max-h-[720px] rounded-2xl sm:rounded-3xl overflow-hidden border border-blue-500/20 shadow-[0_0_50px_rgba(0,112,243,0.2)] select-none bg-[#05070E]"
       >
         {/* Background Image Carousel with Cross-Fade */}
         <AnimatePresence mode="wait">
@@ -299,17 +299,17 @@ const HeroMusicBillboard: React.FC = () => {
           )}
         </button>
 
-        {/* Left/Right Carousel Chevrons on Hover */}
+        {/* Left/Right Carousel Chevrons on Hover (Desktop only) */}
         <button
           onClick={handlePrev}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-blue-400/30 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer"
+          className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-blue-400/30 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer"
           title="Previous Track"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
         <button
           onClick={handleNext}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-blue-400/30 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer"
+          className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/40 hover:bg-black/80 border border-blue-400/30 text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer"
           title="Next Track"
         >
           <ChevronRight className="w-6 h-6" />
@@ -499,14 +499,14 @@ const Top10SongCard: React.FC<{ song: Song; rank: number }> = ({ song, rank }) =
       className="relative flex-shrink-0 flex items-start cursor-pointer group/card select-none"
     >
       {/* Signature Giant Rank Number */}
-      <div className="w-16 sm:w-24 flex items-center justify-center flex-shrink-0 z-0 select-none pt-3 sm:pt-6">
-        <span className="text-7xl sm:text-9xl font-black music-rank-number tracking-tighter">
+      <div className="w-12 sm:w-24 flex items-center justify-center flex-shrink-0 z-0 select-none pt-2 sm:pt-6">
+        <span className="text-6xl sm:text-9xl font-black music-rank-number tracking-tighter">
           {rank}
         </span>
       </div>
 
       {/* Album Art Card + Visible Song Name and Artist */}
-      <div className="-ml-7 sm:-ml-10 relative flex flex-col w-[150px] sm:w-[175px] md:w-[195px] z-10">
+      <div className="-ml-5 sm:-ml-10 relative flex flex-col w-[125px] sm:w-[175px] md:w-[195px] z-10">
         <div className="relative aspect-square rounded-xl overflow-hidden bg-[#0A1020] shadow-2xl border border-blue-500/20 group-hover/card:border-blue-400 group-hover/card:shadow-[0_0_20px_rgba(0,112,243,0.35)] transition-all">
           <img
             src={song.album_art}
@@ -593,14 +593,14 @@ const Top10MusicShelf: React.FC<{ songs: Song[] }> = ({ songs }) => {
       <div className="relative">
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#05070E] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute left-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-r from-[#05070E] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronLeft className="w-7 h-7 text-white" />
         </button>
 
         <div
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
+          className="flex gap-2 overflow-x-auto no-scrollbar px-3 sm:px-12 pb-2 scroll-smooth"
         >
           {top10List.map((song, idx) => (
             <Top10SongCard key={song.id} song={song} rank={idx + 1} />
@@ -609,7 +609,7 @@ const Top10MusicShelf: React.FC<{ songs: Song[] }> = ({ songs }) => {
 
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#05070E] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute right-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-l from-[#05070E] to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronRight className="w-7 h-7 text-white" />
         </button>
@@ -653,7 +653,8 @@ const CategorySongCard: React.FC<{ song: Song }> = ({ song }) => {
     <motion.div
       whileHover={{ scale: 1.06, y: -5, zIndex: 20 }}
       transition={{ duration: 0.2 }}
-      className="relative flex-shrink-0 w-[170px] sm:w-[190px] md:w-[210px] cursor-pointer group/card select-none"
+      onClick={handlePlay}
+      className="relative flex-shrink-0 w-[135px] sm:w-[190px] md:w-[210px] cursor-pointer group/card select-none"
     >
       <div className="relative rounded-xl overflow-hidden bg-[#0A1020] aspect-square shadow-lg border border-blue-500/15 group-hover:border-blue-400/50 transition-colors">
         <img
@@ -766,14 +767,14 @@ const CategoryShelf: React.FC<CategoryShelfProps> = ({
       <div className="relative">
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute left-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-r from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronLeft className="w-6 h-6 text-white" />
         </button>
 
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
+          className="flex gap-2.5 sm:gap-4 overflow-x-auto no-scrollbar px-3 sm:px-12 pb-2 scroll-smooth"
         >
           {songs.map((song) => (
             <CategorySongCard key={song.id} song={song} />
@@ -782,7 +783,7 @@ const CategoryShelf: React.FC<CategoryShelfProps> = ({
 
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
+          className="hidden md:flex absolute right-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-l from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity"
         >
           <ChevronRight className="w-6 h-6 text-white" />
         </button>
@@ -868,10 +869,10 @@ const LikedSongsShelf: React.FC = () => {
 
       {/* Shelf Body */}
       <div className="relative">
-        {/* Left Arrow */}
+        {/* Left Arrow (Desktop only) */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-r from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
+          className="hidden md:flex absolute left-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-r from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronLeft className="w-6 h-6 text-white drop-shadow" />
         </button>
@@ -879,7 +880,7 @@ const LikedSongsShelf: React.FC = () => {
         {/* Scroll Track */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto no-scrollbar px-6 sm:px-12 pb-2 scroll-smooth"
+          className="flex gap-2.5 sm:gap-4 overflow-x-auto no-scrollbar px-3 sm:px-12 pb-2 scroll-smooth"
         >
           {/* Card 1: Featured 'Liked Songs' Hero Tile */}
           <motion.div
@@ -950,10 +951,10 @@ const LikedSongsShelf: React.FC = () => {
           )}
         </div>
 
-        {/* Right Arrow */}
+        {/* Right Arrow (Desktop only) */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-20 w-12 flex items-center justify-center bg-gradient-to-l from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
+          className="hidden md:flex absolute right-0 top-0 bottom-0 z-20 w-12 items-center justify-center bg-gradient-to-l from-[#05070E] via-[#05070E]/80 to-transparent opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer"
         >
           <ChevronRight className="w-6 h-6 text-white drop-shadow" />
         </button>

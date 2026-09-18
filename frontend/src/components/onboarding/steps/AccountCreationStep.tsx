@@ -136,6 +136,7 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
       {/* Top Navigation */}
       <div className="w-full max-w-2xl flex items-center justify-between z-10 mb-6">
         <button
+          type="button"
           onClick={onBack}
           disabled={isSubmitting || isSuccess}
           className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5 disabled:opacity-40"
@@ -143,13 +144,6 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
           <ArrowLeft className="w-4 h-4" />
           <span>Change Plan ({selectedPlan.name})</span>
         </button>
-
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#FF1E56] animate-pulse" />
-          <span className="text-xs font-mono font-bold tracking-wider text-gray-300 uppercase">
-            Step 2 of 3: Account Credentials
-          </span>
-        </div>
       </div>
 
       {/* Main Container */}
@@ -171,7 +165,7 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
                     style={{ backgroundColor: selectedPlan.accentColor }}
                   />
                   <span className="text-xs font-mono uppercase tracking-wider text-gray-400">
-                    Selected: <strong className="text-white font-sans">{selectedPlan.name}</strong> (${selectedPlan.priceMonthly}/mo)
+                    Selected: <strong className="text-white font-sans">{selectedPlan.name}</strong> ({selectedPlan.priceMonthly === 0 ? 'Free Tier' : `₹${selectedPlan.priceMonthly}/mo`})
                   </span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-gray-400">

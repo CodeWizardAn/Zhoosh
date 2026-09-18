@@ -28,30 +28,11 @@ import {
 import { ZhooshLogo } from '@/components/common/ZhooshLogo';
 import { ProjectCreditsModal } from '@/components/common/ProjectCreditsModal';
 import { ACADEMIC_PROJECT_INFO } from '@/data/teamMembers';
+import { AppSnapshotsShowcase } from '../components/AppSnapshotsShowcase';
 
 interface LandingLoginStepProps {
   onGoToPlans: () => void;
   onLoginSuccess: (email: string) => void;
-}
-
-interface TrendingMovie {
-  id: string;
-  title: string;
-  category: string;
-  year: string;
-  rating: string;
-  poster: string;
-  badge?: string;
-}
-
-interface TrendingSong {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  duration: string;
-  cover: string;
-  badge?: string;
 }
 
 export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
@@ -75,8 +56,6 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
   const [isShaking, setIsShaking] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [backdropMode, setBackdropMode] = useState<'dual' | 'movies' | 'music'>('dual');
-  const [hoveredMovieId, setHoveredMovieId] = useState<string | null>(null);
-  const [hoveredSongId, setHoveredSongId] = useState<string | null>(null);
   const [isCreditsOpen, setIsCreditsOpen] = useState(false);
   const [creditsTab, setCreditsTab] = useState<'legal' | 'developer' | 'academic'>('legal');
 
@@ -114,86 +93,6 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
     setEmail('alex.mercer@zhoosh.stream');
     setPassword('ZhooshPass2026!');
   };
-
-  // Trending Movies with authentic uploaded posters: Brand New Day, Mirzapur, Shawshank Redemption, American Psycho
-  const trendingMovies: TrendingMovie[] = [
-    {
-      id: 'brand-new-day',
-      title: 'Brand New Day',
-      category: 'Drama • Musical Odyssey',
-      year: '2025',
-      rating: 'U/A • 8.4',
-      badge: '#1 in Movies Today',
-      poster: '/poster-brand-new-day.jpg'
-    },
-    {
-      id: 'mirzapur',
-      title: 'Mirzapur',
-      category: 'Action • Crime Drama',
-      year: '2024',
-      rating: 'A • 8.5',
-      badge: 'Season 3 Trending',
-      poster: '/poster-mirzapur.jpg'
-    },
-    {
-      id: 'shawshank',
-      title: 'The Shawshank Redemption',
-      category: 'Drama • IMDb Top #1',
-      year: '1994',
-      rating: 'U/A • 9.3',
-      badge: 'All-Time Masterpiece',
-      poster: '/poster-shawshank.jpg'
-    },
-    {
-      id: 'american-psycho',
-      title: 'American Psycho',
-      category: 'Psychological Thriller',
-      year: '2000',
-      rating: 'A • 7.6',
-      badge: 'Cult Phenomenon',
-      poster: '/poster-american-psycho.png'
-    }
-  ];
-
-  // Trending Songs as explicitly requested: Darmiyaan, Señorita, Gajanana, Beautiful Things
-  const trendingSongs: TrendingSong[] = [
-    {
-      id: 'darmiyaan',
-      title: 'Darmiyaan',
-      artist: 'Shafqat Amanat Ali & Clinton Cerejo',
-      album: 'Jodi Breakers',
-      duration: '5:49',
-      badge: 'Soulful Classic',
-      cover: '/song-darmiyaan.png'
-    },
-    {
-      id: 'senorita',
-      title: 'Señorita',
-      artist: 'Shawn Mendes & Camila Cabello',
-      album: 'Shawn Mendes (Deluxe)',
-      duration: '3:11',
-      badge: 'Billboard Global #1',
-      cover: '/song-senorita.png'
-    },
-    {
-      id: 'gajanana',
-      title: 'Gajanana',
-      artist: 'Sukhwinder Singh',
-      album: 'Bajirao Mastani',
-      duration: '3:34',
-      badge: 'High-Energy Anthem',
-      cover: '/song-gajanana.png'
-    },
-    {
-      id: 'beautiful-things',
-      title: 'Beautiful Things',
-      artist: 'Benson Boone',
-      album: 'Fireworks & Rollerblades',
-      duration: '3:00',
-      badge: 'Global Viral Track',
-      cover: '/song-beautiful-things.png'
-    }
-  ];
 
   return (
     <div className="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden bg-[#050508] text-white">
@@ -293,11 +192,8 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
             Unlimited movies, music, and more
           </h1>
-          <p className="text-base sm:text-lg text-gray-200 font-medium">
-            Starts at <span className="text-[#FF1E56] font-bold font-mono">$8.99/mo</span>. Cancel anytime.
-          </p>
-          <p className="text-xs sm:text-sm text-gray-400 max-w-lg mx-auto">
-            Ready to stream? Enter your email to sign in or choose your membership plan.
+          <p className="text-sm sm:text-base text-gray-300 max-w-xl mx-auto leading-relaxed pt-1">
+            Stream 4K cinema blockbusters, studio-grade lossless audio, and real-time AI curation in one seamless universe.
           </p>
         </motion.div>
 
@@ -452,214 +348,9 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
       </main>
 
       {/* ========================================================================= */}
-      {/* 4. TRENDING MOVIES SECTION (Netflix-Style Giant Number Ranks)             */}
+      {/* 4. APP SNAPSHOTS SHOWCASE (macOS Window Frame Mockup)                      */}
       {/* ========================================================================= */}
-      <section className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span>Trending Movies</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#FF1E56]/20 border border-[#FF1E56]/40 text-[#FF1E56] font-mono uppercase">
-                Top 10 Today
-              </span>
-            </h2>
-          </div>
-          <button
-            onClick={onGoToPlans}
-            className="text-xs sm:text-sm font-semibold text-gray-400 hover:text-white flex items-center gap-1 group"
-          >
-            <span>See All Movies</span>
-            <ChevronRight className="w-4 h-4 text-[#FF1E56] group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
-        {/* Carousel / Row of Ranked Movie Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 pt-4 pb-2">
-          {trendingMovies.map((movie, index) => (
-            <div
-              key={movie.id}
-              className="relative flex items-end select-none group cursor-pointer"
-              onClick={onGoToPlans}
-              onMouseEnter={() => setHoveredMovieId(movie.id)}
-              onMouseLeave={() => setHoveredMovieId(null)}
-            >
-              {/* Netflix-Style Giant Rank Number Overlapping Lower Left */}
-              <span
-                className="text-7xl sm:text-8xl lg:text-9xl font-black select-none pointer-events-none absolute -bottom-3 -left-4 sm:-left-6 z-20 leading-none"
-                style={{
-                  WebkitTextStroke: '4px #FFFFFF',
-                  color: '#000000',
-                  filter: 'drop-shadow(2px 6px 14px rgba(0,0,0,0.95))'
-                }}
-              >
-                {index + 1}
-              </span>
-
-              {/* Poster Card */}
-              <motion.div
-                whileHover={{ y: -8, scale: 1.03 }}
-                transition={{ duration: 0.25 }}
-                className="relative z-10 w-full aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 bg-[#0E0B16] shadow-xl group-hover:border-[#FF1E56]/80 group-hover:shadow-[0_12px_35px_rgba(255,30,86,0.35)] transition-all"
-              >
-                <img
-                  src={movie.poster}
-                  alt={movie.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 filter contrast-110"
-                />
-
-                {/* Dark Vignette Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
-
-
-
-                {/* Hover Play Button Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
-                  <div className="w-12 h-12 rounded-full bg-[#FF1E56] text-white flex items-center justify-center shadow-lg shadow-[#FF1E56]/50 transform scale-90 group-hover:scale-100 transition-transform">
-                    <Play className="w-5 h-5 fill-white translate-x-0.5" />
-                  </div>
-                </div>
-
-                {/* Bottom Metadata */}
-                <div className="absolute bottom-3 right-3 left-10 sm:left-12 text-right">
-                  <h3 className="font-bold text-sm sm:text-base text-white truncate leading-tight drop-shadow">
-                    {movie.title}
-                  </h3>
-                  <p className="text-[10px] text-gray-300 font-medium truncate mt-0.5">
-                    {movie.category}
-                  </p>
-                  <div className="flex items-center justify-end gap-1.5 text-[9px] font-mono text-gray-400 mt-1">
-                    <span>{movie.year}</span>
-                    <span>•</span>
-                    <span className="text-amber-400 font-bold">{movie.rating}</span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          ))}
-
-          {/* "+ More" Movies Card -> Redirects to Account Creation / Plans */}
-          <div
-            onClick={onGoToPlans}
-            className="relative flex items-end select-none group cursor-pointer"
-          >
-            <motion.div
-              whileHover={{ y: -8, scale: 1.03 }}
-              transition={{ duration: 0.25 }}
-              className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden border-2 border-dashed border-[#FF1E56]/40 hover:border-[#FF1E56] bg-gradient-to-b from-[#140C1E]/80 to-[#07050C]/95 backdrop-blur-xl p-5 flex flex-col items-center justify-center text-center shadow-xl hover:shadow-[0_12px_35px_rgba(255,30,86,0.3)] transition-all group"
-            >
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#FF1E56] to-[#A855F7] flex items-center justify-center text-white mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                <Plus className="w-7 h-7" />
-              </div>
-              <h3 className="font-black text-sm sm:text-base text-white tracking-tight uppercase">
-                Explore 5,000+
-              </h3>
-              <p className="text-xs text-[#FF2E93] font-bold mt-0.5">
-                More Movies & Series
-              </p>
-              <p className="text-[11px] text-gray-400 mt-2 leading-tight">
-                Create an account to unlock the full catalog
-              </p>
-              <span className="mt-4 px-3 py-1.5 rounded-full bg-[#FF1E56]/20 border border-[#FF1E56]/40 text-[10px] font-bold text-white group-hover:bg-[#FF1E56] transition-colors flex items-center gap-1">
-                <span>Unlock All</span>
-                <ArrowRight className="w-3 h-3" />
-              </span>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 5. TRENDING SONGS SECTION (Spotify-Meets-Netflix Ranked Audio Hits)        */}
-      {/* ========================================================================= */}
-      <section className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-              <span>Trending Songs</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#C084FC] font-mono uppercase">
-                Top Hits Today
-              </span>
-            </h2>
-          </div>
-          <button
-            onClick={onGoToPlans}
-            className="text-xs sm:text-sm font-semibold text-gray-400 hover:text-white flex items-center gap-1 group"
-          >
-            <span>See All Tracks</span>
-            <ChevronRight className="w-4 h-4 text-[#A855F7] group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
-        {/* Carousel / Row of Ranked Song Cards - Uniform with Trending Movies */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-4 pb-2">
-          {trendingSongs.map((song, index) => (
-            <div
-              key={song.id}
-              className="relative flex items-end select-none group cursor-pointer"
-              onClick={onGoToPlans}
-              onMouseEnter={() => setHoveredSongId(song.id)}
-              onMouseLeave={() => setHoveredSongId(null)}
-            >
-              {/* Giant Rank Number Overlapping Lower Left */}
-              <span
-                className="text-7xl sm:text-8xl lg:text-9xl font-black select-none pointer-events-none absolute -bottom-3 -left-3 sm:-left-5 z-20 leading-none"
-                style={{
-                  WebkitTextStroke: '4px #FFFFFF',
-                  color: '#000000',
-                  filter: 'drop-shadow(2px 6px 14px rgba(0,0,0,0.95))'
-                }}
-              >
-                {index + 1}
-              </span>
-
-              {/* Poster/Cover Card — Uniform with Trending Movies */}
-              <motion.div
-                whileHover={{ y: -8, scale: 1.03 }}
-                transition={{ duration: 0.25 }}
-                className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 bg-[#160D24] shadow-2xl group-hover:border-[#A855F7]/60 group-hover:shadow-[0_12px_35px_rgba(168,85,247,0.3)] transition-all"
-              >
-                <img
-                  src={song.cover}
-                  alt={song.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-
-                {/* Dark Vignette Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
-
-                {/* Top Badge */}
-                <div className="absolute top-3 right-3 z-10">
-                  <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-[#A855F7]/40 text-[9px] font-bold text-[#C084FC]">
-                    {song.badge}
-                  </span>
-                </div>
-
-                {/* Hover Play Button Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#A855F7] to-[#7C3AED] text-white flex items-center justify-center shadow-lg shadow-[#A855F7]/50 transform scale-90 group-hover:scale-100 transition-transform">
-                    <Play className="w-5 h-5 fill-white translate-x-0.5" />
-                  </div>
-                </div>
-
-                {/* Bottom Metadata */}
-                <div className="absolute bottom-3 right-3 left-10 sm:left-12 text-right">
-                  <h3 className="font-bold text-sm sm:text-base text-white truncate leading-tight drop-shadow">
-                    {song.title}
-                  </h3>
-                  <p className="text-[10px] text-gray-300 font-medium truncate mt-0.5">
-                    {song.artist}
-                  </p>
-                  <div className="flex items-center justify-end gap-1.5 text-[9px] font-mono text-gray-400 mt-1">
-                    <span>{song.album}</span>
-                    <span>•</span>
-                    <span className="text-[#C084FC] font-bold">{song.duration}</span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <AppSnapshotsShowcase onExplore={onGoToPlans} />
 
       {/* ========================================================================= */}
       {/* 6. WHY CHOOSE OUR WEBSITE ("Why Choose Zhoosh") SECTION                   */}

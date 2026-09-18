@@ -96,40 +96,118 @@ export const PlayerBar: React.FC = () => {
   if (mode !== 'music' || !currentTrack) return null;
 
   return (
-    <aside
-      className="fixed bottom-0 inset-x-0 z-40 h-20 bg-[#000000] border-t border-[#282828] px-4 sm:px-6 flex items-center justify-between select-none"
-      aria-label="Spotify Player"
-    >
-      {/* Left: Track Information & Album Art */}
-      <div className="flex items-center gap-3.5 min-w-[180px] max-w-[30%]">
-        <img
-          src={currentTrack.album_art}
-          alt={currentTrack.title}
-          className="w-14 h-14 rounded object-cover shadow shrink-0"
-        />
-
-        <div className="min-w-0">
-          <h4 className="text-sm font-semibold text-white truncate hover:underline cursor-pointer">
-            {currentTrack.title}
-          </h4>
-          <p className="text-xs text-[#B3B3B3] truncate hover:underline hover:text-white cursor-pointer mt-0.5">
-            {currentTrack.artist}
-          </p>
+    <>
+      {/* ── MOBILE SPOTIFY MINI-PLAYER (< md) ── */}
+      <aside
+        className="fixed bottom-[58px] inset-x-2 sm:inset-x-4 z-40 md:hidden h-14 bg-[#111116]/95 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] px-2.5 flex items-center justify-between select-none overflow-hidden"
+        aria-label="Spotify Mobile Mini Player"
+      >
+        {/* Slim Progress Bar at Bottom of Mini Player Card */}
+        <div className="absolute bottom-0 inset-x-2 h-[2.5px] bg-white/10 rounded-full overflow-hidden">
+          <div
+            style={{ width: `${progress * 100}%` }}
+            className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-300"
+          />
         </div>
 
-        <button
-          onClick={handleLikeCurrent}
-          className={`p-1.5 transition-colors ${
-            isLiked ? 'text-[#A855F7]' : 'text-[#B3B3B3] hover:text-white'
-          }`}
-          title={isLiked ? 'Unlike' : 'Like'}
-        >
-          <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-        </button>
-      </div>
+        {/* Track Thumbnail & Titles */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+          <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-black/50 border border-white/10">
+            <img
+              src={currentTrack.album_art}
+              alt={currentTrack.title}
+              className="w-full h-full object-cover"
+            />
+            {isPlaying && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-0.5">
+                <span className="w-0.5 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                <span className="w-0.5 h-3 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                <span className="w-0.5 h-2 bg-cyan-300 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+              </div>
+            )}
+          </div>
 
-      {/* Center: Controls & Scrub Bar */}
-      <div className="flex flex-col items-center max-w-xl w-full px-4">
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xs font-bold text-white truncate leading-tight">
+              {currentTrack.title}
+            </h4>
+            <p className="text-[11px] text-zinc-400 truncate leading-tight mt-0.5">
+              {currentTrack.artist}
+            </p>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={handleLikeCurrent}
+            className={`p-2 transition-colors cursor-pointer ${
+              isLiked ? 'text-rose-500' : 'text-zinc-400 hover:text-white'
+            }`}
+            title={isLiked ? 'Unlike' : 'Like'}
+          >
+            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+          </button>
+
+          <button
+            onClick={handleTogglePlay}
+            className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-md transition-transform active:scale-95 cursor-pointer ml-0.5"
+            title={isPlaying ? 'Pause' : 'Play'}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {isPlaying ? (
+                <Pause className="w-3.5 h-3.5 fill-current" />
+              ) : (
+                <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+              )}
+            </AnimatePresence>
+          </button>
+
+          <button
+            onClick={nextTrack}
+            className="p-2 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            title="Next Track"
+          >
+            <SkipForward className="w-4 h-4 fill-current" />
+          </button>
+        </div>
+      </aside>
+
+      {/* ── DESKTOP STUDIO PLAYER BAR (>= md) ── */}
+      <aside
+        className="hidden md:flex fixed bottom-0 inset-x-0 z-40 h-20 bg-[#000000] border-t border-[#282828] px-4 sm:px-6 items-center justify-between select-none"
+        aria-label="Spotify Desktop Player"
+      >
+        {/* Left: Track Information & Album Art */}
+        <div className="flex items-center gap-3.5 min-w-[180px] max-w-[30%]">
+          <img
+            src={currentTrack.album_art}
+            alt={currentTrack.title}
+            className="w-14 h-14 rounded object-cover shadow shrink-0"
+          />
+
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold text-white truncate hover:underline cursor-pointer">
+              {currentTrack.title}
+            </h4>
+            <p className="text-xs text-[#B3B3B3] truncate hover:underline hover:text-white cursor-pointer mt-0.5">
+              {currentTrack.artist}
+            </p>
+          </div>
+
+          <button
+            onClick={handleLikeCurrent}
+            className={`p-1.5 transition-colors ${
+              isLiked ? 'text-[#A855F7]' : 'text-[#B3B3B3] hover:text-white'
+            }`}
+            title={isLiked ? 'Unlike' : 'Like'}
+          >
+            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+          </button>
+        </div>
+
+        {/* Center: Controls & Scrub Bar */}
+        <div className="flex flex-col items-center max-w-xl w-full px-4">
         {/* Playback Buttons */}
         <div className="flex items-center gap-4 mb-1">
           <button className="text-[#B3B3B3] hover:text-white transition-colors" title="Shuffle">
@@ -234,5 +312,6 @@ export const PlayerBar: React.FC = () => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
