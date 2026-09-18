@@ -188,7 +188,6 @@ export const AIChatView: React.FC = () => {
 
   const shouldReduceMotion = useReducedMotion();
   const [input, setInput] = useState('');
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -298,10 +297,9 @@ export const AIChatView: React.FC = () => {
 
   const handleClear = () => {
     clearChatScreen(activeMode);
-    setShowClearConfirm(false);
     addToast({
-      title: `${isMovieMode ? 'Cinema' : 'Music'} Chat Cleared`,
-      description: `Screen refreshed. ${botName}'s memory and taste profile remain safely stored!`,
+      title: 'Chat cleared',
+      description: 'Screen refreshed · Memory and taste profile preserved',
       type: 'info'
     });
   };
@@ -355,130 +353,26 @@ export const AIChatView: React.FC = () => {
         />
       </div>
 
-      {/* ── 2. Top Chat Status & Action Strip (Clear Chat & Memory Preserved) ── */}
-      <div className="shrink-0 z-20 w-full px-4 sm:px-8 py-2.5 bg-[#08080d]/80 backdrop-blur-md border-b border-white/5">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
-          {/* Left: Agent Info & Memory Status */}
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div
-                className={`w-8 h-8 rounded-xl overflow-hidden border ${
-                  isMovieMode ? 'border-red-500/50 bg-red-950/40' : 'border-blue-500/50 bg-blue-950/40'
-                }`}
-              >
-                <img
-                  src={botAvatar}
-                  alt={botName}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/agent-avatar.jpg';
-                  }}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#08080d]" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white tracking-wide">{botName}</span>
-              <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                  isMovieMode
-                    ? 'border-red-500/30 bg-red-500/10 text-red-300'
-                    : 'border-blue-500/30 bg-blue-500/10 text-cyan-300'
-                }`}
-              >
-                {isMovieMode ? 'Cinema AI' : 'Music AI'}
-              </span>
-            </div>
-
-            {/* Stored Memory Badge (Preserved even when chat is cleared) */}
-            <div
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium cursor-help select-none ${
-                isMovieMode
-                  ? 'border-purple-500/30 bg-purple-950/30 text-purple-300 hover:border-purple-400/50'
-                  : 'border-cyan-500/30 bg-cyan-950/30 text-cyan-300 hover:border-cyan-400/50'
-              }`}
-              title={`${isMovieMode ? 'Cinema' : 'Music'} memory active: ${(currentMemory?.preferredGenres || []).join(', ') || 'Taste profile stored'}`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              <span>
-                🧠 {isMovieMode ? 'Cinema' : 'Music'} Memory Preserved
-              </span>
-            </div>
-          </div>
-
-          {/* Right: Clear Chat Action */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowClearConfirm(true)}
-              disabled={messages.length === 0}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
-                messages.length > 0
-                  ? isMovieMode
-                    ? 'border-red-500/30 bg-red-950/25 text-red-300 hover:bg-red-500/20 hover:border-red-400 hover:text-white shadow-sm'
-                    : 'border-blue-500/30 bg-blue-950/25 text-blue-300 hover:bg-blue-500/20 hover:border-cyan-400 hover:text-white shadow-sm'
-                  : 'border-white/5 bg-white/5 text-gray-500 cursor-not-allowed opacity-50'
-              }`}
-              title="Clear all messages from screen (keeps long-term memory intact)"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear Chat</span>
-            </button>
-          </div>
+      {/* ── 2. Minimalist Clear Chat Bar (Subtle, blends seamlessly with dark theme) ── */}
+      {messages.length > 0 && (
+        <div className="shrink-0 z-20 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-3 pb-1 flex justify-end">
+          <button
+            onClick={handleClear}
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/40 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/15 backdrop-blur-md transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
+            title={`Clear ${isMovieMode ? 'cinema' : 'music'} chat (taste memory remains preserved)`}
+          >
+            <Trash2 className="w-3.5 h-3.5 text-white/30 group-hover:text-red-400 transition-colors" />
+            <span>Clear chat</span>
+          </button>
         </div>
-      </div>
-
-      {/* Clear Chat Confirmation Modal */}
-      <AnimatePresence>
-        {showClearConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm rounded-2xl bg-[#0F0A18] border border-white/15 p-5 space-y-4 shadow-2xl"
-            >
-              <div className="flex items-center gap-3 text-red-400">
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">Clear {isMovieMode ? 'Cinema' : 'Music'} Chat?</h4>
-                  <p className="text-xs text-gray-400">Removes messages from this screen</p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-xs text-purple-200 leading-relaxed flex items-start gap-2">
-                <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Memory is preserved:</strong> {botName} will still remember your taste profile, favorite genres, and calibrated preferences for future recommendations!
-                </span>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  onClick={() => setShowClearConfirm(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleClear}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#E50914] hover:bg-red-600 text-white shadow-md shadow-red-950/60 transition-all cursor-pointer"
-                >
-                  Clear Screen
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      )}
 
       {/* ══════════════════════════════════════════
           CHAT MESSAGES SCROLL VIEW
           ══════════════════════════════════════════ */}
       <div
         ref={scrollContainerRef}
+        data-lenis-prevent
         className="flex-1 min-h-0 w-full max-w-5xl mx-auto px-4 sm:px-8 py-4 space-y-6 overflow-y-auto z-10 flex flex-col"
       >
         {/* Welcome Empty State */}
