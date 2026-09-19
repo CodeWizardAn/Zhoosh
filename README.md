@@ -12,9 +12,11 @@
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6.svg?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC.svg?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![Framer Motion](https://img.shields.io/badge/Motion-Framer_Motion-FF0055.svg?style=flat&logo=framer)](https://www.framer.com/motion/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-zhoosh--eight.vercel.app-E50914.svg?style=for-the-badge&logo=vercel)](https://zhoosh-eight.vercel.app)
 
 *A unified AI-driven platform that bridges cinematic storytelling with acoustic discovery through dual-vector recommendation algorithms, conversational intelligence, and an interactive split-screen interface.*
+
+🚀 **Live Deployment**: [https://zhoosh-eight.vercel.app](https://zhoosh-eight.vercel.app)
 
 [Explore Features](#-key-features) • [Architecture](#-system-architecture) • [ML Engine](#-ai--recommendation-mechanics) • [API Specs](#-api-endpoints) • [Team Roster](#-developer-team-batch-a2) • [Presentation & Report](#-documentation--presentation-deck)
 
