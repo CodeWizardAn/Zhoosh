@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -11,7 +11,9 @@ import {
   HelpCircle,
   Film,
   Music2,
-  Sparkles
+  Sparkles,
+  ArrowLeft,
+  Mic
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAgentStore } from '@/store/useAgentStore';
@@ -35,6 +37,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
     setUser,
     openAuth,
     logoutAndRedirect,
+    openVoiceSearch,
   } = useAppStore();
 
   const { profile: agentProfile } = useAgentStore();
@@ -45,13 +48,53 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  React.useEffect(() => {
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
     const handleOpenSearch = () => {
       setSearchOpen(true);
+      setTimeout(() => {
+        mobileInputRef.current?.focus();
+        desktopInputRef.current?.focus();
+      }, 50);
     };
     window.addEventListener('zhoosh:open-search', handleOpenSearch);
     return () => window.removeEventListener('zhoosh:open-search', handleOpenSearch);
   }, []);
+
+  // If search value exists, keep search open
+  useEffect(() => {
+    if (searchValue.trim().length > 0 && !searchOpen) {
+      setSearchOpen(true);
+    }
+  }, [searchValue, searchOpen]);
+
+  // Focus input when search opens
+  useEffect(() => {
+    if (searchOpen) {
+      const timer = setTimeout(() => {
+        mobileInputRef.current?.focus();
+        desktopInputRef.current?.focus();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [searchOpen]);
+
+  // Close on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isProfileOpen) setIsProfileOpen(false);
+        if (searchOpen) {
+          setSearchOpen(false);
+          onSearchChange('');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isProfileOpen, searchOpen, onSearchChange]);
 
   // Dynamic Navigation Items based on active mode
   const NAV_ITEMS = mode === 'movies'
@@ -81,6 +124,73 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
   return (
     <>
       <header className="fixed top-0 inset-x-0 z-50 h-14 sm:h-16 flex items-center px-3 sm:px-8 gap-2 sm:gap-6 select-none bg-[#050508]/95 backdrop-blur-md border-b border-white/10 transition-colors">
+        {/* ── MOBILE FULL-BLEED SEARCH OVERLAY (Takes over full header on mobile screens) ── */}
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+              className="md:hidden absolute inset-0 z-50 bg-[#050508] px-3 flex items-center gap-2 shadow-2xl border-b border-white/15"
+            >
+              <button
+                onClick={() => {
+                  setSearchOpen(false);
+                  onSearchChange('');
+                }}
+                className="p-2 -ml-1 text-gray-300 hover:text-white transition-colors cursor-pointer shrink-0 rounded-full hover:bg-white/10"
+                title="Back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              <div className="relative flex-1 flex items-center min-w-0">
+                <Search
+                  className={`absolute left-3 w-4 h-4 pointer-events-none ${
+                    mode === 'movies' ? 'text-[#E50914]' : 'text-[#0070F3]'
+                  }`}
+                />
+                <input
+                  ref={mobileInputRef}
+                  type="text"
+                  placeholder={
+                    mode === 'movies'
+                      ? 'Search movies, actors, genres...'
+                      : 'Search songs, artists, romantic...'
+                  }
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="w-full bg-white/[0.08] focus:bg-white/[0.14] border border-white/20 focus:border-white/50 rounded-full pl-9 pr-16 py-2 text-sm text-white placeholder-gray-400 focus:outline-none transition-all shadow-inner"
+                />
+
+                <div className="absolute right-2 flex items-center gap-1">
+                  {searchValue && (
+                    <button
+                      onClick={() => onSearchChange('')}
+                      className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer rounded-full"
+                      title="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => openVoiceSearch()}
+                    className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                      mode === 'movies'
+                        ? 'text-red-400 hover:text-white hover:bg-red-500/20'
+                        : 'text-blue-400 hover:text-white hover:bg-blue-500/20'
+                    }`}
+                    title="Voice Search"
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* LEFT: Zhoosh Brand Logo & Navigation Links */}
         <div className="flex items-center gap-2 sm:gap-6 shrink-0">
           <button
@@ -138,12 +248,12 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
         </div>
 
         {/* Dynamic spacer that absorbs space so search and nav never overlap */}
-        <div className="flex-1 min-w-2" />
+        <div className="flex-1 min-w-1" />
 
         {/* RIGHT controls */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* Cinema / Music Mode Switcher Pill */}
-          <div className="relative flex items-center p-1 rounded-full bg-[#0d0f18]/85 border border-white/10 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.8),0_4px_16px_rgba(0,0,0,0.4)] backdrop-blur-xl group/toggle">
+          <div className="relative flex items-center p-0.5 sm:p-1 rounded-full bg-[#0d0f18]/85 border border-white/10 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.8),0_4px_16px_rgba(0,0,0,0.4)] backdrop-blur-xl group/toggle">
             {/* Dynamic ambient halo glow behind active mode */}
             <div
               className={`absolute -inset-0.5 rounded-full blur-md transition-opacity duration-500 pointer-events-none -z-10 ${
@@ -164,7 +274,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                   }
                 }
               }}
-              className={`relative flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
+              className={`relative flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
                 mode === 'movies'
                   ? 'text-white font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]'
                   : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
@@ -193,7 +303,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                   }
                 }
               }}
-              className={`relative flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
+              className={`relative flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all z-10 cursor-pointer select-none ${
                 mode === 'music'
                   ? 'text-white font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]'
                   : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
@@ -212,55 +322,89 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
             </motion.button>
           </div>
 
-          {/* Search */}
-          <div className="flex items-center">
+          {/* DESKTOP SEARCH BAR (>= md) */}
+          <div className="hidden md:flex items-center">
             <AnimatePresence>
               {searchOpen && (
                 <motion.div
                   initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: typeof window !== 'undefined' && window.innerWidth < 640 ? 140 : 240, opacity: 1 }}
+                  animate={{ width: 280, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className="relative overflow-hidden mr-1"
                 >
+                  <Search
+                    className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${
+                      mode === 'movies' ? 'text-[#E50914]' : 'text-[#0070F3]'
+                    }`}
+                  />
                   <input
+                    ref={desktopInputRef}
                     autoFocus
                     type="text"
-                    placeholder={mode === 'movies' ? 'Search movies, genres...' : 'Search songs, singers, romantic...'}
+                    placeholder={mode === 'movies' ? 'Search movies, genres...' : 'Search songs, artists, mood...'}
                     value={searchValue}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full bg-black/80 border border-white/30 rounded px-3 py-1.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-white/60"
+                    className="w-full bg-black/85 border border-white/30 focus:border-white/70 rounded-full pl-9 pr-14 py-1.5 text-sm text-white placeholder-gray-400 focus:outline-none transition-all shadow-md"
                   />
-                  {searchValue && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {searchValue && (
+                      <button
+                        onClick={() => onSearchChange('')}
+                        className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer rounded-full"
+                        title="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
-                      onClick={() => onSearchChange('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                      onClick={() => openVoiceSearch()}
+                      className={`p-1 rounded-full text-gray-400 hover:text-white transition-colors cursor-pointer ${
+                        mode === 'movies' ? 'hover:text-red-400' : 'hover:text-blue-400'
+                      }`}
+                      title="Voice Search"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <Mic className="w-3.5 h-3.5" />
                     </button>
-                  )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
             <button
               onClick={() => { setSearchOpen(!searchOpen); if (searchOpen) onSearchChange(''); }}
-              className="p-1.5 text-gray-200 hover:text-white transition-colors cursor-pointer"
-              title="Search"
+              className={`p-2 rounded-full transition-colors cursor-pointer ${
+                searchOpen ? 'text-white bg-white/10' : 'text-gray-200 hover:text-white hover:bg-white/5'
+              }`}
+              title={searchOpen ? 'Close Search' : 'Search'}
             >
               <Search className="w-5 h-5" />
             </button>
           </div>
 
+          {/* MOBILE SEARCH TRIGGER BUTTON (< md) */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="md:hidden p-1.5 text-gray-200 hover:text-white hover:bg-white/5 rounded-full transition-colors cursor-pointer"
+            title="Search"
+          >
+            <Search className="w-5 h-5" />
+          </button>
 
-          {/* Profile Dropdown (Screenshot 1 & 2) */}
+          {/* Profile Dropdown */}
           {user ? (
             <div className="relative">
+              {isProfileOpen && (
+                <div
+                  className="fixed inset-0 z-40 bg-transparent"
+                  onClick={() => setIsProfileOpen(false)}
+                />
+              )}
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 group p-1 rounded-full hover:bg-white/5 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 sm:gap-2 group p-1 rounded-full hover:bg-white/5 transition-all cursor-pointer"
                 title="Account & Profile"
               >
-                <div className={`w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 transition-all shadow-md shadow-black/40 flex items-center justify-center bg-black/40 ${
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden ring-2 ring-white/20 transition-all shadow-md shadow-black/40 flex items-center justify-center bg-black/40 ${
                   mode === 'movies' ? 'group-hover:ring-[#FF1E56]' : 'group-hover:ring-[#0070F3]'
                 }`}>
                   <img
@@ -283,7 +427,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onSearchChange, searchValue }) =
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-[#0D0B14]/95 backdrop-blur-xl border border-white/15 shadow-2xl p-2.5 text-sm text-white z-50 select-none"
+                    className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-24px)] rounded-2xl bg-[#0D0B14]/95 backdrop-blur-xl border border-white/15 shadow-2xl p-2.5 text-sm text-white z-50 select-none"
                   >
                     {/* Upward triangle pointer caret */}
                     <div className="absolute -top-1.5 right-4 w-3 h-3 bg-[#0D0B14] border-t border-l border-white/15 rotate-45" />

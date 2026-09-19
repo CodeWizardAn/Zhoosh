@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Disc3,
   User,
-  Volume2
+  Volume2,
+  X
 } from 'lucide-react';
 import { useSearch, useLikeMutation } from '@/api/hooks';
 import { useAppStore } from '@/store/useAppStore';
@@ -28,9 +29,10 @@ import type { Movie, Song } from '@/types';
 
 interface SearchResultsViewProps {
   query: string;
+  onClear?: () => void;
 }
 
-export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) => {
+export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query, onClear }) => {
   const {
     mode,
     openMovieModal,
@@ -115,7 +117,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) =
   };
 
   return (
-    <div className="px-4 sm:px-8 md:px-10 py-6 max-w-7xl mx-auto space-y-10 pb-28">
+    <div className="px-3 sm:px-8 md:px-10 py-4 sm:py-6 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-28">
       {/* Search Header Breadcrumb */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-400 border-b border-white/10 pb-4">
         <div className="flex items-center gap-2">
@@ -128,6 +130,16 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) =
             Showing results for <span className="text-white font-bold">"{query}"</span>
           </span>
         </div>
+        {onClear && (
+          <button
+            onClick={onClear}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer"
+            title="Clear current search query"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Clear Search</span>
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -149,6 +161,8 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) =
               ? 'Try searching for romantic songs like "Kesariya", "Perfect", or artists like "Arijit Singh", "Coldplay", "The Weeknd".'
               : 'Try broadening your keywords or use the Voice Search button to describe the mood or plot.'
           }
+          actionText={onClear ? 'Clear Search' : undefined}
+          onAction={onClear}
         />
       ) : (
         <div className="space-y-12">
@@ -175,6 +189,9 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) =
                     src={primarySong.album_art}
                     alt={primarySong.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80';
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Play className="w-10 h-10 text-white fill-white drop-shadow-md" />
@@ -383,6 +400,11 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query }) =
                     src={primaryMovie.poster_path}
                     alt={primaryMovie.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      if (primaryMovie.backdrop_path && e.currentTarget.src !== primaryMovie.backdrop_path) {
+                        e.currentTarget.src = primaryMovie.backdrop_path;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Info className="w-8 h-8 text-white" />

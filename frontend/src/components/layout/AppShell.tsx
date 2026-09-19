@@ -68,7 +68,7 @@ export const AppShell: React.FC = () => {
 
   const renderActiveView = () => {
     if (searchQuery.trim().length > 0) {
-      return <SearchResultsView key="search" query={searchQuery} />;
+      return <SearchResultsView key="search" query={searchQuery} onClear={() => setSearchQuery('')} />;
     }
 
     switch (activeNav) {

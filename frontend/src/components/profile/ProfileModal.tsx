@@ -90,7 +90,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             {/* Avatar Picker */}
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-2">Choose Avatar</label>
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                 {PRESET_AVATARS.map((preset, idx) => {
                   const isSelected = avatar === preset;
                   return (
