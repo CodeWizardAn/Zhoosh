@@ -25,7 +25,8 @@ tmdb_5000_credits.csv
 
 # Backend processed/expanded datasets
 backend/data/
-data/
+/data/
+!frontend/src/data/
 backend/data/movies.csv
 backend/data/spotify_tracks.csv
 
