@@ -13,4 +13,4 @@ if current_dir not in sys.path:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8005))
     print(f"Starting AuraStream FastAPI Server on http://127.0.0.1:{port} ...")
-    uvicorn.run("backend.app.main:app", host="127.0.0.1", port=port, reload=False)
+    uvicorn.run("backend.app.main:app", host="127.0.0.1", port=port, reload=True)

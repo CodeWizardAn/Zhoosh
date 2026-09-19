@@ -26,9 +26,6 @@ export const PreferenceSummaryStrip: React.FC<PreferenceSummaryStripProps> = ({
           <div>
             <div className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
               <span>Your Selected Tastes</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 border border-white/15 text-gray-300">
-                {count} / {maxItems}
-              </span>
             </div>
             <p className="text-[11px] text-gray-400 mt-0.5">
               Personalized for your cinema and music experience

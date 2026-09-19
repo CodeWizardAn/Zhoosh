@@ -29,6 +29,8 @@ import { ZhooshLogo } from '@/components/common/ZhooshLogo';
 import { ProjectCreditsModal } from '@/components/common/ProjectCreditsModal';
 import { ACADEMIC_PROJECT_INFO } from '@/data/teamMembers';
 import { AppSnapshotsShowcase } from '../components/AppSnapshotsShowcase';
+import { BrandStoryCarousel } from '../components/BrandStoryCarousel';
+import { WhyChooseZhooshCarousel } from '../components/WhyChooseZhooshCarousel';
 
 interface LandingLoginStepProps {
   onGoToPlans: () => void;
@@ -95,7 +97,7 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden bg-[#050508] text-white">
+    <div className="relative min-h-screen w-full flex flex-col justify-between overflow-x-clip bg-[#050508] text-white">
       {/* ========================================================================= */}
       {/* 1. HIGH-VIBRANCY MEDIA BACKDROP: Netflix Poster Wall + Spotify Music Wall */}
       {/* ========================================================================= */}
@@ -193,7 +195,7 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
             Unlimited movies, music, and more
           </h1>
           <p className="text-sm sm:text-base text-gray-300 max-w-xl mx-auto leading-relaxed pt-1">
-            Stream 4K cinema blockbusters, studio-grade lossless audio, and real-time AI curation in one seamless universe.
+            Personalized movie and music recommendations tailored to your taste, mood, and vibe—all in one seamless universe.
           </p>
         </motion.div>
 
@@ -353,90 +355,14 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
       <AppSnapshotsShowcase onExplore={onGoToPlans} />
 
       {/* ========================================================================= */}
+      {/* 5. OUR STORY: HORIZONTAL SWIPEABLE CARDS (Multi-Dimensional Discovery)   */}
+      {/* ========================================================================= */}
+      <BrandStoryCarousel onExplorePlans={onGoToPlans} />
+
+      {/* ========================================================================= */}
       {/* 6. WHY CHOOSE OUR WEBSITE ("Why Choose Zhoosh") SECTION                   */}
       {/* ========================================================================= */}
-      <section className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 py-16">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-            Why Choose Zhoosh?
-          </h2>
-          <p className="text-sm sm:text-base text-gray-400 mt-3 leading-relaxed">
-            One revolutionary subscription uniting the thrill of cinematic blockbusters with the depth of high-fidelity music.
-          </p>
-        </div>
-
-        {/* 4 Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1: Dual Universe */}
-          <motion.div
-            whileHover={{ y: -6 }}
-            className="p-6 rounded-3xl bg-[#090611]/90 backdrop-blur-xl border border-[#2B1B3D] hover:border-[#FF1E56]/60 transition-all shadow-xl text-left relative overflow-hidden group"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF1E56] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-12 h-12 rounded-2xl bg-[#FF1E56]/15 border border-[#FF1E56]/30 flex items-center justify-center text-[#FF1E56] mb-4">
-              <Layers className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">
-              Dual Entertainment
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Watch 4K movies and stream 100M+ tracks in one unified app. No need to pay for separate movie and music apps.
-            </p>
-          </motion.div>
-
-          {/* Card 2: 4K HDR & Spatial Audio */}
-          <motion.div
-            whileHover={{ y: -6 }}
-            className="p-6 rounded-3xl bg-[#090611]/90 backdrop-blur-xl border border-[#2B1B3D] hover:border-[#A855F7]/60 transition-all shadow-xl text-left relative overflow-hidden group"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#A855F7] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-12 h-12 rounded-2xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#C084FC] mb-4">
-              <Tv2 className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">
-              Cinema 4K & Dolby Audio
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Crystal-clear 4K Ultra HD visual resolution with Dolby Vision and spatial surround sound for every film and track.
-            </p>
-          </motion.div>
-
-          {/* Card 3: Real-Time Synced Lyrics & Studio Masters */}
-          <motion.div
-            whileHover={{ y: -6 }}
-            className="p-6 rounded-3xl bg-[#090611]/90 backdrop-blur-xl border border-[#2B1B3D] hover:border-[#FF2E93]/60 transition-all shadow-xl text-left relative overflow-hidden group"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF2E93] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-12 h-12 rounded-2xl bg-[#FF2E93]/15 border border-[#FF2E93]/30 flex items-center justify-center text-[#FF2E93] mb-4">
-              <Headphones className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">
-              Studio Master FLAC
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Hear music as the artist intended with 24-bit/192kHz lossless audio and synchronized karaoke-style lyrics.
-            </p>
-          </motion.div>
-
-          {/* Card 4: Watch Anywhere & Offline */}
-          <motion.div
-            whileHover={{ y: -6 }}
-            className="p-6 rounded-3xl bg-[#090611]/90 backdrop-blur-xl border border-[#2B1B3D] hover:border-emerald-500/60 transition-all shadow-xl text-left relative overflow-hidden group"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4">
-              <Smartphone className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">
-              Watch Anywhere, Cancel Anytime
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Available on phone, tablet, laptop, and smart TV. Download and enjoy offline anywhere with zero cancellation fees.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <WhyChooseZhooshCarousel />
 
       {/* ========================================================================= */}
       {/* 7. MINIMALIST FOOTER WITH DEVELOPER TEAM & AI COMPETITION BUTTONS        */}
@@ -458,24 +384,6 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
                 className="hover:text-white transition-colors cursor-pointer"
               >
                 Developer Team
-              </button>
-              <button
-                onClick={() => {
-                  setCreditsTab('academic');
-                  setIsCreditsOpen(true);
-                }}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                AI Project Competition
-              </button>
-              <button
-                onClick={() => {
-                  setCreditsTab('legal');
-                  setIsCreditsOpen(true);
-                }}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                Legal Team
               </button>
             </div>
           </div>

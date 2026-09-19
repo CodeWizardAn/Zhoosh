@@ -24,10 +24,13 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
   const [activeTab, setActiveTab] = useState<'movie' | 'music'>('movie');
   const [selectedItems, setSelectedItems] = useState<PreferenceItem[]>(initialPreferences);
 
-  const [limitNotice, setLimitNotice] = useState(false);
+  const [limitNotice, setLimitNotice] = useState<string | null>(null);
+
+  const selectedGenres = selectedItems.filter((i) => i.section === 'genre');
+  const selectedLanguages = selectedItems.filter((i) => i.section === 'language');
 
   const count = selectedItems.length;
-  const isComplete = count >= 5;
+  const isComplete = selectedGenres.length >= 1 || selectedLanguages.length >= 1;
 
   const currentTabItems = PREFERENCE_ITEMS.filter((item) => item.type === activeTab);
   const languageItems = currentTabItems.filter((i) => i.section === 'language');
@@ -37,17 +40,23 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
     const exists = selectedItems.some((i) => i.id === item.id);
     if (exists) {
       setSelectedItems(selectedItems.filter((i) => i.id !== item.id));
-      setLimitNotice(false);
+      setLimitNotice(null);
     } else {
-      if (selectedItems.length < 5) {
+      const isGenre = item.section === 'genre';
+      const categoryCount = isGenre ? selectedGenres.length : selectedLanguages.length;
+      const categoryLabel = isGenre ? 'genres' : 'languages';
+
+      if (categoryCount < 5) {
         const next = [...selectedItems, item];
         setSelectedItems(next);
-        if (next.length === 5) {
+        const nextGenres = next.filter((i) => i.section === 'genre').length;
+        const nextLangs = next.filter((i) => i.section === 'language').length;
+        if (nextGenres === 5 && nextLangs === 5) {
           try { zhooshAudio.playZhooshIntroSound(); } catch {}
         }
       } else {
-        setLimitNotice(true);
-        setTimeout(() => setLimitNotice(false), 3000);
+        setLimitNotice(`5/5 ${categoryLabel} already selected! Tap any selected to swap.`);
+        setTimeout(() => setLimitNotice(null), 3000);
       }
     }
   };
@@ -63,7 +72,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
 
   const renderCard = (item: PreferenceItem) => {
     const isSelected = selectedItems.some((i) => i.id === item.id);
-    const isFull = selectedItems.length >= 5 && !isSelected;
+    const isGenre = item.section === 'genre';
+    const isCategoryFull = (isGenre ? selectedGenres.length >= 5 : selectedLanguages.length >= 5) && !isSelected;
 
     return (
       <motion.button
@@ -76,7 +86,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             ? activeTab === 'movie'
               ? 'border-[#FF1E56]/70 bg-[#FF1E56]/10 shadow-[0_0_15px_rgba(255,30,86,0.25)]'
               : 'border-[#A855F7]/70 bg-[#A855F7]/10 shadow-[0_0_15px_rgba(168,85,247,0.25)]'
-            : isFull
+            : isCategoryFull
             ? 'border-white/5 bg-white/3 opacity-45 hover:opacity-75'
             : 'border-white/10 bg-white/4 hover:border-white/25 hover:bg-white/8'
         }`}
@@ -164,20 +174,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             </button>
           </div>
 
-          {/* Progress indicator tag / line */}
-          {count === 5 ? (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>5/5 selected</span>
-            </div>
-          ) : count === 4 ? (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FF1E56]/15 border border-[#FF1E56]/40 text-[#FF6B8B] animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF1E56]" />
-              <span>Please select one more</span>
-            </div>
-          ) : (
-            <span className="text-xs text-gray-500 font-mono">{count}/5 selected</span>
-          )}
+          {/* Spacer to keep tab switcher perfectly centered */}
+          <div className="w-12" />
         </div>
       </div>
 
@@ -190,21 +188,9 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             What do you like to watch{userName ? `, ${userName}` : ''}?
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Pick 5 — languages and genres — to personalise your feed.
+            Select up to 5 genres and 5 languages to personalise your feed.
           </p>
         </div>
-
-        {/* Dynamic status line when 4 selected or limit reached */}
-        {count === 4 && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-2.5 rounded-xl bg-[#FF1E56]/10 border border-[#FF1E56]/35 flex items-center gap-2.5 text-xs font-semibold text-[#FF6B8B]"
-          >
-            <span className="w-2 h-2 rounded-full bg-[#FF1E56] animate-pulse shrink-0" />
-            <span>Please select one more</span>
-          </motion.div>
-        )}
 
         {limitNotice && (
           <motion.div
@@ -212,8 +198,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             animate={{ opacity: 1, y: 0 }}
             className="px-4 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between text-xs font-medium text-purple-300"
           >
-            <span>5/5 already selected! Tap any selected item to swap.</span>
-            <button onClick={() => setLimitNotice(false)} className="text-gray-400 hover:text-white text-xs">✕</button>
+            <span>{limitNotice}</span>
+            <button onClick={() => setLimitNotice(null)} className="text-gray-400 hover:text-white text-xs cursor-pointer">✕</button>
           </motion.div>
         )}
 
@@ -228,7 +214,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 onClick={() => toggleItem(item)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-white/20 bg-white/8 text-white hover:border-red-400/60 hover:bg-red-500/10 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-white/20 bg-white/8 text-white hover:border-red-400/60 hover:bg-red-500/10 transition-all cursor-pointer"
               >
                 {item.title}
                 <span className="text-gray-400 text-[10px]">✕</span>
@@ -240,9 +226,14 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         {/* Languages */}
         {languageItems.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Globe className="w-3.5 h-3.5 text-gray-500" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Languages</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Languages</span>
+              </div>
+              <span className="text-xs font-mono text-gray-400">
+                {selectedLanguages.length}/5 selected
+              </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
               {languageItems.map(renderCard)}
@@ -253,9 +244,14 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         {/* Genres */}
         {genreItems.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Layers className="w-3.5 h-3.5 text-gray-500" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Genres</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Genres</span>
+              </div>
+              <span className="text-xs font-mono text-gray-400">
+                {selectedGenres.length}/5 selected
+              </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
               {genreItems.map(renderCard)}
@@ -271,18 +267,18 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#050508]/95 backdrop-blur-md border-t border-white/8">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <div className="text-xs">
-            {count === 5 ? (
+            {selectedGenres.length === 5 && selectedLanguages.length === 5 ? (
               <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                5/5 selected • Ready to go!
+                5 genres & 5 languages selected • Ready to go!
               </span>
-            ) : count === 4 ? (
-              <span className="font-semibold text-[#FF6B8B]">
-                Please select one more
+            ) : selectedGenres.length > 0 || selectedLanguages.length > 0 ? (
+              <span className="text-gray-300">
+                Selected: <strong className="text-white">{selectedGenres.length}/5</strong> genres • <strong className="text-white">{selectedLanguages.length}/5</strong> languages
               </span>
             ) : (
               <span className="text-gray-500">
-                Select {5 - count} more to continue
+                Select your favorite genres and languages to continue
               </span>
             )}
           </div>
@@ -292,7 +288,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             <motion.div
               className="h-full rounded-full"
               style={{ backgroundColor: accent }}
-              animate={{ width: `${(count / 5) * 100}%` }}
+              animate={{ width: `${((selectedGenres.length + selectedLanguages.length) / 10) * 100}%` }}
               transition={{ duration: 0.3 }}
             />
           </div>

@@ -168,9 +168,6 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
                     Selected: <strong className="text-white font-sans">{selectedPlan.name}</strong> ({selectedPlan.priceMonthly === 0 ? 'Free Tier' : `₹${selectedPlan.priceMonthly}/mo`})
                   </span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-gray-400">
-                  {selectedPlan.resolution}
-                </span>
               </div>
 
               <div className="text-left mb-6">
@@ -432,11 +429,6 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* Footer reassurance */}
-      <div className="text-center text-[11px] text-gray-500 z-10 mb-2">
-        End-to-end 256-bit encryption • No tracking across third-party networks
       </div>
     </motion.div>
   );

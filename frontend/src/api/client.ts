@@ -365,6 +365,36 @@ class ApiClient {
           replyText = `🎵 **You are currently in Music mode with ${agentName}!**\n\nTo explore movies, watch trailers, or check director filmographies, please switch to **Cinema mode** using the toggle in the top bar 🎬.`;
           attachedMovies = [];
           attachedSongs = [];
+        } else if (/\b(travelling|traveling|travlling|travel|road trip|roadtrip|journey|vacation|wanderlust|trip|drive|driving)\b/i.test(msg)) {
+          intent = 'travel';
+          replyText = "Here are 🚗 **Road Trip & Wanderlust Anthems** tracks curated for your vibe on Zhoosh:\n\nClick any track below to launch playback! If you want more, say **'more'**.";
+          const travelSongTitles = ['ilahi', 'safarnama', 'dil chahta hai', 'matargashti', 'as it was'];
+          attachedSongs = MOCK_SONGS.filter(s => travelSongTitles.some(t => s.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedSongs.length === 0) attachedSongs = MOCK_SONGS.slice(0, 6);
+        } else if (/\b(college|hostel|campus|friends|friendship|missing college|miss my college|miss college|college days|university|old friends|dosti)\b/i.test(msg)) {
+          intent = 'college';
+          replyText = "Here are 🎓 **College Days & Eternal Friendship** tracks curated for your vibe on Zhoosh:\n\nClick any track below to launch playback! If you want more, say **'more'**.";
+          const collegeSongTitles = ['yaaron', 'give me some sunshine', 'tera yaar hoon main', 'kabira', 'dil chahta hai'];
+          attachedSongs = MOCK_SONGS.filter(s => collegeSongTitles.some(t => s.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedSongs.length === 0) attachedSongs = MOCK_SONGS.slice(0, 6);
+        } else if (/\b(exciting|thrilling|adrenaline|kendrick|kendric|rock|hype|hyped|pump|workout|gym|banger)\b/i.test(msg)) {
+          intent = 'thrill';
+          replyText = "Here are ⚡ **High-Energy Rock & Kendrick Lamar Anthems** tracks curated for your vibe on Zhoosh:\n\nClick any track below to launch playback! If you want more, say **'more'**.";
+          const thrillSongTitles = ['humble', 'not like us', 'blinding lights', 'starboy'];
+          attachedSongs = MOCK_SONGS.filter(s => thrillSongTitles.some(t => s.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedSongs.length === 0) attachedSongs = MOCK_SONGS.slice(0, 6);
+        } else if (/\b(sad|tired|depressed|depress|exhausted|feeling low|feleing sad|heartbreak|crying|cry|melancholy|pain|comfort|lonely|tears)\b/i.test(msg)) {
+          intent = 'sad';
+          replyText = "Here are 🌧️ **Sad & Comforting Melodies** tracks curated for your vibe on Zhoosh:\n\nClick any track below to launch playback! If you want more, say **'more'**.";
+          const sadSongTitles = ['tum hi ho', 'channa mereya', 'fix you', 'safarnama'];
+          attachedSongs = MOCK_SONGS.filter(s => sadSongTitles.some(t => s.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedSongs.length === 0) attachedSongs = MOCK_SONGS.slice(0, 6);
+        } else if (/\b(happy|joyful|joyfyul|joy|pleasant|cheerful|good vibes|feel good|feel-good|uplifting|delightful|romantic|love|love songs)\b/i.test(msg)) {
+          intent = 'happy';
+          replyText = "Here are ☀️ **Happy, Joyful & Romantic Love Songs** tracks curated for your vibe on Zhoosh:\n\nClick any track below to launch playback! If you want more, say **'more'**.";
+          const happySongTitles = ['ilahi', 'matargashti', 'as it was', 'espresso', 'dil chahta hai'];
+          attachedSongs = MOCK_SONGS.filter(s => happySongTitles.some(t => s.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedSongs.length === 0) attachedSongs = MOCK_SONGS.slice(0, 6);
         } else if (/\b(hip hop|hip-hop|hiphop|rap)\b/i.test(msg)) {
           intent = 'hiphop';
           replyText = "Here are top-streamed 🎵 **Hip-Hop** tracks on Zhoosh Music. Click any track to launch playback!";
@@ -372,7 +402,7 @@ class ApiClient {
         } else if (/\b(romantic|romance|love)\b/i.test(msg)) {
           intent = 'romantic';
           replyText = "Here are soulful 🎵 **Romantic** melodies curated for you on Zhoosh. Click any track to listen!";
-          attachedSongs = MOCK_SONGS.filter(s => s.genre.toLowerCase().includes('romantic')).slice(0, 6);
+          attachedSongs = MOCK_SONGS.filter(s => s.genre.toLowerCase().includes('romantic') || s.genre.toLowerCase().includes('friendship')).slice(0, 6);
         } else if (/\b(rock|pop|soundtrack|lo-fi|chill)\b/i.test(msg)) {
           intent = 'genre';
           replyText = "Here are top-streamed tracks matching your vibe on Zhoosh Music. Click any track to stream instantly!";
@@ -392,6 +422,36 @@ class ApiClient {
           replyText = `🎬 **You are currently in Cinema mode with ${agentName}!**\n\nTo discover music tracks, browse artist discographies, and stream lossless audio, please switch to **Music mode** using the toggle in the top bar 🎵.\n\nWould you like me to recommend a movie instead?`;
           attachedMovies = [];
           attachedSongs = [];
+        } else if (/\b(travelling|traveling|travlling|travel|road trip|roadtrip|journey|vacation|wanderlust|trip|drive|driving)\b/i.test(msg)) {
+          intent = 'travel';
+          replyText = "Here are 🚗 **Wanderlust & Travelling Journeys** films curated for you on Zhoosh:\n\nClick **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.";
+          const travelMovieTitles = ['zindagi na milegi dobara', 'yeh jawaani hai deewani', 'jab we met', 'dil chahta hai'];
+          attachedMovies = MOCK_MOVIES.filter(m => travelMovieTitles.some(t => m.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 6);
+        } else if (/\b(college|hostel|campus|friends|friendship|missing college|miss my college|miss college|college days|university|old friends)\b/i.test(msg)) {
+          intent = 'college';
+          replyText = "Here are 🎓 **College Days & Lifelong Friendship** films curated for you on Zhoosh:\n\nClick **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.";
+          const collegeMovieTitles = ['3 idiots', 'chhichhore', 'dil chahta hai', 'yeh jawaani hai deewani'];
+          attachedMovies = MOCK_MOVIES.filter(m => collegeMovieTitles.some(t => m.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 6);
+        } else if (/\b(exciting|thrilling|thriller|adrenaline|edge of my seat|edge of seat|mind-blowing|action packed|intense|hype|hyped)\b/i.test(msg)) {
+          intent = 'thrill';
+          replyText = "Here are ⚡ **Exciting & High-Octane Thrillers** films curated for you on Zhoosh:\n\nClick **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.";
+          const thrillMovieTitles = ['oppenheimer', 'the dark knight', 'inception', 'fight club'];
+          attachedMovies = MOCK_MOVIES.filter(m => thrillMovieTitles.some(t => m.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 6);
+        } else if (/\b(sad|tired|depressed|depress|exhausted|feeling low|feleing sad|heartbroken|crying|cry|tears|comfort|comforting|drained|melancholy)\b/i.test(msg)) {
+          intent = 'sad';
+          replyText = "Here are 🌧️ **Heartwarming Comfort & Poignant Dramas** films curated for you on Zhoosh:\n\nClick **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.";
+          const sadMovieTitles = ['main hoon na', 'forrest gump', 'the shawshank redemption'];
+          attachedMovies = MOCK_MOVIES.filter(m => sadMovieTitles.some(t => m.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 6);
+        } else if (/\b(happy|joyful|joyfyul|joy|pleasant|cheerful|uplifting|feel good|feel-good|delightful|sweet|romcom|romantic comedy)\b/i.test(msg)) {
+          intent = 'happy';
+          replyText = "Here are ☀️ **Joyful & Feel-Good Romantic Comedies** films curated for you on Zhoosh:\n\nClick **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.";
+          const happyMovieTitles = ['jab we met', 'yeh jawaani hai deewani', 'forrest gump'];
+          attachedMovies = MOCK_MOVIES.filter(m => happyMovieTitles.some(t => m.title.toLowerCase().includes(t))).slice(0, 6);
+          if (attachedMovies.length === 0) attachedMovies = MOCK_MOVIES.slice(0, 6);
         } else if (/\b(romantic|romance|love|heartfelt)\b/i.test(msg)) {
           intent = 'romance';
           replyText = "Here are acclaimed 💖 **Romantic & Heartfelt** films curated for you on Zhoosh. Click **Watch / View Movie** on any card below to start streaming!";

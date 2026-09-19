@@ -201,50 +201,165 @@ def detect_music_language_in_query(query: str):
     return None, None
 
 def detect_music_mood_in_query(query: str):
-    """Detect mood requests like 'sad songs', 'party songs', 'workout tracks', 'romantic songs'."""
+    """Detect mood & situational music requests for 5 core scenarios + existing vibes:
+    1. Travelling / Road trip (Ilahi, Safarnama, Dil Chahta Hai, Matargashti)
+    2. Missing College Days / Friendship (Yaaron, Give Me Some Sunshine, Tera Yaar Hoon Main, Kabira, Dil Chahta Hai)
+    3. Exciting / Thrilling / Kendrick Lamar / Rock (HUMBLE., Not Like Us, All The Stars, Bohemian Rhapsody, In The End, Numb)
+    4. Sad / Tired / Depressed / Melancholic Comfort (Tum Hi Ho, Channa Mereya, Fix You, The Scientist, Until I Found You)
+    5. Happy / Joyful / Pleasant / Romantic Love (Shape of You, Birds of a Feather, As It Was, Kesariya)
+    """
     q_lower = query.lower()
-    if any(k in q_lower for k in ['sad', 'emotional', 'heartbreak', 'crying', 'cry', 'depressed', 'melancholy', 'pain', 'breakup', 'lonely', 'tears']):
-        sad_priority = ['tum hi ho', 'channa mereya', 'fix you', 'the scientist', 'all of me', 'darmiyaan', 'beautiful things', 'until i found you', 'photograph', 'numb', 'in the end']
-        if engine.music_df is not None:
-            selected_rows = []
-            seen_ids = set()
-            # 1. Add priority emotional ballads in order
-            for s_name in sad_priority:
-                m = engine.music_df[engine.music_df['track_name'].str.lower() == s_name]
-                for _, r in m.iterrows():
-                    if r['track_id'] not in seen_ids:
-                        selected_rows.append(r)
-                        seen_ids.add(r['track_id'])
-            # 2. Supplement with lowest valence tracks
-            low_valence = engine.music_df[
-                (~engine.music_df['track_id'].isin(seen_ids)) &
-                (engine.music_df['valence'] <= 0.35)
-            ].sort_values(by='valence', ascending=True)
-            for _, r in low_valence.iterrows():
-                selected_rows.append(r)
+    if engine.music_df is None or engine.music_df.empty:
+        return None, None
 
-            formatted = [engine._format_song_row(row, match_pct=98, rationale=f"Soulful melancholic resonance: '{row['track_name']}' by {row['artists']}.") for row in selected_rows[:8]]
-            return "🌧️ **Sad & Melancholic**", formatted
-    elif any(k in q_lower for k in ['romantic', 'romance', 'love', 'crush', 'valentine', 'couple', 'ballad']):
-        romantic_songs = engine.get_romantic_recommendations(limit=8)
-        if romantic_songs:
-            return "💖 **Romantic & Heartfelt**", romantic_songs
-    elif any(k in q_lower for k in ['party', 'dance', 'club', 'banger', 'celebrate', 'upbeat']):
+    # 1. Missing College Days / Friendship & Nostalgia
+    if any(k in q_lower for k in [
+        'college days', 'college day', 'missing college', 'miss my college', 'miss college',
+        'hostel', 'hostel days', 'hostel life', 'campus', 'college life', 'university',
+        'missing my friends', 'missing friends', 'miss my friends', 'friendship', 'friends',
+        'old friends', 'college memories', 'school days', 'college', 'dosti'
+    ]):
+        college_songs = [
+            'yaaron', 'give me some sunshine', 'tera yaar hoon main', 'kabira', 'dil chahta hai'
+        ]
+        selected = []
+        seen = set()
+        for s_name in college_songs:
+            m = engine.music_df[engine.music_df['track_name'].str.lower() == s_name]
+            for _, r in m.iterrows():
+                if r['track_id'] not in seen:
+                    selected.append(engine._format_song_row(
+                        r, match_pct=99,
+                        rationale=f"Soul-stirring friendship & campus anthem: '{r['track_name']}' by {r['artists']}."
+                    ))
+                    seen.add(r['track_id'])
+        return "🎓 **College Days & Eternal Friendship**", selected[:6]
+
+    # 2. Travelling / Road Trip / Wanderlust Songs
+    if any(k in q_lower for k in [
+        'travelling', 'traveling', 'travlling', 'travel', 'road trip', 'roadtrip',
+        'journey', 'vacation', 'wanderlust', 'trip', 'drive', 'driving', 'holiday'
+    ]):
+        travel_songs = [
+            'ilahi', 'safarnama', 'dil chahta hai', 'matargashti', 'as it was', 'a bar song (tipsy)'
+        ]
+        selected = []
+        seen = set()
+        for s_name in travel_songs:
+            m = engine.music_df[engine.music_df['track_name'].str.lower() == s_name]
+            for _, r in m.iterrows():
+                if r['track_id'] not in seen:
+                    selected.append(engine._format_song_row(
+                        r, match_pct=99,
+                        rationale=f"The ultimate road-trip anthem: '{r['track_name']}' by {r['artists']}."
+                    ))
+                    seen.add(r['track_id'])
+        return "🚗 **Road Trip & Wanderlust Anthems**", selected[:6]
+
+    # 3. Exciting / Thrilling / Kendrick Lamar / Rock / High Energy
+    if any(k in q_lower for k in [
+        'exciting', 'thrilling', 'adrenaline', 'kendrick', 'kendric', 'rock',
+        'rock music', 'hype', 'hyped', 'pump', 'workout', 'gym', 'banger', 'electric'
+    ]):
+        thrill_songs = [
+            'humble.', 'not like us', 'all the stars', 'bohemian rhapsody',
+            'in the end', 'numb', 'radioactive', 'starboy'
+        ]
+        selected = []
+        seen = set()
+        for s_name in thrill_songs:
+            m = engine.music_df[engine.music_df['track_name'].str.lower() == s_name]
+            for _, r in m.iterrows():
+                if r['track_id'] not in seen:
+                    selected.append(engine._format_song_row(
+                        r, match_pct=99,
+                        rationale=f"High-octane Kendrick Lamar & rock power: '{r['track_name']}' by {r['artists']}."
+                    ))
+                    seen.add(r['track_id'])
+        return "⚡ **High-Energy Rock & Kendrick Lamar Anthems**", selected[:6]
+
+    # 4. Sad / Tired / Depressed / Melancholic Comfort
+    if any(k in q_lower for k in [
+        'sad', 'tired', 'depressed', 'depress', 'exhausted', 'feeling low',
+        'feleing sad', 'heartbreak', 'crying', 'cry', 'melancholy', 'pain',
+        'comfort', 'lonely', 'breakup', 'tears'
+    ]):
+        sad_priority = [
+            'tum hi ho', 'channa mereya', 'fix you', 'the scientist',
+            'until i found you', 'all of me', 'numb', 'in the end'
+        ]
+        selected = []
+        seen = set()
+        for s_name in sad_priority:
+            m = engine.music_df[engine.music_df['track_name'].str.lower() == s_name]
+            for _, r in m.iterrows():
+                if r['track_id'] not in seen:
+                    selected.append(engine._format_song_row(
+                        r, match_pct=98,
+                        rationale=f"Soulful melancholic resonance: '{r['track_name']}' by {r['artists']}."
+                    ))
+                    seen.add(r['track_id'])
+        # Supplement with lowest valence tracks
+        low_valence = engine.music_df[
+            (~engine.music_df['track_id'].isin(seen)) &
+            (engine.music_df['valence'] <= 0.35)
+        ].sort_values(by='valence', ascending=True)
+        for _, r in low_valence.iterrows():
+            if len(selected) >= 6:
+                break
+            selected.append(engine._format_song_row(
+                r, match_pct=97,
+                rationale=f"Soulful melancholic resonance: '{r['track_name']}' by {r['artists']}."
+            ))
+            seen.add(r['track_id'])
+        return "🌧️ **Sad & Comforting Melodies**", selected[:6]
+
+    # 5. Happy / Joyful / Pleasant / Romantic Love Songs
+    if any(k in q_lower for k in [
+        'happy', 'joyful', 'joyfyul', 'joy', 'pleasant', 'cheerful',
+        'good vibes', 'feel good', 'feel-good', 'uplifting', 'delightful',
+        'romantic', 'romance', 'love', 'love songs', 'crush', 'valentine'
+    ]):
+        happy_priority = [
+            'shape of you', 'birds of a feather', 'as it was', 'please please please',
+            'good luck, babe!', 'a bar song (tipsy)'
+        ]
+        selected = []
+        seen = set()
+        seen_names = set()
+        for s_name in happy_priority:
+            m = engine.music_df[engine.music_df['track_name'].str.lower() == s_name]
+            for _, r in m.iterrows():
+                t_key = r['track_name'].lower().strip()
+                if r['track_id'] not in seen and t_key not in seen_names:
+                    selected.append(engine._format_song_row(
+                        r, match_pct=99,
+                        rationale=f"Vibrant feel-good love song: '{r['track_name']}' by {r['artists']}."
+                    ))
+                    seen.add(r['track_id'])
+                    seen_names.add(t_key)
+        # Include romantic recommendations if available
+        rom = engine.get_romantic_recommendations(limit=4)
+        for r_song in rom:
+            r_key = r_song['title'].lower().strip()
+            if r_song['id'] not in seen and r_key not in seen_names and len(selected) < 6:
+                selected.append(r_song)
+                seen.add(r_song['id'])
+                seen_names.add(r_key)
+        return "☀️ **Happy, Joyful & Romantic Love Songs**", selected[:6]
+
+    # Fallback existing moods
+    if any(k in q_lower for k in ['party', 'dance', 'club', 'banger', 'celebrate', 'upbeat']):
         party_titles = ['humble.', 'sicko mode', 'blinding lights', 'starboy', 'shape of you', 'hotline bling', 'die with a smile']
-        if engine.music_df is not None:
-            df = engine.music_df[engine.music_df['track_name'].str.lower().apply(lambda t: any(s in t for s in party_titles)) | (engine.music_df['danceability'] >= 0.70)]
-            formatted = [engine._format_song_row(row, match_pct=99, rationale=f"High-octane party anthem: '{row['track_name']}' by {row['artists']}.") for _, row in df.iterrows()]
-            return "⚡ **Party & Dance**", formatted
-    elif any(k in q_lower for k in ['workout', 'gym', 'pump', 'training', 'exercise', 'lifting', 'fitness', 'hype', 'energy']):
-        workout_titles = ['humble.', 'sicko mode', 'in the end', 'numb', 'starboy', 'god\'s plan', 'radioactive', 'believer']
-        if engine.music_df is not None:
-            df = engine.music_df[engine.music_df['track_name'].str.lower().apply(lambda t: any(s in t for s in workout_titles)) | (engine.music_df['energy'] >= 0.75)]
-            formatted = [engine._format_song_row(row, match_pct=99, rationale=f"Max intensity training track: '{row['track_name']}' by {row['artists']}.") for _, row in df.iterrows()]
-            return "🔥 **Workout & Gym**", formatted
-    elif any(k in q_lower for k in ['chill', 'relax', 'calm', 'study', 'sleep', 'soothing', 'peaceful', 'mellow', 'zen']):
-        lofi_tracks = engine.get_music(genre='lo-fi', limit=8)
+        df = engine.music_df[engine.music_df['track_name'].str.lower().apply(lambda t: any(s in t for s in party_titles)) | (engine.music_df['danceability'] >= 0.70)]
+        formatted = [engine._format_song_row(row, match_pct=99, rationale=f"High-octane party anthem: '{row['track_name']}' by {row['artists']}.") for _, row in df.iterrows()]
+        return "⚡ **Party & Dance**", formatted[:6]
+
+    if any(k in q_lower for k in ['chill', 'relax', 'calm', 'study', 'sleep', 'soothing', 'peaceful', 'mellow', 'zen']):
+        lofi_tracks = engine.get_music(genre='lo-fi', limit=6)
         if lofi_tracks:
             return "☕ **Chill & Lo-Fi**", lofi_tracks
+
     return None, None
 
 def detect_movie_language_in_query(query: str):
@@ -270,41 +385,165 @@ def detect_movie_language_in_query(query: str):
     return None, None
 
 def detect_movie_mood_in_query(query: str):
-    """Detect movie mood requests like 'sad movies', 'mind bending movies', 'scary movies'."""
+    """Detect movie mood & situational requests for 5 core scenarios + existing vibes:
+    1. Travelling / Road trip (Zindagi Na Milegi Dobara, Yeh Jawaani Hai Deewani, Jab We Met, Dil Chahta Hai, Walter Mitty, Into the Wild, Before Sunrise)
+    2. Missing College Days / Friendship (3 Idiots, Chhichhore, Dil Chahta Hai, Yeh Jawaani Hai Deewani, Superbad, Dead Poets Society)
+    3. Exciting / Thrilling / Action (Oppenheimer, The Dark Knight, Inception, Fight Club, The Matrix, Mad Max)
+    4. Sad / Tired / Depressed / Emotional Comfort (Main Hoon Na, Forrest Gump, The Shawshank Redemption, Dead Poets Society)
+    5. Happy / Joyful / Pleasant / Romantic Comedy (Jab We Met, Crazy Stupid Love, La La Land, About Time, The Holiday, Crazy Rich Asians)
+    """
     q_lower = query.lower()
     if engine.movies_df is None or engine.movies_df.empty:
         return None, None
-    if any(k in q_lower for k in ['romantic', 'romance', 'love', 'couple', 'heartfelt', 'valentine', 'relationship', 'ballad']):
-        matches = engine.movies_df[engine.movies_df['genres_str'].str.lower().str.contains('romance', na=False)]
-        if not matches.empty:
-            top_m = matches.sort_values(by='vote_count', ascending=False).head(6)
-            return "💖 **Romantic & Heartfelt Cinema**", [engine._format_movie_row(r) for _, r in top_m.iterrows()]
-    elif any(k in q_lower for k in ['mind-bending', 'mind bending', 'twist', 'psychological', 'puzzle', 'confusing', 'complex']):
+
+    # 1. Missing College Days / Friendship & Nostalgia
+    if any(k in q_lower for k in [
+        'college days', 'college day', 'missing college', 'miss my college', 'miss college',
+        'hostel', 'hostel days', 'hostel life', 'campus', 'college life', 'university',
+        'missing my friends', 'missing friends', 'miss my friends', 'friendship', 'friends',
+        'old friends', 'college memories', 'school days', 'college'
+    ]):
+        college_titles = [
+            '3 idiots', 'chhichhore', 'dil chahta hai', 'yeh jawaani hai deewani',
+            'superbad', 'dead poets society'
+        ]
+        selected = []
+        seen = set()
+        for t in college_titles:
+            m = engine.movies_df[engine.movies_df['title'].str.lower() == t]
+            for _, r in m.iterrows():
+                if r['title'].lower() not in seen:
+                    selected.append(engine._format_movie_row(
+                        r, match_pct=99,
+                        rationale=f"Timeless campus friendship & hostel classic: '{r['title']}'."
+                    ))
+                    seen.add(r['title'].lower())
+        return "🎓 **College Days & Lifelong Friendship**", selected[:6]
+
+    # 2. Travelling / Road Trip / Vacation / Journey
+    if any(k in q_lower for k in [
+        'travelling', 'traveling', 'travlling', 'travel', 'road trip', 'roadtrip',
+        'journey', 'vacation', 'wanderlust', 'trip', 'driving', 'exploring', 'holiday'
+    ]):
+        travel_titles = [
+            'zindagi na milegi dobara', 'yeh jawaani hai deewani', 'jab we met',
+            'dil chahta hai', 'the secret life of walter mitty', 'into the wild', 'before sunrise'
+        ]
+        selected = []
+        seen = set()
+        for t in travel_titles:
+            m = engine.movies_df[engine.movies_df['title'].str.lower() == t]
+            for _, r in m.iterrows():
+                if r['title'].lower() not in seen:
+                    selected.append(engine._format_movie_row(
+                        r, match_pct=99,
+                        rationale=f"Essential wanderlust & road-trip classic: '{r['title']}'."
+                    ))
+                    seen.add(r['title'].lower())
+        return "🚗 **Wanderlust & Travelling Journeys**", selected[:6]
+
+    # 3. Exciting / Thrilling / Action / Adrenaline
+    if any(k in q_lower for k in [
+        'exciting', 'thrilling', 'thriller', 'adrenaline', 'edge of my seat',
+        'edge of seat', 'mind-blowing', 'mind blowing', 'action packed', 'intense', 'hype', 'hyped'
+    ]):
+        thrill_titles = [
+            'oppenheimer', 'the dark knight', 'inception', 'fight club',
+            'the matrix', 'mad max: fury road', 'the dark knight rises'
+        ]
+        selected = []
+        seen = set()
+        for t in thrill_titles:
+            m = engine.movies_df[engine.movies_df['title'].str.lower() == t]
+            for _, r in m.iterrows():
+                if r['title'].lower() not in seen:
+                    selected.append(engine._format_movie_row(
+                        r, match_pct=99,
+                        rationale=f"Electrifying high-octane thriller: '{r['title']}'."
+                    ))
+                    seen.add(r['title'].lower())
+        return "⚡ **Exciting & High-Octane Thrillers**", selected[:6]
+
+    # 4. Sad / Tired / Depressed / Poignant Comfort
+    if any(k in q_lower for k in [
+        'sad', 'tired', 'depressed', 'depress', 'exhausted', 'feeling low',
+        'feleing sad', 'heartbroken', 'crying', 'cry', 'tears', 'comfort', 'comforting',
+        'drained', 'melancholic', 'melancholy', 'pain'
+    ]):
+        comfort_titles = [
+            'main hoon na', 'forrest gump', 'the shawshank redemption',
+            'dead poets society', 'good will hunting'
+        ]
+        selected = []
+        seen = set()
+        for t in comfort_titles:
+            m = engine.movies_df[engine.movies_df['title'].str.lower() == t]
+            for _, r in m.iterrows():
+                if r['title'].lower() not in seen:
+                    selected.append(engine._format_movie_row(
+                        r, match_pct=98,
+                        rationale=f"Deeply comforting & heartwarming cinema: '{r['title']}'."
+                    ))
+                    seen.add(r['title'].lower())
+        # Supplement with high-rated emotional drama if needed
+        if len(selected) < 6:
+            dramas = engine.movies_df[
+                engine.movies_df['genres_str'].str.lower().str.contains('drama', na=False) &
+                (~engine.movies_df['title'].str.lower().isin(seen))
+            ].sort_values(by='vote_average', ascending=False)
+            for _, r in dramas.head(6 - len(selected)).iterrows():
+                selected.append(engine._format_movie_row(r, match_pct=96, rationale=f"Touching emotional drama: '{r['title']}'."))
+        return "🌧️ **Heartwarming Comfort & Poignant Dramas**", selected[:6]
+
+    # 5. Happy / Joyful / Pleasant / Romantic Comedy
+    if any(k in q_lower for k in [
+        'happy', 'joyful', 'joyfyul', 'joy', 'pleasant', 'cheerful',
+        'uplifting', 'feel good', 'feel-good', 'delightful', 'sweet',
+        'romcom', 'romantic comedy', 'good mood'
+    ]):
+        happy_titles = [
+            'jab we met', 'crazy, stupid, love.', 'la la land', 'about time',
+            'the holiday', 'crazy rich asians', 'midnight in paris', 'notting hill'
+        ]
+        selected = []
+        seen = set()
+        for t in happy_titles:
+            m = engine.movies_df[engine.movies_df['title'].str.lower() == t]
+            for _, r in m.iterrows():
+                if r['title'].lower() not in seen:
+                    selected.append(engine._format_movie_row(
+                        r, match_pct=98,
+                        rationale=f"Feel-good romantic comedy to bring a smile: '{r['title']}'."
+                    ))
+                    seen.add(r['title'].lower())
+        return "☀️ **Joyful & Feel-Good Romantic Comedies**", selected[:6]
+
+    # Fallback existing vibes
+    if any(k in q_lower for k in ['mind-bending', 'mind bending', 'twist', 'psychological', 'puzzle', 'confusing', 'complex']):
         mb_titles = ['inception', 'interstellar', 'shutter island', 'the prestige', 'fight club', 'memento', 'matrix', 'arrival']
         matches = engine.movies_df[engine.movies_df['title'].str.lower().apply(lambda t: any(m in t for m in mb_titles))]
         if not matches.empty:
             top_m = matches.sort_values(by='vote_count', ascending=False).head(6)
             return "🧠 **Mind-Bending & Psychological**", [engine._format_movie_row(r) for _, r in top_m.iterrows()]
-    elif any(k in q_lower for k in ['sad', 'emotional', 'crying', 'tearjerker', 'heartbreaking', 'melancholic']):
-        matches = engine.movies_df[engine.movies_df['genres_str'].str.lower().str.contains('drama', na=False) & (engine.movies_df['vote_average'].astype(float) >= 8.2)]
-        if not matches.empty:
-            top_m = matches.sort_values(by='vote_count', ascending=False).head(6)
-            return "🌧️ **Emotional & Poignant Dramas**", [engine._format_movie_row(r) for _, r in top_m.iterrows()]
-    elif any(k in q_lower for k in ['scary', 'spooky', 'frightening', 'creepy']):
+
+    if any(k in q_lower for k in ['scary', 'spooky', 'frightening', 'creepy', 'horror']):
         matches = engine.movies_df[engine.movies_df['genres_str'].str.lower().str.contains('horror', na=False)]
         if not matches.empty:
             top_m = matches.sort_values(by='vote_count', ascending=False).head(6)
             return "👻 **Terrifying Horror**", [engine._format_movie_row(r) for _, r in top_m.iterrows()]
-    elif any(k in q_lower for k in ['funny', 'hilarious', 'laugh']):
+
+    if any(k in q_lower for k in ['funny', 'hilarious', 'laugh']):
         matches = engine.movies_df[engine.movies_df['genres_str'].str.lower().str.contains('comedy', na=False)]
         if not matches.empty:
             top_m = matches.sort_values(by='vote_count', ascending=False).head(6)
             return "😂 **Acclaimed Comedies**", [engine._format_movie_row(r) for _, r in top_m.iterrows()]
-    elif any(k in q_lower for k in ['inspiring', 'inspirational', 'motivational']):
+
+    if any(k in q_lower for k in ['inspiring', 'inspirational', 'motivational']):
         matches = engine.movies_df[engine.movies_df['genres_str'].str.lower().str.contains('drama', na=False) & (engine.movies_df['vote_count'].astype(float) >= 10000)]
         if not matches.empty:
             top_m = matches.sort_values(by='vote_average', ascending=False).head(6)
             return "✨ **Inspiring & Uplifting Stories**", [engine._format_movie_row(r) for _, r in top_m.iterrows()]
+
     return None, None
 
 def detect_person_in_query(query: str):
@@ -721,7 +960,17 @@ def generate_grounded_response(
             []
         )
 
-    # 2. Check for specific movie match
+    # 2. Check for Movie Mood & Situational Requests (Travelling, College Days, Thrillers, Sad/Tired, Happy)
+    movie_mood_title, movie_mood_results = detect_movie_mood_in_query(message)
+    if movie_mood_results:
+        return (
+            f"Here are {movie_mood_title} films curated for you on Zhoosh:\n\n"
+            f"Click **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.",
+            movie_mood_results,
+            []
+        )
+
+    # 3. Check for specific movie match
     movie = find_movie_in_query(message)
     if movie is not None:
         title = str(movie['title'])
@@ -814,17 +1063,7 @@ def generate_grounded_response(
             []
         )
 
-    # 5. Check for Movie Mood (Mind-Bending, Sad/Drama, Scary, Funny, Inspiring)
-    movie_mood_title, movie_mood_results = detect_movie_mood_in_query(message)
-    if movie_mood_results:
-        return (
-            f"Here are {movie_mood_title} films curated for you on Zhoosh:\n\n"
-            f"Click **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.",
-            movie_mood_results,
-            []
-        )
-
-    # 6. Check for Movie Genre Query (Horror, Comedy, Thriller, Sci-Fi, etc.)
+    # 5. Check for Movie Genre Query (Horror, Comedy, Thriller, Sci-Fi, etc.)
     genre = detect_genre_in_query(message)
     if genre:
         top_genre_movies = engine.get_top_genre_movies(genre, limit=6)

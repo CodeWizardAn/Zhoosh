@@ -49,18 +49,6 @@ export const FixedFooter: React.FC = () => {
             >
               Developer Team
             </button>
-            <button
-              onClick={() => openCredits('academic')}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              AI Project Competition
-            </button>
-            <button
-              onClick={() => openCredits('legal')}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Legal Team
-            </button>
           </div>
 
           {/* Minimalist Copyright with Pillai University & Batch A2 */}

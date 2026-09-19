@@ -274,7 +274,7 @@ export const PlansStep: React.FC<PlansStepProps> = ({
         </div>
       </div>
 
-      {/* Floating Continue Button - Fades in when plan is selected */}
+      {/* Next Button - Fades in when plan is selected */}
       <AnimatePresence>
         {selectedPlan && (
           <motion.div
@@ -282,25 +282,8 @@ export const PlansStep: React.FC<PlansStepProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 15 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-xl z-20 mt-8 mb-2 flex flex-col sm:flex-row items-center justify-between gap-4 p-3.5 rounded-2xl bg-[#181826]/90 backdrop-blur-xl border border-white/15 shadow-2xl"
+            className="z-20 mt-8 mb-4 flex justify-center"
           >
-            <div className="flex items-center gap-3 px-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: selectedPlan.accentColor }}
-              />
-              <div className="text-left">
-                <div className="text-xs font-bold text-white">
-                  {selectedPlan.name} Tier Selected
-                </div>
-                <div className="text-[11px] text-gray-400 font-mono">
-                  {selectedPlan.priceMonthly === 0
-                    ? 'Forever Free • 720p HD • No Card Required'
-                    : `₹${billingCycle === 'yearly' ? Math.round(selectedPlan.priceMonthly * 0.8) : selectedPlan.priceMonthly}/mo • ${selectedPlan.resolution} • Cancel anytime`}
-                </div>
-              </div>
-            </div>
-
             <motion.button
               type="button"
               onClick={() => {
@@ -309,11 +292,11 @@ export const PlansStep: React.FC<PlansStepProps> = ({
                 } catch {}
                 handleContinue();
               }}
-              whileHover={shouldReduceMotion ? {} : { scale: 1.03 }}
-              whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs tracking-wider uppercase text-white bg-gradient-to-r from-[#FF1E56] via-[#E50914] to-[#A855F7] hover:brightness-110 shadow-lg shadow-[#FF1E56]/25 flex items-center justify-center gap-2 transition-all"
+              whileHover={shouldReduceMotion ? {} : { scale: 1.04 }}
+              whileTap={shouldReduceMotion ? {} : { scale: 0.96 }}
+              className="px-8 py-3 rounded-xl font-bold text-sm tracking-wider uppercase text-white bg-gradient-to-r from-[#FF1E56] via-[#E50914] to-[#A855F7] hover:brightness-110 shadow-lg shadow-[#FF1E56]/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
-              <span>Continue to Profile Setup</span>
+              <span>Next</span>
               <ArrowRight className="w-4 h-4" />
             </motion.button>
           </motion.div>
