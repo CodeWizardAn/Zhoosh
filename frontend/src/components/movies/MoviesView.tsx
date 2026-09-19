@@ -572,18 +572,30 @@ interface ContinueWatchingItem {
   episodeLabel: string;
 }
 
-const VERIFIED_FALLBACK_POSTERS = [
-  'https://image.tmdb.org/t/p/w780/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',
-  'https://image.tmdb.org/t/p/w780/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-  'https://image.tmdb.org/t/p/w780/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-  'https://image.tmdb.org/t/p/w780/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg',
-  'https://image.tmdb.org/t/p/w780/lyQBXzOQSuE59IsHyhrp0qIiPAz.jpg',
-];
-
-const getSafeFallbackPoster = (id: string | number) => {
-  const hash = String(id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return VERIFIED_FALLBACK_POSTERS[hash % VERIFIED_FALLBACK_POSTERS.length];
-};
+export const FallbackPosterPlaceholder: React.FC<{ movie: Movie }> = ({ movie }) => (
+  <div className="w-full h-full bg-gradient-to-br from-[#1C1C28] via-[#14141E] to-[#0A0A10] p-3 flex flex-col justify-between border border-white/10 select-none">
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] font-bold text-[#E50914] uppercase tracking-wider">
+        {movie.genres?.[0] || 'Cinema'}
+      </span>
+      <span className="text-[10px] text-gray-400 font-mono">
+        {movie.year || (movie.release_date ? movie.release_date.slice(0, 4) : 'HD')}
+      </span>
+    </div>
+    <div className="my-auto py-2">
+      <h4 className="text-xs sm:text-sm font-black text-white line-clamp-3 leading-snug tracking-wide">
+        {movie.title}
+      </h4>
+      <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">
+        {movie.director || movie.genres?.slice(0, 2).join(' • ')}
+      </p>
+    </div>
+    <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1 border-t border-white/5">
+      <span className="text-[#FFAA00] font-bold">★ {movie.vote_average?.toFixed(1) || '8.0'}</span>
+      <span className="text-[9px] uppercase font-semibold text-gray-400">{movie.language || 'Cinema'}</span>
+    </div>
+  </div>
+);
 
 const ContinueWatchingCard: React.FC<{
   item: ContinueWatchingItem;
@@ -605,9 +617,11 @@ const ContinueWatchingCard: React.FC<{
   };
 
   const [imgSrc, setImgSrc] = useState(movie.poster_path || movie.backdrop_path || '');
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setImgSrc(movie.poster_path || movie.backdrop_path || '');
+    setHasError(false);
   }, [movie.poster_path, movie.backdrop_path]);
 
   return (
@@ -623,24 +637,28 @@ const ContinueWatchingCard: React.FC<{
     >
       {/* 2:3 Vertical Container so Posters Fit 100% Correctly */}
       <div className="relative rounded-lg overflow-hidden bg-[#141414] aspect-[2/3] shadow-xl border border-white/5">
-        <img
-          src={imgSrc}
-          alt={movie.title}
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-top"
-          loading="lazy"
-          onError={() => {
-            if (imgSrc && imgSrc.includes('/w780/')) {
-              setImgSrc(imgSrc.replace('/w780/', '/w500/'));
-            } else if (imgSrc && imgSrc.includes('/w500/')) {
-              setImgSrc(imgSrc.replace('/w500/', '/original/'));
-            } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
-              setImgSrc(movie.backdrop_path);
-            } else {
-              setImgSrc(getSafeFallbackPoster(movie.id));
-            }
-          }}
-        />
+        {!hasError && imgSrc ? (
+          <img
+            src={imgSrc}
+            alt={movie.title}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-top"
+            loading="lazy"
+            onError={() => {
+              if (imgSrc && imgSrc.includes('/w780/')) {
+                setImgSrc(imgSrc.replace('/w780/', '/w500/'));
+              } else if (imgSrc && imgSrc.includes('/w500/')) {
+                setImgSrc(imgSrc.replace('/w500/', '/original/'));
+              } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
+                setImgSrc(movie.backdrop_path);
+              } else {
+                setHasError(true);
+              }
+            }}
+          />
+        ) : (
+          <FallbackPosterPlaceholder movie={movie} />
+        )}
 
         {/* Quick Corner Remove Button (Permanently remove) */}
         <button
@@ -877,9 +895,11 @@ const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) =>
   const isLiked = !!likedIds[String(movie.id)];
   const likeMutation = useLikeMutation();
   const [imgSrc, setImgSrc] = useState(movie.poster_path);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setImgSrc(movie.poster_path);
+    setHasError(false);
   }, [movie.poster_path]);
 
   return (
@@ -898,24 +918,28 @@ const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) =>
 
       {/* Vertical Poster Card */}
       <div className="-ml-5 sm:-ml-10 relative w-[120px] sm:w-[170px] md:w-[190px] aspect-[2/3] rounded-lg overflow-hidden bg-[#141414] shadow-2xl z-10 border border-white/10">
-        <img
-          src={imgSrc}
-          alt={movie.title}
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-top"
-          loading="lazy"
-          onError={() => {
-            if (imgSrc.includes('/w780/')) {
-              setImgSrc(imgSrc.replace('/w780/', '/w500/'));
-            } else if (imgSrc.includes('/w500/')) {
-              setImgSrc(imgSrc.replace('/w500/', '/original/'));
-            } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
-              setImgSrc(movie.backdrop_path);
-            } else {
-              setImgSrc(getSafeFallbackPoster(movie.id));
-            }
-          }}
-        />
+        {!hasError && imgSrc ? (
+          <img
+            src={imgSrc}
+            alt={movie.title}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-top"
+            loading="lazy"
+            onError={() => {
+              if (imgSrc.includes('/w780/')) {
+                setImgSrc(imgSrc.replace('/w780/', '/w500/'));
+              } else if (imgSrc.includes('/w500/')) {
+                setImgSrc(imgSrc.replace('/w500/', '/original/'));
+              } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
+                setImgSrc(movie.backdrop_path);
+              } else {
+                setHasError(true);
+              }
+            }}
+          />
+        ) : (
+          <FallbackPosterPlaceholder movie={movie} />
+        )}
 
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2.5 flex flex-col justify-end opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
@@ -1024,9 +1048,11 @@ const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
   const isLiked = !!likedIds[String(movie.id)];
   const likeMutation = useLikeMutation();
   const [imgSrc, setImgSrc] = useState(movie.poster_path);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setImgSrc(movie.poster_path);
+    setHasError(false);
   }, [movie.poster_path]);
 
   return (
@@ -1037,24 +1063,28 @@ const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
       className="relative flex-shrink-0 w-[130px] sm:w-[195px] md:w-[220px] cursor-pointer group/card select-none"
     >
       <div className="relative rounded-lg overflow-hidden bg-[#141414] aspect-[2/3] shadow-lg border border-white/5">
-        <img
-          src={imgSrc}
-          alt={movie.title}
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-top"
-          loading="lazy"
-          onError={() => {
-            if (imgSrc.includes('/w780/')) {
-              setImgSrc(imgSrc.replace('/w780/', '/w500/'));
-            } else if (imgSrc.includes('/w500/')) {
-              setImgSrc(imgSrc.replace('/w500/', '/original/'));
-            } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
-              setImgSrc(movie.backdrop_path);
-            } else {
-              setImgSrc(getSafeFallbackPoster(movie.id));
-            }
-          }}
-        />
+        {!hasError && imgSrc ? (
+          <img
+            src={imgSrc}
+            alt={movie.title}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-top"
+            loading="lazy"
+            onError={() => {
+              if (imgSrc.includes('/w780/')) {
+                setImgSrc(imgSrc.replace('/w780/', '/w500/'));
+              } else if (imgSrc.includes('/w500/')) {
+                setImgSrc(imgSrc.replace('/w500/', '/original/'));
+              } else if (movie.backdrop_path && imgSrc !== movie.backdrop_path) {
+                setImgSrc(movie.backdrop_path);
+              } else {
+                setHasError(true);
+              }
+            }}
+          />
+        ) : (
+          <FallbackPosterPlaceholder movie={movie} />
+        )}
 
         {/* Hover Action Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-3 flex flex-col justify-end opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">

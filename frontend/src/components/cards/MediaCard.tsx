@@ -60,6 +60,14 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   };
 
   const posterImage = movie ? movie.poster_path : song?.album_art;
+  const [imgSrc, setImgSrc] = useState(posterImage);
+  const [hasError, setHasError] = useState(false);
+
+  React.useEffect(() => {
+    setImgSrc(posterImage);
+    setHasError(false);
+  }, [posterImage]);
+
   const title = item.title;
   const subtitle = movie ? movie.genres.slice(0, 2).join(' • ') : song?.artist;
 
@@ -88,12 +96,35 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         onClick={handleCardClick}
         className="group relative rounded-md overflow-hidden cursor-pointer select-none bg-[#181818] shadow-md hover:shadow-2xl transition-all w-[160px] sm:w-[185px] md:w-[205px] aspect-[2/3] shrink-0"
       >
-        <img
-          src={posterImage}
-          alt={title}
-          loading="lazy"
-          className="w-full h-full object-cover object-top"
-        />
+        {!hasError && imgSrc ? (
+          <img
+            src={imgSrc}
+            alt={title}
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            className="w-full h-full object-cover object-top"
+            onError={() => {
+              if (movie?.backdrop_path && imgSrc !== movie.backdrop_path) {
+                setImgSrc(movie.backdrop_path);
+              } else {
+                setHasError(true);
+              }
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-[#1E1E2A] to-[#121218] p-3 flex flex-col justify-between border border-white/10 select-none">
+            <span className="text-[10px] font-bold text-[#E50914] uppercase tracking-wider">
+              {movie?.genres?.[0] || 'Cinema'}
+            </span>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-3 leading-snug">
+                {title}
+              </h4>
+              <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{subtitle}</p>
+            </div>
+            <span className="text-[10px] text-[#FFAA00] font-medium">★ {movie?.vote_average?.toFixed(1) || '8.2'}</span>
+          </div>
+        )}
 
         {/* Hover Action Drawer */}
         <div

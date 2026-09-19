@@ -12,14 +12,16 @@ class ApiClient {
   private async request(path: string, options?: RequestInit): Promise<Response> {
     try {
       const res = await fetch(`${this.baseUrl}${path}`, options);
-      if (res.ok) return res;
+      const ct = res.headers.get('content-type');
+      if (res.ok && ct && ct.includes('application/json')) return res;
     } catch {
       // Vite proxy unreachable
     }
 
     try {
       const res = await fetch(`${this.directUrl}${path}`, options);
-      if (res.ok) return res;
+      const ct = res.headers.get('content-type');
+      if (res.ok && ct && ct.includes('application/json')) return res;
     } catch {
       // Direct backend unreachable
     }
