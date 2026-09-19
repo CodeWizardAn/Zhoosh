@@ -71,16 +71,152 @@ class ApiClient {
     }
   }
 
-  async fetchMovieRecommendations(movieId: string | number, limit: number = 8): Promise<Movie[]> {
+  async fetchMovieRecommendations(
+    movieId: string | number,
+    limit: number = 8,
+    targetMovie?: Movie | null
+  ): Promise<Movie[]> {
     try {
-      const res = await this.request(`/movies/${movieId}/recommendations?limit=${limit}`);
-      return await res.json();
+      const titleParam = targetMovie?.title ? `&title=${encodeURIComponent(targetMovie.title)}` : '';
+      const res = await this.request(`/movies/${movieId}/recommendations?limit=${limit}${titleParam}`);
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) return data;
+        }
+      }
     } catch {
-      await delay(350);
-      return [...MOCK_MOVIES]
-        .filter((m) => String(m.id) !== String(movieId))
-        .slice(0, limit);
+      // Proceed to high-accuracy content-based recommender
     }
+
+    await delay(180);
+
+    // 1. Identify Target Movie accurately
+    const baseMovie =
+      targetMovie ||
+      MOCK_MOVIES.find((m) => String(m.id) === String(movieId)) ||
+      MOCK_MOVIES.find((m) => m.title.toLowerCase() === String(movieId).toLowerCase()) ||
+      MOCK_MOVIES.find((m) => String(m.id).includes(String(movieId).replace('hero-', '')));
+
+    if (!baseMovie) {
+      return [...MOCK_MOVIES].filter((m) => String(m.id) !== String(movieId)).slice(0, limit);
+    }
+
+    const targetTitle = baseMovie.title.toLowerCase().trim();
+    const targetGenres = new Set((baseMovie.genres || []).map((g) => g.toLowerCase().trim()));
+    const targetDirector = (baseMovie.director || '').toLowerCase().trim();
+    const targetLang = (baseMovie.language || '').toLowerCase().trim();
+    const targetYear = baseMovie.year || (baseMovie.release_date ? parseInt(baseMovie.release_date.slice(0, 4), 10) : 0);
+
+    const stopWords = new Set([
+      'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'with', 'is', 'are', 'was', 'by',
+      'from', 'this', 'that', 'into', 'after', 'about', 'when', 'who', 'they', 'their', 'them', 'must'
+    ]);
+
+    const extractKeywords = (text: string) =>
+      text
+        .replace(/[^a-zA-Z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .map((w) => w.toLowerCase().trim())
+        .filter((w) => w.length > 3 && !stopWords.has(w));
+
+    const targetKw = new Set([...extractKeywords(baseMovie.title), ...extractKeywords(baseMovie.overview || '').slice(0, 25)]);
+
+    // Franchise and thematic clusters
+    const FRANCHISES: Array<{ name: string; pattern: RegExp }> = [
+      { name: 'batman', pattern: /batman|dark knight|joker|gotham|bruce wayne/i },
+      { name: 'spiderman', pattern: /spider-man|spiderman|spider-verse|peter parker|miles morales/i },
+      { name: 'avengers', pattern: /avengers|iron man|thor|captain america|marvel|thanos|infinity war/i },
+      { name: 'godfather', pattern: /godfather|corleone|mafia|don vito/i },
+      { name: 'nolan', pattern: /inception|interstellar|oppenheimer|tenet|prestige|memento|dunkirk/i },
+      { name: 'ghibli', pattern: /spirited away|princess mononoke|howl's moving castle|my neighbor totoro|your name|suzume/i },
+      { name: 'tarantino', pattern: /pulp fiction|django unchained|kill bill|inglourious basterds|reservoir dogs/i },
+      { name: 'hirani', pattern: /3 idiots|pk|taare zameen|like stars on earth|munna bhai|dangal|swades|lagaan/i },
+      { name: 'bollywood_friendship', pattern: /3 idiots|chhichhore|dil chahta hai|zindagi na milegi dobara|yeh jawaani hai deewani/i },
+      { name: 'bollywood_romance', pattern: /jab we met|dilwale dulhania|kal ho naa ho|kabir singh|barfi|queen|om shanti om/i },
+      { name: 'space_scifi', pattern: /interstellar|gravity|the martian|arrival|2001: a space odyssey|space|alien|wormhole/i },
+      { name: 'crime_noir', pattern: /godfather|goodfellas|scarface|the departed|gangs of wasseypur|irishman|se7en/i },
+      { name: 'horror_universe', pattern: /conjuring|annabelle|insidious|hereditary|a quiet place|sinister|shining/i },
+    ];
+
+    const matchingFranchises = FRANCHISES.filter(
+      (f) => f.pattern.test(baseMovie.title) || f.pattern.test(baseMovie.overview || '')
+    );
+
+    // 2. Score Candidates accurately
+    const scored = MOCK_MOVIES.filter((cand) => {
+      if (String(cand.id) === String(baseMovie.id)) return false;
+      if (cand.title.toLowerCase() === targetTitle) return false;
+      return true;
+    }).map((cand) => {
+      let score = 0;
+      const candTitle = cand.title.toLowerCase().trim();
+      const candDirector = (cand.director || '').toLowerCase().trim();
+      const candLang = (cand.language || '').toLowerCase().trim();
+      const candGenres = (cand.genres || []).map((g) => g.toLowerCase().trim());
+      const candKw = extractKeywords(cand.title + ' ' + (cand.overview || ''));
+
+      // 1. Franchise Cluster Match (+75 pts)
+      for (const f of matchingFranchises) {
+        if (f.pattern.test(cand.title) || f.pattern.test(cand.overview || '')) {
+          score += 75;
+          break;
+        }
+      }
+
+      // 2. Same Director Match (+50 pts)
+      if (targetDirector && targetDirector !== 'visionary director' && candDirector === targetDirector) {
+        score += 50;
+      }
+
+      // 3. Language & Regional Affinity (+40 pts)
+      if (targetLang && candLang) {
+        if (targetLang === candLang) {
+          score += 40;
+        } else if (targetLang === 'hindi' && candLang !== 'hindi') {
+          score -= 45; // Do not recommend Hollywood for Bollywood
+        } else if (targetLang !== 'hindi' && candLang === 'hindi') {
+          score -= 35; // Do not recommend Bollywood for Hollywood
+        }
+      }
+
+      // 4. Genre Jaccard Overlap (+45 pts max)
+      let commonGenreCount = 0;
+      for (const g of candGenres) {
+        if (targetGenres.has(g)) commonGenreCount++;
+      }
+      if (targetGenres.size > 0) {
+        score += (commonGenreCount / targetGenres.size) * 45;
+      }
+
+      // 5. Thematic Keywords Match (+30 pts max)
+      let commonKw = 0;
+      for (const kw of candKw) {
+        if (targetKw.has(kw)) commonKw++;
+      }
+      score += Math.min(30, commonKw * 6);
+
+      // 6. Quality & Rating (+10 pts max)
+      score += ((cand.vote_average || 7.5) / 10) * 10;
+
+      // 7. Era Proximity (+6 pts)
+      const candYear = cand.year || (cand.release_date ? parseInt(cand.release_date.slice(0, 4), 10) : 0);
+      if (targetYear > 0 && candYear > 0) {
+        const diff = Math.abs(targetYear - candYear);
+        if (diff <= 5) score += 6;
+        else if (diff <= 12) score += 3;
+      }
+
+      // 8. Deterministic Seeded Variation (+4 pts)
+      const h = (targetTitle.length * 31 + candTitle.length * 17) % 7;
+      score += h * 0.5;
+
+      return { movie: cand, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, limit).map((c) => c.movie);
   }
 
   async search(query: string, mode: AppMode): Promise<import('@/types').SearchResult> {

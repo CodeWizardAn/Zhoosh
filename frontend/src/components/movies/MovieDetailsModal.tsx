@@ -29,7 +29,8 @@ export const MovieDetailsModal: React.FC = () => {
   const movieId = selectedMovie ? String(selectedMovie.id) : null;
   const { data: recommendations = [], isLoading: isRecsLoading } = useMovieRecommendations(
     selectedMovie?.id,
-    9
+    9,
+    selectedMovie
   );
 
   const isLiked = selectedMovie ? !!likedIds[String(selectedMovie.id)] : false;

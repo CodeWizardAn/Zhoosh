@@ -35,10 +35,14 @@ export function useRecommendations(mode: AppMode) {
   });
 }
 
-export function useMovieRecommendations(movieId: string | number | null | undefined, limit: number = 8) {
+export function useMovieRecommendations(
+  movieId: string | number | null | undefined,
+  limit: number = 8,
+  targetMovie?: Movie | null
+) {
   return useQuery({
-    queryKey: QUERY_KEYS.movieRecommendations(movieId || 'none'),
-    queryFn: () => (movieId ? api.fetchMovieRecommendations(movieId, limit) : Promise.resolve([])),
+    queryKey: QUERY_KEYS.movieRecommendations(movieId ? String(movieId) : 'none'),
+    queryFn: () => (movieId ? api.fetchMovieRecommendations(movieId, limit, targetMovie) : Promise.resolve([])),
     enabled: !!movieId,
     staleTime: 1000 * 60 * 5,
   });

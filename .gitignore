@@ -18,20 +18,18 @@ venv/
 env/
 *.egg
 
-# ─── DATA FILES (proprietary – do not share) ──────────────────────────────────
+# ─── DATA FILES ──────────────────────────────────────────────────────────────
 # Root TMDB raw datasets
 tmdb_5000_movies.csv
 tmdb_5000_credits.csv
 
-# Backend processed/expanded datasets
-backend/data/
-/data/
+# Backend datasets (included for cloud deployment)
+!backend/data/
+!backend/data/movies.csv
+!backend/data/spotify_tracks.csv
 !frontend/src/data/
-backend/data/movies.csv
-backend/data/spotify_tracks.csv
 
-# Any other CSVs / pickles / model weights / datasets
-*.csv
+# Other raw data formats
 *.tsv
 *.parquet
 *.sqlite

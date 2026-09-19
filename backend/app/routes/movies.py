@@ -27,8 +27,22 @@ def get_movie(movie_id: str):
     return movie
 
 @router.get("/{movie_id}/recommendations", response_model=List[MovieItem])
-def get_movie_recommendations(movie_id: str, limit: int = 6):
+def get_movie_recommendations(
+    movie_id: str,
+    limit: int = 6,
+    title: Optional[str] = Query(None, description="Optional title fallback")
+):
     movie = engine.get_movie_by_id(movie_id)
-    if not movie:
+    search_title = None
+    if movie:
+        search_title = movie.get('title')
+    elif title:
+        search_title = title
+    else:
+        clean_slug = movie_id.replace("hero-", "").replace("m-", "").replace("-", " ")
+        search_title = clean_slug
+
+    if not search_title:
         raise HTTPException(status_code=404, detail="Movie not found")
-    return engine.recommend_movies_for_title(movie['title'], top_n=limit, exclude_id=str(movie_id))
+    return engine.recommend_movies_for_title(search_title, top_n=limit, exclude_id=str(movie_id))
+
