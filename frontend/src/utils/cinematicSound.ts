@@ -1,11 +1,11 @@
-// Cinematic "Ta-Dum" / "Zhoosh" Audio Synthesizer
-// Created using Web Audio API for zero-dependency, zero-latency cinematic playback
+// Cinematic "ZHOOOOSH" / Netflix-Style Intro Audio Synthesizer
+// Created using Web Audio API for zero-dependency, zero-latency cinematic sound design
 
 class ZhooshAudioEngine {
   private ctx: AudioContext | null = null;
-  public isMuted = true; // Sound disabled as requested
+  public isMuted = false; // Enabled for signature Zhoosh cinematic intro sound
 
-  private getContext(): AudioContext | null {
+  public getContext(): AudioContext | null {
     if (this.isMuted) return null;
     if (typeof window === 'undefined') return null;
     if (!this.ctx) {
@@ -19,141 +19,168 @@ class ZhooshAudioEngine {
   }
 
   /**
-   * Plays the signature Netflix-style "Ta-Dum" / "Zhoosh" cinematic sound:
-   * 1. "Ta": Quick mid-frequency percussion strike (80ms)
-   * 2. "DUMMM": Deep subterranean bass chord (45Hz - 90Hz) with 2.4s decay
-   * 3. "Zhoooosh": Bandpass filtered noise whoosh sweeping through the spectrum
-   * 4. Shimmer: Harmonically rich crystalline overtone chime
+   * Resumes the AudioContext on user interaction if the browser suspended autoplay
+   */
+  public resumeContext(): Promise<void> {
+    const ctx = this.getContext();
+    if (ctx && ctx.state === 'suspended') {
+      return ctx.resume();
+    }
+    return Promise.resolve();
+  }
+
+  /**
+   * Signature Netflix-style "ZHOOOOOOSH" Cinematic Sound:
+   * 1. "Zzz": Initial high-energy stereo sizzle and FM sweep (0.0s - 0.25s)
+   * 2. "OOOO": Subterranean cinema sub-bass chord + detuned brass impact (0.12s - 2.2s)
+   * 3. "SHHH": Giant resonant pink noise whoosh sweeping through the spectrum ("ZHOOO-SSHHH")
+   * 4. "Shimmer": Crystalline celestial overtones and reverberant chime tail (0.25s - 2.5s)
    */
   playZhooshIntroSound() {
     if (this.isMuted) return;
     const ctx = this.getContext();
     if (!ctx) return;
 
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
     try {
       const now = ctx.currentTime;
 
-      // Master compressor to give that Hollywood punch & prevent clipping
+      // Master Compressor for Hollywood-grade loudness & zero distortion
       const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.setValueAtTime(-12, now);
-      compressor.knee.setValueAtTime(30, now);
-      compressor.ratio.setValueAtTime(12, now);
-      compressor.attack.setValueAtTime(0.003, now);
-      compressor.release.setValueAtTime(0.25, now);
+      compressor.threshold.setValueAtTime(-14, now);
+      compressor.knee.setValueAtTime(24, now);
+      compressor.ratio.setValueAtTime(10, now);
+      compressor.attack.setValueAtTime(0.002, now);
+      compressor.release.setValueAtTime(0.28, now);
       compressor.connect(ctx.destination);
 
-      // --- 1. THE "TA" (Initial Perceptual Impact Transient at 0.0s) ---
-      const taOsc = ctx.createOscillator();
-      const taGain = ctx.createGain();
-      taOsc.type = 'triangle';
-      taOsc.frequency.setValueAtTime(130, now);
-      taOsc.frequency.exponentialRampToValueAtTime(60, now + 0.12);
+      // --- 1. THE "Z" (Initial Electric Spark Transient at 0.0s) ---
+      const zOsc = ctx.createOscillator();
+      const zGain = ctx.createGain();
+      const zFilter = ctx.createBiquadFilter();
 
-      taGain.gain.setValueAtTime(0.35, now);
-      taGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      zOsc.type = 'sawtooth';
+      zOsc.frequency.setValueAtTime(85, now);
+      zOsc.frequency.exponentialRampToValueAtTime(190, now + 0.22);
 
-      taOsc.connect(taGain);
-      taGain.connect(compressor);
-      taOsc.start(now);
-      taOsc.stop(now + 0.15);
+      zFilter.type = 'bandpass';
+      zFilter.frequency.setValueAtTime(500, now);
+      zFilter.frequency.exponentialRampToValueAtTime(1400, now + 0.24);
+      zFilter.Q.setValueAtTime(4.5, now);
 
-      // --- 2. THE "DUMMM" (Main Subterranean Sub-Bass Chord at 0.14s) ---
-      const dumTime = now + 0.13;
+      zGain.gain.setValueAtTime(0.001, now);
+      zGain.gain.linearRampToValueAtTime(0.28, now + 0.07);
+      zGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
-      // Sub bass fundamental (48Hz)
+      zOsc.connect(zFilter);
+      zFilter.connect(zGain);
+      zGain.connect(compressor);
+      zOsc.start(now);
+      zOsc.stop(now + 0.26);
+
+      // --- 2. THE "OOOO" (Subterranean Sub-Bass Chord + Analog Brass) ---
+      const boomTime = now + 0.12;
+
+      // Sub Bass Fundamental (44Hz deep rumble)
       const subOsc = ctx.createOscillator();
       const subGain = ctx.createGain();
       subOsc.type = 'sine';
-      subOsc.frequency.setValueAtTime(75, dumTime);
-      subOsc.frequency.exponentialRampToValueAtTime(46, dumTime + 0.35);
+      subOsc.frequency.setValueAtTime(72, boomTime);
+      subOsc.frequency.exponentialRampToValueAtTime(42, boomTime + 0.42);
 
-      subGain.gain.setValueAtTime(0.001, dumTime);
-      subGain.gain.linearRampToValueAtTime(0.7, dumTime + 0.04);
-      subGain.gain.exponentialRampToValueAtTime(0.001, dumTime + 2.2);
+      subGain.gain.setValueAtTime(0.001, boomTime);
+      subGain.gain.linearRampToValueAtTime(0.9, boomTime + 0.05);
+      subGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 2.2);
 
       subOsc.connect(subGain);
       subGain.connect(compressor);
-      subOsc.start(dumTime);
-      subOsc.stop(dumTime + 2.3);
+      subOsc.start(boomTime);
+      subOsc.stop(boomTime + 2.3);
 
-      // Detuned Brass/Saw Unison for cinematic thickness (D2 = 73.4Hz + A2 = 110Hz)
-      [73.4, 73.9, 110.0].forEach((freq, idx) => {
+      // Cinematic Detuned Brass Unison (D2 = 73.4Hz, A2 = 110Hz, D3 = 146.8Hz)
+      [73.4, 74.1, 110.0, 146.8].forEach((freq, idx) => {
         const brassOsc = ctx.createOscillator();
         const brassGain = ctx.createGain();
         const brassFilter = ctx.createBiquadFilter();
 
-        brassOsc.type = 'sawtooth';
-        brassOsc.frequency.setValueAtTime(freq, dumTime);
+        brassOsc.type = idx % 2 === 0 ? 'sawtooth' : 'triangle';
+        brassOsc.frequency.setValueAtTime(freq, boomTime);
 
-        // Low-pass filter sweep for that authentic analog brass growl
         brassFilter.type = 'lowpass';
-        brassFilter.frequency.setValueAtTime(320, dumTime);
-        brassFilter.frequency.exponentialRampToValueAtTime(80, dumTime + 1.8);
-        brassFilter.Q.setValueAtTime(4, dumTime);
+        brassFilter.frequency.setValueAtTime(380, boomTime);
+        brassFilter.frequency.exponentialRampToValueAtTime(75, boomTime + 1.9);
+        brassFilter.Q.setValueAtTime(3.2, boomTime);
 
-        const volume = idx === 2 ? 0.15 : 0.22;
-        brassGain.gain.setValueAtTime(0.001, dumTime);
-        brassGain.gain.linearRampToValueAtTime(volume, dumTime + 0.06);
-        brassGain.gain.exponentialRampToValueAtTime(0.001, dumTime + 2.1);
+        const vol = 0.2 / (idx + 1);
+        brassGain.gain.setValueAtTime(0.001, boomTime);
+        brassGain.gain.linearRampToValueAtTime(vol, boomTime + 0.06);
+        brassGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 2.0);
 
         brassOsc.connect(brassFilter);
         brassFilter.connect(brassGain);
         brassGain.connect(compressor);
 
-        brassOsc.start(dumTime);
-        brassOsc.stop(dumTime + 2.2);
+        brassOsc.start(boomTime);
+        brassOsc.stop(boomTime + 2.1);
       });
 
-      // --- 3. THE "ZHOOOOSH" (Airy Frequency Sweep Whoosh) ---
-      // White noise buffer for rushing texture
-      const bufferSize = ctx.sampleRate * 1.5;
+      // --- 3. THE "SHHHHH" (Massive Resonant Acoustic Whoosh "ZHOOO-SSHHH") ---
+      const noiseDuration = 2.2;
+      const bufferSize = ctx.sampleRate * noiseDuration;
       const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const output = noiseBuffer.getChannelData(0);
+      let lastOut = 0.0;
       for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
+        const white = Math.random() * 2 - 1;
+        output[i] = (lastOut + 0.025 * white) / 1.025;
+        lastOut = output[i];
+        output[i] *= 3.8;
       }
 
-      const whiteNoise = ctx.createBufferSource();
-      whiteNoise.buffer = noiseBuffer;
+      const noiseSource = ctx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
 
-      const noiseFilter = ctx.createBiquadFilter();
-      noiseFilter.type = 'bandpass';
-      noiseFilter.frequency.setValueAtTime(250, now);
-      noiseFilter.frequency.exponentialRampToValueAtTime(2400, now + 0.25);
-      noiseFilter.frequency.exponentialRampToValueAtTime(400, now + 1.2);
-      noiseFilter.Q.setValueAtTime(3.5, now);
+      const sweepFilter = ctx.createBiquadFilter();
+      sweepFilter.type = 'bandpass';
+      sweepFilter.frequency.setValueAtTime(200, now);
+      // Sweep dynamically up through the "ZHOOO" into the wide "SHHHH"
+      sweepFilter.frequency.exponentialRampToValueAtTime(3200, now + 0.38);
+      sweepFilter.frequency.exponentialRampToValueAtTime(380, now + 1.7);
+      sweepFilter.Q.setValueAtTime(2.6, now);
 
       const noiseGain = ctx.createGain();
       noiseGain.gain.setValueAtTime(0.001, now);
-      noiseGain.gain.linearRampToValueAtTime(0.28, now + 0.16);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+      noiseGain.gain.linearRampToValueAtTime(0.55, now + 0.3);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.9);
 
-      whiteNoise.connect(noiseFilter);
-      noiseFilter.connect(noiseGain);
+      noiseSource.connect(sweepFilter);
+      sweepFilter.connect(noiseGain);
       noiseGain.connect(compressor);
 
-      whiteNoise.start(now);
-      whiteNoise.stop(now + 1.4);
+      noiseSource.start(now);
+      noiseSource.stop(now + 2.0);
 
-      // --- 4. THE METALLIC CRYSTALLINE OVERTONE (Anvil / Chime Reverb tail) ---
-      [1760, 2637, 3520].forEach((freq) => {
+      // --- 4. THE CRYSTALLINE CINEMATIC SHIMMER (Bells & Star Dust) ---
+      [1318.51, 1661.22, 1975.53, 2637.02].forEach((freq, idx) => {
         const chimeOsc = ctx.createOscillator();
         const chimeGain = ctx.createGain();
 
         chimeOsc.type = 'sine';
-        chimeOsc.frequency.setValueAtTime(freq, dumTime + 0.02);
+        chimeOsc.frequency.setValueAtTime(freq, boomTime + idx * 0.04);
 
-        chimeGain.gain.setValueAtTime(0.001, dumTime + 0.02);
-        chimeGain.gain.linearRampToValueAtTime(0.04, dumTime + 0.05);
-        chimeGain.gain.exponentialRampToValueAtTime(0.0001, dumTime + 1.8);
+        chimeGain.gain.setValueAtTime(0.001, boomTime + idx * 0.04);
+        chimeGain.gain.linearRampToValueAtTime(0.07, boomTime + idx * 0.04 + 0.03);
+        chimeGain.gain.exponentialRampToValueAtTime(0.0001, boomTime + idx * 0.04 + 2.2);
 
         chimeOsc.connect(chimeGain);
         chimeGain.connect(compressor);
 
-        chimeOsc.start(dumTime + 0.02);
-        chimeOsc.stop(dumTime + 1.9);
+        chimeOsc.start(boomTime + idx * 0.04);
+        chimeOsc.stop(boomTime + idx * 0.04 + 2.3);
       });
-
     } catch (e) {
       console.warn('AudioContext playback error (user interaction may be required):', e);
     }
