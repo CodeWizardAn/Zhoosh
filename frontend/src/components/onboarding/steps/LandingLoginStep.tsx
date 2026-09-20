@@ -34,7 +34,6 @@ import { ACADEMIC_PROJECT_INFO } from '@/data/teamMembers';
 import { AppSnapshotsShowcase } from '../components/AppSnapshotsShowcase';
 import { BrandStoryCarousel } from '../components/BrandStoryCarousel';
 import { WhyChooseZhooshCarousel } from '../components/WhyChooseZhooshCarousel';
-import { zhooshAudio } from '@/utils/cinematicSound';
 
 interface LandingLoginStepProps {
   onGoToPlans: () => void;
@@ -48,31 +47,6 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
   const shouldReduceMotion = useReducedMotion();
   const signInCardRef = React.useRef<HTMLDivElement>(null);
   const emailInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Play signature ZHOOOOSH sound whenever landing page comes
-  React.useEffect(() => {
-    try {
-      zhooshAudio.playZhooshIntroSound(true);
-    } catch {}
-
-    const onLandingInteraction = () => {
-      try {
-        zhooshAudio.playZhooshIntroSound(true);
-      } catch {}
-    };
-
-    window.addEventListener('pointerdown', onLandingInteraction, { once: true });
-    window.addEventListener('click', onLandingInteraction, { once: true });
-    window.addEventListener('keydown', onLandingInteraction, { once: true });
-    window.addEventListener('touchstart', onLandingInteraction, { once: true });
-
-    return () => {
-      window.removeEventListener('pointerdown', onLandingInteraction);
-      window.removeEventListener('click', onLandingInteraction);
-      window.removeEventListener('keydown', onLandingInteraction);
-      window.removeEventListener('touchstart', onLandingInteraction);
-    };
-  }, []);
 
   const [email, setEmail] = useState(() => {
     try {
@@ -91,7 +65,6 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
   const [creditsTab, setCreditsTab] = useState<'legal' | 'developer' | 'academic'>('legal');
 
   const handleSignInClick = () => {
-    try { zhooshAudio.playZhooshIntroSound(true); } catch {}
     if (signInCardRef.current) {
       signInCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => {

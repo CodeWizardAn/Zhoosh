@@ -1,7 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, Sparkles } from 'lucide-react';
-import { zhooshAudio } from '@/utils/cinematicSound';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -10,51 +8,26 @@ interface SplashScreenProps {
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [progress, setProgress] = useState(15);
-  const [soundPlayed, setSoundPlayed] = useState(false);
-
-  const handlePlaySound = useCallback((force = true) => {
-    try {
-      zhooshAudio.playZhooshIntroSound(force);
-      setSoundPlayed(true);
-    } catch {}
-  }, []);
 
   useEffect(() => {
-    // 1. Attempt immediate playback on initial mount
-    handlePlaySound(false);
-
-    // 2. Browser Autoplay Unlock: Listen for any user gesture (click, tap, key)
-    const onUserGesture = () => {
-      handlePlaySound(true);
-    };
-
-    window.addEventListener('pointerdown', onUserGesture);
-    window.addEventListener('click', onUserGesture);
-    window.addEventListener('keydown', onUserGesture);
-    window.addEventListener('touchstart', onUserGesture);
-
     // Progress bar simulation
-    const p1 = setTimeout(() => setProgress(45), 400);
-    const p2 = setTimeout(() => setProgress(78), 1000);
-    const p3 = setTimeout(() => setProgress(100), 1700);
+    const p1 = setTimeout(() => setProgress(45), 350);
+    const p2 = setTimeout(() => setProgress(78), 900);
+    const p3 = setTimeout(() => setProgress(100), 1500);
 
-    // Splash duration: 2.5s for complete cinematic brand reveal
+    // Splash duration: 2.1s for clean brand reveal
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onComplete, 400);
-    }, 2500);
+      setTimeout(onComplete, 350);
+    }, 2100);
 
     return () => {
-      window.removeEventListener('pointerdown', onUserGesture);
-      window.removeEventListener('click', onUserGesture);
-      window.removeEventListener('keydown', onUserGesture);
-      window.removeEventListener('touchstart', onUserGesture);
       clearTimeout(p1);
       clearTimeout(p2);
       clearTimeout(p3);
       clearTimeout(timer);
     };
-  }, [onComplete, handlePlaySound]);
+  }, [onComplete]);
 
   return (
     <AnimatePresence>
@@ -63,9 +36,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           key="splash"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.04 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          onClick={() => handlePlaySound(true)}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050508] select-none overflow-hidden cursor-pointer"
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050508] select-none overflow-hidden"
         >
           {/* Deep Black, Crimson Red & Electric Purple Atmospheric Cosmic Flares */}
           <div className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full bg-[#FF1E56]/22 blur-[170px] pointer-events-none animate-pulse" />
@@ -176,24 +148,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
                 style={{ width: `${progress}%`, transition: 'width 0.4s ease-out' }}
               />
             </motion.div>
-
-            {/* 4. Interactive Sound Activation Button / Badge */}
-            <motion.button
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePlaySound(true);
-              }}
-              className="mt-4 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/15 text-xs font-semibold text-rose-200 hover:bg-white/10 hover:border-red-500/40 transition-all shadow-[0_0_15px_rgba(255,30,86,0.25)] cursor-pointer"
-            >
-              <Volume2 className={`w-3.5 h-3.5 text-[#FF1E56] ${soundPlayed ? '' : 'animate-bounce'}`} />
-              <span>{soundPlayed ? '🔊 Playing Signature Zhoosh' : '▶ Tap to hear signature ZOOOOOSH'}</span>
-              <Sparkles className="w-3 h-3 text-rose-400" />
-            </motion.button>
           </div>
         </motion.div>
       )}
