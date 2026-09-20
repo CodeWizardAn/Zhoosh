@@ -639,18 +639,75 @@ class ApiClient {
     } catch {
       // Mock streaming fallback
       await delay(200);
-      const msg = message.toLowerCase().trim();
       let intent = 'conversational';
       let attachedMovies: Movie[] = [];
       let attachedSongs: Song[] = [];
       let replyText = '';
 
-      if (mode === 'music') {
-        // ================= MUSIC MODE FALLBACK =================
-        if (/\b(movie|movies|film|films|cinema|director|actor)\b/i.test(msg)) {
-          intent = 'mode_switch';
-          replyText = `🎵 **You are currently in Music mode with ${agentName}!**\n\nTo explore movies, watch trailers, or check director filmographies, please switch to **Cinema mode** using the toggle in the top bar 🎬.`;
-        } else if (/\b(what (kind of )?(songs?|music|tracks?) do i like|my taste|what do i like|my preferences|what is my music taste)\b/i.test(msg)) {
+      // 1. Meta Difference Check ("diff between hi hello", "difference between hi and hello", "high differently")
+      const isGreetingMeta =
+        /\b(diff|difference|different|differently|distinction|compare|meanings?|differentiate)\b/i.test(message) &&
+        /\b(hi|hello|hey|high)\b/i.test(message);
+
+      const isHighVibe = /\bhigh\s+(energy|octane|tempo|bpm|stakes?|school|definition|rating|rated|performance)\b/i.test(message);
+      const cleanPunct = message.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
+      const isPureGreeting = !isHighVibe && (
+        /^(hi+|hello+|hey+|heyy+|heya|howdy|hola|high|sup|yo|greetings?|good\s+(morning|afternoon|evening|day))(\s+(there|nova|sonicbot|bot|friend|buddy|mate|everyone|all|assistant))?$/i.test(cleanPunct)
+      );
+      const isIdentity = /\b(who are you|who r u|what is your name|whats your name|what are you|introduce yourself)\b/i.test(cleanPunct);
+      const isHowAreYou = /\b(how are you|how r u|how do you do|hows it going|how are things|how are you doing)\b/i.test(cleanPunct);
+      const isHelp = /^(help|what can you do|how does this work)$/i.test(cleanPunct);
+
+      if (isGreetingMeta) {
+        intent = 'conversational';
+        if (mode === 'movies') {
+          replyText = `Linguistically, **"Hi"**, **"Hello"**, and **"High"** all carry distinct meanings:\n\n• **"Hi"**: Casual, warm, and conversational—the standard informal greeting among friends.\n• **"Hello"**: The classic, universally recognized greeting suited for any setting.\n• **"High"**: A phonetic homophone (sounds identical) often typed by mistake or transcribed via voice for "hi"—though in cinema, it points to **high-octane thrillers**, **high-stakes drama**, or **high-energy blockbusters**!\n\nWhether you say *hi*, *hello*, or are looking for something high-energy, I'm **${agentName}**, your dedicated AI cinema guide. What would you like to watch or explore today?`;
+        } else {
+          replyText = `Linguistically, **"Hi"**, **"Hello"**, and **"High"** all carry distinct nuances:\n\n• **"Hi"**: Casual, energetic, and informal—great for kicking off a listening session.\n• **"Hello"**: The universal standard greeting for every musical discovery.\n• **"High"**: A phonetic homophone often typed as a quick typo or transcribed via voice for "hi"—though in music, it represents **high-energy gym bangers**, **high-BPM dance tracks**, or **high-fidelity lossless audio**!\n\nWhether you say *hi*, *hello*, or want high-energy tunes, I'm **${agentName}**, your AI audio guide. What track, artist, or genre are you tuning into today?`;
+        }
+      } else if (isPureGreeting || isIdentity || isHowAreYou || isHelp) {
+        intent = 'conversational';
+        if (/^high/i.test(cleanPunct)) {
+          replyText = mode === 'movies'
+            ? `Hello there! I see you said **"High"**—whether that's a quick hello or you're looking for **high-octane, adrenaline-pumping cinema**, you've come to the right place! 🎬\n\nI'm **${agentName}**, your AI Cinema Intelligence guide. Ask me for high-energy thrillers, genre recommendations, or say _"What kind of movies do I like?"_ to tune your taste profile!`
+            : `Hello there! I see you typed **"High"**—whether that's a friendly hello or you're searching for **high-energy workout bangers and high-BPM anthems**, I've got you covered! ⚡\n\nI'm **${agentName}**, your AI Music Intelligence guide. Ask me for gym tracks, artists like Arijit Singh, or your sonic taste profile!`;
+        } else if (/^hi/i.test(cleanPunct)) {
+          replyText = mode === 'movies'
+            ? `Hi there! 👋 I am **${agentName}**, your personal AI Cinema & Storytelling guide on Zhoosh.\n\nWhat are you in the mood to watch today? You can ask for genres (**Thriller**, **Comedy**, **Sci-Fi**), films like **Inception**, or say _"What kind of movies do I like?"_!`
+            : `Hi there! 👋 I am **${agentName}**, your personal AI Music & Audio Intelligence guide on Zhoosh.\n\nWhat's your soundtrack today? Explore **Lo-Fi**, **Hip-Hop**, artists like **Coldplay**, or vibe tracks for **Road Trips**!`;
+        } else if (/^hello/i.test(cleanPunct)) {
+          replyText = mode === 'movies'
+            ? `Hello! Welcome to Zhoosh Cinema. I'm **${agentName}**, your dedicated movie recommendation intelligence.\n\nWhether you're looking for mind-bending sci-fi, gripping thrillers, heartfelt dramas, or movies directed by Christopher Nolan, I have our entire library ready for you. How can I help you choose your next favorite film?`
+            : `Hello! Welcome to Zhoosh Music. I'm **${agentName}**, your dedicated audio intelligence assistant.\n\nFrom chart-topping global hits and lossless Hi-Fi tracks to curated moods (party, chill, road trips, or workout), I can queue up the perfect sound for your moment. What would you like to explore?`;
+        } else if (/^hey/i.test(cleanPunct)) {
+          replyText = mode === 'movies'
+            ? `Hey! Great to see you. I'm **${agentName}**, your AI film curator. Looking for something thrilling, funny, or thought-provoking to stream today? Tell me a genre, an actor, or a movie you love!`
+            : `Hey! Great to see you. I'm **${agentName}**, your AI music companion. Ready to find your next favorite track or playlist? Drop an artist, genre, or mood and let's get the music going!`;
+        } else if (isHowAreYou) {
+          replyText = mode === 'movies'
+            ? `I'm doing great, thank you for asking! 😊 Ready to help you discover incredible movies, directors, and cinematic stories. What genre or vibe are you in the mood for today?`
+            : `I'm doing fantastic, thanks for asking! 🎵 Ready to queue up the best tracks and curate the perfect soundscape for you. What kind of music vibe or artist are you tuning into today?`;
+        } else if (isIdentity) {
+          replyText = mode === 'movies'
+            ? `I am **${agentName}**, your dedicated AI Cinema & Soundtrack Intelligence assistant on Zhoosh. Ask me for movie recommendations by genre, directors like Christopher Nolan, similar movies to Inception, or your personal taste profile!`
+            : `I am **${agentName}**, your dedicated AI Music & Audio Intelligence guide on Zhoosh. Ask me for songs by artist (Arijit Singh, Coldplay), genres (Hip-Hop, Lo-Fi), or workout bangers!`;
+        } else {
+          replyText = mode === 'movies'
+            ? `Greetings and welcome! I'm **${agentName}**, your AI cinema companion on Zhoosh. Ready to stream something remarkable? Tell me what genre or vibe you're feeling today!`
+            : `Greetings and welcome! I'm **${agentName}**, your audio intelligence guide on Zhoosh. Ready to stream some great tunes? Tell me what sound or vibe you want!`;
+        }
+      } else {
+        // Strip leading greeting for compound queries (e.g. "hi suggest thriller movies")
+        const strippedMsg = message.replace(/^(hi+|hello+|hey+|heyy+|howdy|hola|high|good\s+(morning|afternoon|evening))\b[,!.\s]*/i, '').trim();
+        const msg = (strippedMsg || message).toLowerCase().trim();
+
+        if (mode === 'music') {
+          // ================= MUSIC MODE FALLBACK =================
+          if (/\b(movie|movies|film|films|cinema|director|actor)\b/i.test(msg)) {
+            intent = 'mode_switch';
+            replyText = `🎵 **You are currently in Music mode with ${agentName}!**\n\nTo explore movies, watch trailers, or check director filmographies, please switch to **Cinema mode** using the toggle in the top bar 🎬.`;
+          } else if (/\b(what (kind of )?(songs?|music|tracks?) do i like|my taste|what do i like|my preferences|what is my music taste)\b/i.test(msg)) {
           intent = 'taste_profile';
           const liked = (likedTitles || []).filter(Boolean);
           if (liked.length > 0) {
@@ -735,9 +792,6 @@ class ApiClient {
           replyText = `Here are acclaimed 🎵 **${gName}** tracks matching your vibe on Zhoosh Music. Click any track to stream instantly!`;
           attachedSongs = MOCK_SONGS.filter(s => s.genre.toLowerCase().includes(gName.toLowerCase())).slice(0, 6);
           if (attachedSongs.length === 0) attachedSongs = MOCK_SONGS.slice(0, 6);
-        } else if (/\b(hi|hello|hey|who are you|help)\b/i.test(msg)) {
-          intent = 'conversational';
-          replyText = `Hello! I'm **${agentName}**, your personal AI Music & Audio Intelligence assistant on Zhoosh.\n\nAsk me for song recommendations by genre (like **Hip-Hop**, **Romantic**, or **Rock**), tracks by artists like **Arijit Singh** or **Coldplay**, or vibe tracks for **Road Trips** and **Workouts**!`;
         } else {
           intent = 'music';
           replyText = "Here are top trending tracks curated for your taste on Zhoosh Music:";
@@ -869,9 +923,6 @@ class ApiClient {
             intent = 'predicted';
             replyText = "🔮 **Predictive Neural Cinema Match**:\n\nBased on your predictive viewing history and taste profile, here are the top predicted feature films ready for you to stream today:";
             attachedMovies = [...MOCK_MOVIES].sort((a, b) => (b.match_score || 0) - (a.match_score || 0)).slice(0, 6);
-          } else if (/\b(hi|hello|hey|who are you|what is your name|help)\b/i.test(msg)) {
-            intent = 'conversational';
-            replyText = `Hello! I'm **${agentName}**, your personal cinema and storytelling intelligence assistant on Zhoosh.\n\nAsk me for movie recommendations by genre (like **Romance**, **Horror**, **Sci-Fi**, or **Comedy**), similar titles to **The Dark Knight** or **Inception**, or films by directors like **Christopher Nolan**!`;
           } else {
             intent = 'recommendation';
             replyText = "Here are top-tier cinematic recommendations curated for your taste on Zhoosh:";
@@ -879,6 +930,7 @@ class ApiClient {
           }
         }
       }
+    }
 
       if (mode === 'movies' && attachedMovies.length > 0 && onMovies) onMovies(attachedMovies);
       if (mode === 'music' && attachedSongs.length > 0 && onSongs) onSongs(attachedSongs);

@@ -266,7 +266,8 @@ def detect_music_mood_in_query(query: str):
     # 3. Exciting / Thrilling / Kendrick Lamar / Rock / High Energy
     if any(k in q_lower for k in [
         'exciting', 'thrilling', 'adrenaline', 'kendrick', 'kendric', 'rock',
-        'rock music', 'hype', 'hyped', 'pump', 'workout', 'gym', 'banger', 'electric'
+        'rock music', 'hype', 'hyped', 'pump', 'workout', 'gym', 'banger', 'electric',
+        'high energy', 'high octane', 'high tempo', 'high bpm'
     ]):
         thrill_songs = [
             'humble.', 'not like us', 'all the stars', 'bohemian rhapsody',
@@ -356,11 +357,11 @@ def detect_music_mood_in_query(query: str):
         return "☀️ **Happy, Joyful & Romantic Love Songs**", selected[:6]
 
     # Fallback existing moods
-    if any(k in q_lower for k in ['party', 'dance', 'club', 'banger', 'celebrate', 'upbeat']):
+    if any(k in q_lower for k in ['party', 'dance', 'club', 'banger', 'celebrate', 'upbeat', 'high energy', 'high octane', 'high tempo', 'gym', 'workout', 'hype']):
         party_titles = ['humble.', 'sicko mode', 'blinding lights', 'starboy', 'shape of you', 'hotline bling', 'die with a smile']
         df = engine.music_df[engine.music_df['track_name'].str.lower().apply(lambda t: any(s in t for s in party_titles)) | (engine.music_df['danceability'] >= 0.70)]
         formatted = [engine._format_song_row(row, match_pct=99, rationale=f"High-octane party anthem: '{row['track_name']}' by {row['artists']}.") for _, row in df.iterrows()]
-        return "⚡ **Party & Dance**", formatted[:6]
+        return "⚡ **Party & High-Energy Bangers**", formatted[:6]
 
     if any(k in q_lower for k in ['chill', 'relax', 'calm', 'study', 'sleep', 'soothing', 'peaceful', 'mellow', 'zen']):
         lofi_tracks = engine.get_music(genre='lo-fi', limit=6)
@@ -452,7 +453,8 @@ def detect_movie_mood_in_query(query: str):
     # 3. Exciting / Adrenaline / Action-Packed
     if any(k in q_lower for k in [
         'exciting', 'adrenaline', 'edge of my seat',
-        'edge of seat', 'mind-blowing', 'mind blowing', 'action packed', 'intense', 'hype', 'hyped'
+        'edge of seat', 'mind-blowing', 'mind blowing', 'action packed', 'intense', 'hype', 'hyped',
+        'high energy', 'high octane', 'high tempo', 'high adrenaline', 'high action'
     ]):
         thrill_titles = [
             'oppenheimer', 'the dark knight', 'inception', 'fight club',
@@ -554,32 +556,82 @@ def detect_movie_mood_in_query(query: str):
     return None, None
 
 def detect_person_in_query(query: str):
-    """Detect if user is asking for director or actor filmography."""
+    """Detect if user is asking for director or actor filmography, supporting full names and surnames."""
     if engine.movies_df is None or engine.movies_df.empty:
         return None, None
         
     q_lower = query.lower()
     
-    # Common famous directors
-    DIRECTORS = [
-        "Christopher Nolan", "Quentin Tarantino", "Steven Spielberg", "Martin Scorsese",
-        "Denis Villeneuve", "David Fincher", "James Cameron", "Ridley Scott",
-        "Stanley Kubrick", "Alfred Hitchcock", "Guillermo del Toro", "Wes Anderson",
-        "Hayao Miyazaki", "Bong Joon-ho", "Greta Gerwig", "Peter Jackson"
-    ]
-    for d in DIRECTORS:
-        if d.lower() in q_lower:
+    # Famous directors with full names and surnames
+    DIRECTOR_MAP = {
+        "christopher nolan": "Christopher Nolan",
+        "nolan": "Christopher Nolan",
+        "quentin tarantino": "Quentin Tarantino",
+        "tarantino": "Quentin Tarantino",
+        "steven spielberg": "Steven Spielberg",
+        "spielberg": "Steven Spielberg",
+        "martin scorsese": "Martin Scorsese",
+        "scorsese": "Martin Scorsese",
+        "denis villeneuve": "Denis Villeneuve",
+        "villeneuve": "Denis Villeneuve",
+        "david fincher": "David Fincher",
+        "fincher": "David Fincher",
+        "james cameron": "James Cameron",
+        "cameron": "James Cameron",
+        "ridley scott": "Ridley Scott",
+        "stanley kubrick": "Stanley Kubrick",
+        "kubrick": "Stanley Kubrick",
+        "alfred hitchcock": "Alfred Hitchcock",
+        "hitchcock": "Alfred Hitchcock",
+        "guillermo del toro": "Guillermo del Toro",
+        "del toro": "Guillermo del Toro",
+        "wes anderson": "Wes Anderson",
+        "hayao miyazaki": "Hayao Miyazaki",
+        "miyazaki": "Hayao Miyazaki",
+        "bong joon-ho": "Bong Joon-ho",
+        "greta gerwig": "Greta Gerwig",
+        "gerwig": "Greta Gerwig",
+        "peter jackson": "Peter Jackson",
+        "rajkumar hirani": "Rajkumar Hirani",
+        "hirani": "Rajkumar Hirani",
+        "anurag kashyap": "Anurag Kashyap"
+    }
+    for kw, d in DIRECTOR_MAP.items():
+        if re.search(r'(?:\b|^)' + re.escape(kw) + r'(?:\b|$|[?!.,])', q_lower):
             return "director", d
             
-    # Common famous actors
-    ACTORS = [
-        "Leonardo DiCaprio", "Brad Pitt", "Tom Cruise", "Christian Bale",
-        "Robert De Niro", "Al Pacino", "Matthew McConaughey", "Morgan Freeman",
-        "Keanu Reeves", "Tom Hanks", "Cillian Murphy", "Joaquin Phoenix",
-        "Ryan Gosling", "Emma Stone", "Scarlett Johansson", "Anne Hathaway"
-    ]
-    for a in ACTORS:
-        if a.lower() in q_lower:
+    # Famous actors with full names and surnames
+    ACTOR_MAP = {
+        "leonardo dicaprio": "Leonardo DiCaprio",
+        "dicaprio": "Leonardo DiCaprio",
+        "brad pitt": "Brad Pitt",
+        "tom cruise": "Tom Cruise",
+        "christian bale": "Christian Bale",
+        "robert de niro": "Robert De Niro",
+        "al pacino": "Al Pacino",
+        "matthew mcconaughey": "Matthew McConaughey",
+        "mcconaughey": "Matthew McConaughey",
+        "morgan freeman": "Morgan Freeman",
+        "keanu reeves": "Keanu Reeves",
+        "tom hanks": "Tom Hanks",
+        "hanks": "Tom Hanks",
+        "cillian murphy": "Cillian Murphy",
+        "joaquin phoenix": "Joaquin Phoenix",
+        "ryan gosling": "Ryan Gosling",
+        "gosling": "Ryan Gosling",
+        "emma stone": "Emma Stone",
+        "scarlett johansson": "Scarlett Johansson",
+        "anne hathaway": "Anne Hathaway",
+        "shah rukh khan": "Shah Rukh Khan",
+        "shahrukh": "Shah Rukh Khan",
+        "srk": "Shah Rukh Khan",
+        "aamir khan": "Aamir Khan",
+        "salman khan": "Salman Khan",
+        "ranbir kapoor": "Ranbir Kapoor",
+        "deepika padukone": "Deepika Padukone"
+    }
+    for kw, a in ACTOR_MAP.items():
+        if re.search(r'(?:\b|^)' + re.escape(kw) + r'(?:\b|$|[?!.,])', q_lower):
             return "actor", a
             
     return None, None
@@ -671,6 +723,230 @@ def extract_context_from_history(history: List[ConversationMessage], current_mod
         'seen_titles': list(seen_titles),
         'more_count': more_count
     }
+
+# ---------------------------------------------------------------------------
+# Conversational & Greeting Intelligence Helpers
+# ---------------------------------------------------------------------------
+
+def is_greeting_meta_query(query: str) -> bool:
+    """Detects when user asks about the linguistic difference between greetings (hi, hello, high)."""
+    q = query.lower().strip()
+    has_diff = bool(re.search(r'\b(diff|difference|different|differently|distinction|compare|meanings?|differentiate)\b', q))
+    has_greetings = bool(re.search(r'\b(hi|hello|hey|high)\b', q))
+    return has_diff and has_greetings
+
+def detect_greeting_intent(query: str) -> Optional[str]:
+    """
+    Intelligently classifies pure greetings, meta questions, and casual conversational openers.
+    Explicitly separates 'high' (standalone greeting / speech-to-text typo) from 'high energy' / 'high octane'.
+    """
+    q = query.lower().strip()
+    
+    # Exclude queries asking for high energy / high octane / movie titles
+    if re.search(r'\bhigh\s+(energy|octane|tempo|bpm|stakes?|school|definition|rating|rated|performance|quality)\b', q):
+        return None
+        
+    if is_greeting_meta_query(query):
+        return 'meta_difference'
+        
+    cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', q).strip()
+    
+    # Conversational intent flavors
+    if re.search(r'\b(who are you|who r u|what is your name|whats your name|what are you|introduce yourself)\b', cleaned):
+        return 'identity'
+    if re.search(r'\b(how are you|how r u|how do you do|hows it going|how are things|how are you doing)\b', cleaned):
+        return 'how_are_you'
+    if re.search(r'\b(help|what can you do|how does this work)\b', cleaned):
+        return 'help'
+        
+    # Standalone greeting expressions (hi, hii, hello, hey, high, etc.)
+    greeting_tokens = r'(hi+|hello+|hey+|heyy+|heya|howdy|hola|high|sup|yo|greetings?|good\s+(morning|afternoon|evening|day))'
+    target_names = r'(\s+(there|nova|sonicbot|bot|friend|buddy|mate|everyone|all|assistant))?'
+    
+    pattern = r'^' + greeting_tokens + target_names + r'$'
+    if re.match(pattern, cleaned):
+        if re.match(r'^high', cleaned):
+            return 'high'
+        elif re.match(r'^hi', cleaned):
+            return 'hi'
+        elif re.match(r'^hey', cleaned):
+            return 'hey'
+        elif re.match(r'^hello', cleaned):
+            return 'hello'
+        else:
+            return 'general'
+            
+    return None
+
+def strip_leading_greeting(query: str) -> str:
+    """Strips leading greeting tokens from compound queries like 'hi recommend thriller movies'."""
+    q = query.strip()
+    if re.match(r'^high\s+(energy|octane|tempo|bpm|stakes?|school|definition|rating|rated|performance)\b', q, flags=re.IGNORECASE):
+        return q
+    pattern = r'^(hi+|hello+|hey+|heyy+|howdy|hola|high|good\s+(morning|afternoon|evening))\b[,!.\s]*'
+    return re.sub(pattern, '', q, flags=re.IGNORECASE).strip()
+
+def get_conversational_response(intent: str, agent_name: str, mode: str = "movies") -> tuple[str, list, list]:
+    """Generates intelligent conversational responses for greetings, meta questions, and casual openers."""
+    if intent == 'meta_difference':
+        if mode == "movies":
+            return (
+                f"Linguistically, **\"Hi\"**, **\"Hello\"**, and **\"High\"** all carry distinct meanings:\n\n"
+                f"• **\"Hi\"**: Casual, warm, and conversational—the standard informal greeting among friends.\n"
+                f"• **\"Hello\"**: The classic, universally recognized greeting suited for any setting.\n"
+                f"• **\"High\"**: A phonetic homophone (sounds identical) often typed by mistake or transcribed via voice for \"hi\"—though in cinema, it points to **high-octane thrillers**, **high-stakes drama**, or **high-energy blockbusters**!\n\n"
+                f"Whether you say *hi*, *hello*, or are looking for something high-energy, I'm **{agent_name}**, your dedicated AI cinema guide. What would you like to watch or explore today?",
+                [],
+                []
+            )
+        else:
+            return (
+                f"Linguistically, **\"Hi\"**, **\"Hello\"**, and **\"High\"** all carry distinct nuances:\n\n"
+                f"• **\"Hi\"**: Casual, energetic, and informal—great for kicking off a listening session.\n"
+                f"• **\"Hello\"**: The universal standard greeting for every musical discovery.\n"
+                f"• **\"High\"**: A phonetic homophone often typed as a quick typo or transcribed via voice for \"hi\"—though in music, it represents **high-energy gym bangers**, **high-BPM dance tracks**, or **high-fidelity lossless audio**!\n\n"
+                f"Whether you say *hi*, *hello*, or want high-energy tunes, I'm **{agent_name}**, your AI audio guide. What track, artist, or genre are you tuning into today?",
+                [],
+                []
+            )
+
+    if intent == 'high':
+        if mode == "movies":
+            return (
+                f"Hello there! I see you said **\"High\"**—whether that's a quick hello or you're looking for **high-octane, adrenaline-pumping cinema**, you've come to the right place! 🎬\n\n"
+                f"I'm **{agent_name}**, your AI Cinema Intelligence guide. Here is what you can explore:\n"
+                f"• Ask for **high-energy thrillers** (like *Oppenheimer* or *The Dark Knight*)\n"
+                f"• Discover films by genre (**Sci-Fi**, **Romance**, **Comedy**, or **Horror**)\n"
+                f"• Say _\"What kind of movies do I like?\"_ to discover your personal taste profile\n\n"
+                f"What cinematic journey sounds exciting to you right now?",
+                [],
+                []
+            )
+        else:
+            return (
+                f"Hello there! I see you typed **\"High\"**—whether that's a friendly hello or you're searching for **high-energy workout bangers and high-BPM anthems**, I've got you covered! ⚡\n\n"
+                f"I'm **{agent_name}**, your AI Music Intelligence guide. Here is what we can queue up:\n"
+                f"• **High-energy gym tracks** and workout anthems (*HUMBLE.*, *Starboy*, *Not Like Us*)\n"
+                f"• Chill & soothing **Lo-Fi** or soulful **Acoustic melodies**\n"
+                f"• Artists like **Arijit Singh** or **Coldplay**\n\n"
+                f"What vibe are you looking to play right now?",
+                [],
+                []
+            )
+
+    if intent == 'hi':
+        if mode == "movies":
+            return (
+                f"Hi there! 👋 I am **{agent_name}**, your personal AI Cinema & Storytelling guide on Zhoosh.\n\n"
+                f"What are you in the mood to watch today?\n"
+                f"• ⚡ Ask for a genre: _\"Suggest some thriller movies\"_ or _\"Comedy movies\"_\n"
+                f"• 🎬 Search by title or vibe: _\"Movies like Inception\"_ or _\"High-energy films\"_\n"
+                f"• 🍿 Calibrate your taste: _\"What kind of movies do I like?\"_\n\n"
+                f"Tell me what sounds exciting!",
+                [],
+                []
+            )
+        else:
+            return (
+                f"Hi there! 👋 I am **{agent_name}**, your personal AI Music & Audio Intelligence guide on Zhoosh.\n\n"
+                f"What's your soundtrack today?\n"
+                f"• 🎧 Explore a genre: _\"Lo-Fi tracks\"_, _\"Hip-Hop bangers\"_, or _\"Romantic songs\"_\n"
+                f"• 🎤 Check top artists: _\"Arijit Singh songs\"_ or _\"The Weeknd hits\"_\n"
+                f"• 🚗 Match your vibe: _\"Road trip songs\"_ or _\"High-energy gym music\"_\n\n"
+                f"Tell me what you'd like to hear!",
+                [],
+                []
+            )
+
+    if intent == 'hello':
+        if mode == "movies":
+            return (
+                f"Hello! Welcome to Zhoosh Cinema. I'm **{agent_name}**, your dedicated movie recommendation intelligence.\n\n"
+                f"Whether you're looking for mind-bending sci-fi, gripping thrillers, heartfelt dramas, or movies directed by Christopher Nolan, I have our entire library ready for you.\n\n"
+                f"How can I help you choose your next favorite film today?",
+                [],
+                []
+            )
+        else:
+            return (
+                f"Hello! Welcome to Zhoosh Music. I'm **{agent_name}**, your dedicated audio intelligence assistant.\n\n"
+                f"From chart-topping global hits and lossless Hi-Fi tracks to curated moods (party, chill, road trips, or workout), I can queue up the perfect sound for your moment.\n\n"
+                f"What sound or artist would you like to explore today?",
+                [],
+                []
+            )
+
+    if intent == 'hey':
+        if mode == "movies":
+            return (
+                f"Hey! Great to see you. I'm **{agent_name}**, your AI film and cinema curator.\n\n"
+                f"Looking for something thrilling, funny, or thought-provoking to stream today? Tell me a genre, an actor, or a movie you love and I'll find the perfect match for you!",
+                [],
+                []
+            )
+        else:
+            return (
+                f"Hey! Great to see you. I'm **{agent_name}**, your AI music companion.\n\n"
+                f"Ready to find your next favorite track or playlist? Drop an artist, genre, or mood and let's get the music going!",
+                [],
+                []
+            )
+
+    if intent == 'how_are_you':
+        if mode == "movies":
+            return (
+                f"I'm doing great, thank you for asking! 😊 Ready to help you discover incredible movies, directors, and cinematic stories.\n\n"
+                f"What are you in the mood for today—a gripping thriller, a hilarious comedy, or a deep sci-fi journey?",
+                [],
+                []
+            )
+        else:
+            return (
+                f"I'm doing fantastic, thanks for asking! 🎵 Ready to queue up the best tracks and curate the perfect soundscape for you.\n\n"
+                f"What kind of music vibe or artist are you tuning into today?",
+                [],
+                []
+            )
+
+    if intent == 'identity':
+        if mode == "movies":
+            return (
+                f"I am **{agent_name}**, your dedicated AI Cinema & Soundtrack Intelligence assistant on Zhoosh.\n\n"
+                f"I'm powered by machine learning recommendation models (TF-IDF cosine similarity, genre clustering, and collaborative neural scoring) across thousands of feature films. You can ask me:\n"
+                f"• Movie recommendations by genre (**Thriller**, **Sci-Fi**, **Comedy**, **Romance**)\n"
+                f"• Films by director (**Christopher Nolan**, **Quentin Tarantino**)\n"
+                f"• Similar movies (_\"Suggest movies like Inception\"_)\n"
+                f"• Your personalized taste profile (_\"What kind of movies do I like?\"_)",
+                [],
+                []
+            )
+        else:
+            return (
+                f"I am **{agent_name}**, your dedicated AI Music & Audio Intelligence guide on Zhoosh.\n\n"
+                f"I analyze audio features (tempo, energy, acousticness, valence, and danceability) across a wide range of tracks and genres. You can ask me:\n"
+                f"• Song recommendations by artist (**Arijit Singh**, **Coldplay**, **The Weeknd**)\n"
+                f"• Genre radio (**Hip-Hop**, **Lo-Fi**, **Rock**, **Romantic**)\n"
+                f"• Vibe playlists (**High-energy gym tracks**, **Road trips**, **Late-night chill**)\n"
+                f"• Your acoustic taste profile (_\"What is my music taste?\"_)",
+                [],
+                []
+            )
+
+    # Default general greeting (good morning/evening/sup/yo/help)
+    if mode == "movies":
+        return (
+            f"Greetings and welcome! I'm **{agent_name}**, your AI cinema companion on Zhoosh.\n\n"
+            f"Ready to stream something remarkable? Tell me what genre or vibe you're feeling today, and I'll pull up the best films for you!",
+            [],
+            []
+        )
+    else:
+        return (
+            f"Greetings and welcome! I'm **{agent_name}**, your audio intelligence guide on Zhoosh.\n\n"
+            f"Ready to stream some great tunes? Tell me what sound, artist, or vibe you want, and I'll queue it up instantly!",
+            [],
+            []
+        )
 
 # ---------------------------------------------------------------------------
 # Intelligent Grounded Response Generator
@@ -811,9 +1087,23 @@ def generate_grounded_response(
                 []
             )
 
-    # ── 1. Determine User Intent: Music vs Cinema ──
-    is_explicit_movie = any(w in msg_lower for w in ["movie", "movies", "film", "films", "cinema", "directed by", "director", "actor", "actress", "box office", "theatre"])
-    is_explicit_music = any(w in msg_lower for w in ["song", "songs", "track", "tracks", "music", "singer", "singers", "composer", "album", "audio", "soundtrack", "soundtracks", "playlist", "listen", "listen to", "play"])
+    # ── 0.8 Conversational & Greeting Intelligence (Hi, Hello, High, Hey, Meta) ──
+    greeting_intent = detect_greeting_intent(message)
+    if greeting_intent:
+        return get_conversational_response(greeting_intent, agent_name, mode=mode)
+
+    # For compound queries that start with a greeting (e.g. 'hi recommend thriller movies'),
+    # strip the leading greeting so downstream intent detectors match cleanly.
+    effective_message = strip_leading_greeting(message)
+    if not effective_message:
+        effective_message = message
+    effective_msg_lower = effective_message.lower().strip()
+
+    # ── 1. Determine User Intent: Music vs Cinema (Word-boundary matching) ──
+    MOVIE_EXPLICIT_WORDS = ["movie", "movies", "film", "films", "cinema", "directed by", "director", "actor", "actress", "box office", "theatre"]
+    MUSIC_EXPLICIT_WORDS = ["song", "songs", "track", "tracks", "music", "singer", "singers", "composer", "album", "audio", "soundtrack", "soundtracks", "playlist", "listen to", "listen"]
+    is_explicit_movie = any(re.search(r'(?:\b|^)' + re.escape(w) + r'(?:\b|$)', effective_msg_lower) for w in MOVIE_EXPLICIT_WORDS)
+    is_explicit_music = any(re.search(r'(?:\b|^)' + re.escape(w) + r'(?:\b|$)', effective_msg_lower) for w in MUSIC_EXPLICIT_WORDS)
 
     # =========================================================================
     # A. MUSIC INTENT INTELLIGENCE (Strictly when mode == "music")
@@ -829,23 +1119,7 @@ def generate_grounded_response(
                 []
             )
 
-        early_entity_type, early_entity_val = find_track_or_artist_in_query(message)
-
-        # 1. Greetings
-        if re.search(r'\b(hello|hi|hey|who are you|what is your name|your name|what\'s your name|help|who r u)\b', msg_lower):
-            return (
-                f"Hello! I am **{agent_name}**, your dedicated AI Music & Audio Intelligence guide on Zhoosh.\n\n"
-                f"I have real-time access to our entire catalog of tracks, artists, genres, and audio features (tempo, energy, acousticness, and valence). Here is what you can ask me:\n"
-                f"• _\"What kind of music do I like?\"_ (for personalized taste discovery)\n"
-                f"• _\"Arijit Singh songs\"_ or _\"Coldplay tracks\"_\n"
-                f"• _\"Suggest Lo-Fi songs\"_ (say _\"more\"_ anytime for next batch)\n"
-                f"• _\"Hindi songs\"_ or _\"Punjabi music\"_\n"
-                f"• _\"Sad songs for when you're feeling down\"_\n"
-                f"• _\"High-energy gym tracks\"_ or _\"Romantic melodies\"_\n\n"
-                f"What vibe or sound are you in the mood for today?",
-                [],
-                []
-            )
+        early_entity_type, early_entity_val = find_track_or_artist_in_query(effective_message)
 
         # 2. Check for Specific Artist
         if early_entity_type == "artist":
@@ -859,7 +1133,7 @@ def generate_grounded_response(
                 )
 
         # 3. Check for Language / Regional Music (Hindi, Punjabi, Global)
-        lang_title, lang_songs = detect_music_language_in_query(message)
+        lang_title, lang_songs = detect_music_language_in_query(effective_message)
         if lang_songs:
             return (
                 f"Here are top {lang_title} tracks curated for you on Zhoosh:\n\n"
@@ -869,7 +1143,7 @@ def generate_grounded_response(
             )
 
         # 4. Check for Mood Music (Sad, Romantic, Party, Workout, Chill)
-        mood_title, mood_songs = detect_music_mood_in_query(message)
+        mood_title, mood_songs = detect_music_mood_in_query(effective_message)
         if mood_songs:
             return (
                 f"Here are {mood_title} tracks curated for your vibe on Zhoosh:\n\n"
@@ -879,7 +1153,7 @@ def generate_grounded_response(
             )
 
         # 5. Check for Specific Music Genre (Hip-Hop, Rock, Pop, Lo-Fi, etc.)
-        music_genre = detect_music_genre_in_query(message)
+        music_genre = detect_music_genre_in_query(effective_message)
         if music_genre:
             if music_genre == 'Romantic':
                 songs_res = engine.get_romantic_recommendations(limit=6)
@@ -911,7 +1185,7 @@ def generate_grounded_response(
             )
 
         # 7. Check for Trending / Top Songs
-        if any(w in msg_lower for w in ["trending", "top", "popular", "best songs", "best tracks", "what should i listen to", "recommend something"]):
+        if any(w in effective_msg_lower for w in ["trending", "top", "popular", "best songs", "best tracks", "what should i listen to", "recommend something"]):
             trending = engine.get_music(limit=6)
             if trending:
                 return (
@@ -922,7 +1196,7 @@ def generate_grounded_response(
                 )
 
         # 8. Search fallback for music
-        search_res = engine.search_all(message, mode='music')
+        search_res = engine.search_all(effective_message, mode='music')
         matched_music = search_res.get('artist_songs') or search_res.get('similar_songs') or search_res.get('similar_romantic_songs') or search_res.get('music', [])
         if matched_music:
             return (
@@ -956,7 +1230,7 @@ def generate_grounded_response(
             []
         )
     # 1. Check for predicted / temporal queries
-    if any(w in msg_lower for w in ["predict", "predicted", "forecast", "tomorrow", "yesterday"]):
+    if any(w in effective_msg_lower for w in ["predict", "predicted", "forecast", "tomorrow", "yesterday"]):
         trending = engine.get_movies(limit=6) if engine else []
         movies_res = trending
         return (
@@ -968,7 +1242,7 @@ def generate_grounded_response(
         )
 
     # 2. Check for Movie Genre Query (Horror, Comedy, Thriller, Sci-Fi, Action, Romance, etc.)
-    genre = detect_genre_in_query(message)
+    genre = detect_genre_in_query(effective_message)
     if genre:
         top_genre_movies = engine.get_top_genre_movies(genre, limit=6)
         if not top_genre_movies:
@@ -983,7 +1257,7 @@ def generate_grounded_response(
             )
 
     # 3. Check for Movie Language (Hindi, Korean, Anime)
-    movie_lang_title, movie_lang_results = detect_movie_language_in_query(message)
+    movie_lang_title, movie_lang_results = detect_movie_language_in_query(effective_message)
     if movie_lang_results:
         return (
             f"Here are top-rated {movie_lang_title} films curated for you on Zhoosh:\n\n"
@@ -993,7 +1267,7 @@ def generate_grounded_response(
         )
 
     # 4. Check for Director / Actor Filmography Query
-    person_type, person_name = detect_person_in_query(message)
+    person_type, person_name = detect_person_in_query(effective_message)
     if person_type == "director" and engine.movies_df is not None:
         matched = engine.movies_df[engine.movies_df['director'].str.lower().str.contains(person_name.lower(), na=False)]
         if not matched.empty:
@@ -1018,7 +1292,7 @@ def generate_grounded_response(
             )
 
     # 5. Check for specific movie match & recommendations
-    movie = find_movie_in_query(message)
+    movie = find_movie_in_query(effective_message)
     if movie is not None:
         title = str(movie['title'])
         director = str(movie.get('director', 'Acclaimed Director'))
@@ -1029,7 +1303,7 @@ def generate_grounded_response(
         genres = str(movie.get('genres_str', movie.get('genres', 'Drama, Thriller')))
         
         # Similar / Recommendation Question
-        if any(w in msg_lower for w in ["similar", "like", "recommend", "suggest", "more like"]):
+        if any(w in effective_msg_lower for w in ["similar", "like", "recommend", "suggest", "more like"]):
             recs = engine.recommend_movies_for_title(title, top_n=6)
             movies_res = recs or []
             return (
@@ -1040,7 +1314,7 @@ def generate_grounded_response(
             )
                 
         # Director Question
-        if any(w in msg_lower for w in ["who directed", "director of", "director", "who made"]):
+        if any(w in effective_msg_lower for w in ["who directed", "director of", "director", "who made"]):
             formatted_m = engine._format_movie_row(movie) if hasattr(engine, '_format_movie_row') else movie
             return (
                 f"🎬 **{title}** ({year}) was directed by **{director}**.\n\n"
@@ -1053,7 +1327,7 @@ def generate_grounded_response(
             )
             
         # Cast / Actor Question
-        if any(w in msg_lower for w in ["who is in", "cast of", "starring", "actor", "actors in", "who acted"]):
+        if any(w in effective_msg_lower for w in ["who is in", "cast of", "starring", "actor", "actors in", "who acted"]):
             formatted_m = engine._format_movie_row(movie) if hasattr(engine, '_format_movie_row') else movie
             return (
                 f"🎬 **{title}** ({year}) features this star-studded cast:\n\n"
@@ -1076,7 +1350,7 @@ def generate_grounded_response(
         )
 
     # 6. Check for Movie Mood & Situational Requests (Travelling, College Days, Adrenaline, Sad/Tired, Happy)
-    movie_mood_title, movie_mood_results = detect_movie_mood_in_query(message)
+    movie_mood_title, movie_mood_results = detect_movie_mood_in_query(effective_message)
     if movie_mood_results:
         return (
             f"Here are {movie_mood_title} films curated for you on Zhoosh:\n\n"
@@ -1086,7 +1360,7 @@ def generate_grounded_response(
         )
 
     # 7. Check for Trending / Top Movies
-    if any(w in msg_lower for w in ["trending", "top", "popular", "best movies", "what should i watch", "recommend something", "suggest"]):
+    if any(w in effective_msg_lower for w in ["trending", "top", "popular", "best movies", "what should i watch", "recommend something", "suggest"]):
         trending = engine.get_movies(limit=6)
         if trending:
             movies_res = trending
@@ -1097,24 +1371,8 @@ def generate_grounded_response(
                 []
             )
 
-    # 8. Conversational / Greetings (Word boundary check)
-    if re.search(r'\b(hello|hi|hey|who are you|what is your name|your name|what\'s your name|help|who r u)\b', msg_lower):
-        return (
-            f"Hello! I am **{agent_name}**, your dedicated AI Cinema & Soundtrack Intelligence guide on Zhoosh.\n\n"
-            f"I have real-time access to our entire catalog of films, directors, ratings, and soundtracks. Here is what you can ask me:\n"
-            f"• _\"What kind of movies do I like?\"_ (for personalized taste discovery)\n"
-            f"• _\"Suggest some thriller movies\"_ (and say _\"more\"_ for the next batch)\n"
-            f"• _\"Suggest comedy movies\"_ or _\"Sci-Fi films\"_\n"
-            f"• _\"Suggest movies like Inception\"_\n"
-            f"• _\"Hindi movies\"_ or _\"Mind-bending movies\"_\n"
-            f"• _\"Who directed Interstellar?\"_\n\n"
-            f"What would you like to explore today?",
-            [],
-            []
-        )
-
-    # 9. Fallback with context search in catalog
-    search_res = engine.search_all(message)
+    # 8. Fallback with context search in catalog
+    search_res = engine.search_all(effective_message)
     if search_res.get('movies'):
         movies_res = search_res['movies'][:6]
         return (
@@ -1163,7 +1421,7 @@ async def groq_stream(message: str, history: List[ConversationMessage], agent_na
     if songs:
         yield f"data: {json.dumps({'type': 'songs', 'songs': songs})}\n\n"
 
-    yield f"data: {json.dumps({'type': 'intent', 'intent': 'grounded_response'})}\n\n"
+    yield f"dduring on boarding..that 5ata: {json.dumps({'type': 'intent', 'intent': 'grounded_response'})}\n\n"
     async for chunk in stream_text_words(response_text, delay_ms=18):
         yield chunk
 
