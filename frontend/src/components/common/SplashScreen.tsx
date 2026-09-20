@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2 } from 'lucide-react';
+import { Volume2, Sparkles } from 'lucide-react';
 import { zhooshAudio } from '@/utils/cinematicSound';
 
 interface SplashScreenProps {
@@ -10,57 +10,51 @@ interface SplashScreenProps {
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [progress, setProgress] = useState(15);
-  const [hasPlayedSound, setHasPlayedSound] = useState(false);
-  const hasAttemptedRef = useRef(false);
+  const [soundPlayed, setSoundPlayed] = useState(false);
 
-  const triggerZhooshSound = useCallback(() => {
-    if (!hasAttemptedRef.current) {
-      hasAttemptedRef.current = true;
-      setHasPlayedSound(true);
-      zhooshAudio.resumeContext().then(() => {
-        zhooshAudio.playZhooshIntroSound();
-      }).catch(() => {
-        zhooshAudio.playZhooshIntroSound();
-      });
-    }
+  const handlePlaySound = useCallback((force = true) => {
+    try {
+      zhooshAudio.playZhooshIntroSound(force);
+      setSoundPlayed(true);
+    } catch {}
   }, []);
 
   useEffect(() => {
-    // 1. Attempt automatic playback on initial mount
-    triggerZhooshSound();
+    // 1. Attempt immediate playback on initial mount
+    handlePlaySound(false);
 
-    // 2. Listen for any first user gesture to unlock Web Audio if autoplay was restricted
-    const handleGesture = () => {
-      triggerZhooshSound();
+    // 2. Browser Autoplay Unlock: Listen for any user gesture (click, tap, key)
+    const onUserGesture = () => {
+      handlePlaySound(true);
     };
 
-    window.addEventListener('pointerdown', handleGesture, { once: true });
-    window.addEventListener('keydown', handleGesture, { once: true });
-    window.addEventListener('click', handleGesture, { once: true });
-    window.addEventListener('touchstart', handleGesture, { once: true });
+    window.addEventListener('pointerdown', onUserGesture);
+    window.addEventListener('click', onUserGesture);
+    window.addEventListener('keydown', onUserGesture);
+    window.addEventListener('touchstart', onUserGesture);
 
     // Progress bar simulation
     const p1 = setTimeout(() => setProgress(45), 400);
     const p2 = setTimeout(() => setProgress(78), 1000);
-    const p3 = setTimeout(() => setProgress(100), 1600);
+    const p3 = setTimeout(() => setProgress(100), 1700);
 
-    // Splash duration: 2.3s for full cinematic brand reveal
+    // Splash duration: 2.5s for complete cinematic brand reveal
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(onComplete, 400);
-    }, 2300);
+    }, 2500);
 
     return () => {
-      window.removeEventListener('pointerdown', handleGesture);
-      window.removeEventListener('keydown', handleGesture);
-      window.removeEventListener('click', handleGesture);
-      window.removeEventListener('touchstart', handleGesture);
+      window.removeEventListener('pointerdown', onUserGesture);
+      window.removeEventListener('click', onUserGesture);
+      window.removeEventListener('keydown', onUserGesture);
+      window.removeEventListener('touchstart', onUserGesture);
       clearTimeout(p1);
       clearTimeout(p2);
       clearTimeout(p3);
       clearTimeout(timer);
     };
-  }, [onComplete, triggerZhooshSound]);
+  }, [onComplete, handlePlaySound]);
 
   return (
     <AnimatePresence>
@@ -70,7 +64,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.04 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          onClick={triggerZhooshSound}
+          onClick={() => handlePlaySound(true)}
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050508] select-none overflow-hidden cursor-pointer"
         >
           {/* Deep Black, Crimson Red & Electric Purple Atmospheric Cosmic Flares */}
@@ -183,16 +177,23 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
               />
             </motion.div>
 
-            {/* 4. Cinematic Audio Badge */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.75 }}
+            {/* 4. Interactive Sound Activation Button / Badge */}
+            <motion.button
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="flex items-center gap-1.5 mt-3 text-[11px] font-mono tracking-wider text-rose-300/80"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlaySound(true);
+              }}
+              className="mt-4 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/15 text-xs font-semibold text-rose-200 hover:bg-white/10 hover:border-red-500/40 transition-all shadow-[0_0_15px_rgba(255,30,86,0.25)] cursor-pointer"
             >
-              <Volume2 className="w-3.5 h-3.5 text-[#FF1E56] animate-pulse" />
-              <span>{hasPlayedSound ? 'Spatial Zhoosh Audio Active' : 'Tap to hear signature Zhoosh sound'}</span>
-            </motion.div>
+              <Volume2 className={`w-3.5 h-3.5 text-[#FF1E56] ${soundPlayed ? '' : 'animate-bounce'}`} />
+              <span>{soundPlayed ? '🔊 Playing Signature Zhoosh' : '▶ Tap to hear signature ZOOOOOSH'}</span>
+              <Sparkles className="w-3 h-3 text-rose-400" />
+            </motion.button>
           </div>
         </motion.div>
       )}

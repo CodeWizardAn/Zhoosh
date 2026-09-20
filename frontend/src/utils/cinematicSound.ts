@@ -1,9 +1,138 @@
 // Cinematic "ZHOOOOSH" / Netflix-Style Intro Audio Synthesizer
-// Created using Web Audio API for zero-dependency, zero-latency cinematic sound design
+// Combines 16-bit Stereo PCM WAV synthesis + Web Audio API for 100% reliable Hollywood playback across all browsers
+
+function writeString(view: DataView, offset: number, string: string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+/**
+ * Generates an authentic 16-bit Stereo PCM WAV audio blob:
+ * 1. "Zzz": Stereo frequency-modulated sawtooth sizzle (0.0s - 0.28s)
+ * 2. "OOOO": Subterranean cinema sub-bass drop (72Hz down to 42Hz) + detuned analog brass unison
+ * 3. "SHHH": Resonant swept pink-noise acoustic whoosh with stereo expansion ("ZHOOO-SSSHHH")
+ * 4. "Shimmer": Crystalline celestial harmonic bells (1318Hz, 1661Hz, 1975Hz, 2637Hz) with 2.2s decay
+ */
+function createZhooshWavBlob(): Blob {
+  const sampleRate = 44100;
+  const duration = 2.4;
+  const numSamples = Math.floor(sampleRate * duration);
+  const numChannels = 2;
+  const bytesPerSample = 2;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = numSamples * blockAlign;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  // RIFF Header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // Subchunk size (16 for PCM)
+  view.setUint16(20, 1, true); // Audio format (1 = PCM)
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true); // Bits per sample
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  let pinkState = 0;
+
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / sampleRate;
+    let left = 0;
+    let right = 0;
+
+    // --- 1. "Zzz" (0.0s to 0.3s): Sawtooth buzz sweeping from 80Hz to 190Hz ---
+    if (t < 0.32) {
+      const zEnv = t < 0.08 ? t / 0.08 : Math.max(0, 1 - (t - 0.08) / 0.24);
+      const zFreq = 80 + (t / 0.32) * 110;
+      const saw = (2 * ((t * zFreq) % 1)) - 1;
+      const zVal = saw * zEnv * 0.4;
+      left += zVal * 0.8;
+      right += zVal * 1.1;
+    }
+
+    // --- 2. "OOOO" (0.1s to 2.2s): Deep Sub-Bass + Detuned Brass Chords ---
+    if (t >= 0.09) {
+      const bTime = t - 0.09;
+      const bassEnv = bTime < 0.05 ? bTime / 0.05 : Math.exp(-bTime * 1.7);
+      // Sub-bass 72Hz sliding down to 42Hz
+      const subFreq = Math.max(42, 72 - bTime * 38);
+      const sub = Math.sin(2 * Math.PI * subFreq * bTime);
+
+      // Detuned Brass unison (73.4Hz + 110Hz + 146.8Hz)
+      const brass1 = Math.sin(2 * Math.PI * 73.4 * bTime);
+      const brass2 = Math.sin(2 * Math.PI * 110.0 * bTime);
+      const brass3 = ((2 * ((bTime * 74.1) % 1)) - 1) * 0.5;
+
+      const ooooVal = (sub * 0.75 + brass1 * 0.28 + brass2 * 0.22 + brass3 * 0.18) * bassEnv;
+      left += ooooVal;
+      right += ooooVal;
+    }
+
+    // --- 3. "SHHHHH" (0.12s to 2.0s): Resonant swept pink noise whoosh ---
+    if (t >= 0.11 && t < 2.1) {
+      const wTime = t - 0.11;
+      const whooshEnv = wTime < 0.3 ? wTime / 0.3 : Math.exp(-wTime * 1.8);
+      const white = Math.random() * 2 - 1;
+      pinkState = (pinkState + 0.04 * white) / 1.04;
+      const noise = pinkState * 3.6;
+
+      const whooshVal = noise * whooshEnv * 0.5;
+      const pan = Math.sin(wTime * 3.8);
+      left += whooshVal * (0.6 - pan * 0.35);
+      right += whooshVal * (0.6 + pan * 0.35);
+    }
+
+    // --- 4. "Shimmer" (0.2s to 2.3s): Crystalline harmonic bells ---
+    if (t >= 0.18) {
+      const sTime = t - 0.18;
+      const sEnv = Math.exp(-sTime * 2.2);
+      const ch1 = Math.sin(2 * Math.PI * 1318.5 * sTime) * 0.09;
+      const ch2 = Math.sin(2 * Math.PI * 1661.2 * sTime) * 0.07;
+      const ch3 = Math.sin(2 * Math.PI * 1975.5 * sTime) * 0.06;
+      const ch4 = Math.sin(2 * Math.PI * 2637.0 * sTime) * 0.05;
+      const shimmer = (ch1 + ch2 + ch3 + ch4) * sEnv;
+      left += shimmer * 0.9;
+      right += shimmer * 1.1;
+    }
+
+    // Master Soft Limiter to guarantee punch without distortion
+    left = Math.tanh(left * 0.92);
+    right = Math.tanh(right * 0.92);
+
+    view.setInt16(offset, Math.floor(left * 32767), true);
+    view.setInt16(offset + 2, Math.floor(right * 32767), true);
+    offset += 4;
+  }
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}
 
 class ZhooshAudioEngine {
   private ctx: AudioContext | null = null;
-  public isMuted = false; // Enabled for signature Zhoosh cinematic intro sound
+  public isMuted = false;
+  private cachedWavUrl: string | null = null;
+  private hasPlayedIntro = false;
+
+  private getWavUrl(): string {
+    if (!this.cachedWavUrl && typeof window !== 'undefined') {
+      try {
+        const blob = createZhooshWavBlob();
+        this.cachedWavUrl = URL.createObjectURL(blob);
+      } catch {
+        this.cachedWavUrl = '';
+      }
+    }
+    return this.cachedWavUrl || '';
+  }
 
   public getContext(): AudioContext | null {
     if (this.isMuted) return null;
@@ -12,43 +141,87 @@ class ZhooshAudioEngine {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
-    }
     return this.ctx;
   }
 
   /**
-   * Resumes the AudioContext on user interaction if the browser suspended autoplay
+   * Resumes AudioContext if suspended
    */
-  public resumeContext(): Promise<void> {
+  public async resumeContext(): Promise<void> {
     const ctx = this.getContext();
     if (ctx && ctx.state === 'suspended') {
-      return ctx.resume();
+      try {
+        await ctx.resume();
+      } catch {}
     }
-    return Promise.resolve();
   }
 
   /**
-   * Signature Netflix-style "ZHOOOOOOSH" Cinematic Sound:
-   * 1. "Zzz": Initial high-energy stereo sizzle and FM sweep (0.0s - 0.25s)
-   * 2. "OOOO": Subterranean cinema sub-bass chord + detuned brass impact (0.12s - 2.2s)
-   * 3. "SHHH": Giant resonant pink noise whoosh sweeping through the spectrum ("ZHOOO-SSHHH")
-   * 4. "Shimmer": Crystalline celestial overtones and reverberant chime tail (0.25s - 2.5s)
+   * Plays the signature Netflix-style "ZOOOOOOSHHH" sound.
+   * Utilizes HTML5 Audio element backed by synthesized PCM WAV for 100% browser compatibility,
+   * with automatic Web Audio synthesizer fallback.
    */
-  playZhooshIntroSound() {
-    if (this.isMuted) return;
+  public playZhooshIntroSound(force = false) {
+    if (this.isMuted && !force) return;
+    if (this.hasPlayedIntro && !force) return;
+
+    this.hasPlayedIntro = true;
+
+    // Strategy 1: HTML5 Audio element with pure synthesized 16-bit Stereo PCM WAV
+    const wavUrl = this.getWavUrl();
+    if (wavUrl) {
+      try {
+        const audio = new Audio(wavUrl);
+        audio.volume = 1.0;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              // Sound successfully playing via HTML5 Audio
+            })
+            .catch(() => {
+              // If browser blocked initial zero-gesture autoplay, attach one-time listener
+              const unlockSound = () => {
+                audio.play().catch(() => {});
+                window.removeEventListener('pointerdown', unlockSound);
+                window.removeEventListener('click', unlockSound);
+                window.removeEventListener('keydown', unlockSound);
+              };
+              window.addEventListener('pointerdown', unlockSound, { once: true });
+              window.addEventListener('click', unlockSound, { once: true });
+              window.addEventListener('keydown', unlockSound, { once: true });
+
+              // Also try Web Audio synthesizer path
+              this.playLiveSynthesizer();
+            });
+          return;
+        }
+      } catch {
+        // Fallback to Web Audio live synthesizer
+      }
+    }
+
+    // Strategy 2: Web Audio API live nodes
+    this.playLiveSynthesizer();
+  }
+
+  /**
+   * Web Audio Live Node Synthesizer with proper suspended-state verification
+   */
+  private async playLiveSynthesizer() {
     const ctx = this.getContext();
     if (!ctx) return;
 
     if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
+      try {
+        await ctx.resume();
+      } catch {
+        return;
+      }
     }
 
     try {
       const now = ctx.currentTime;
-
-      // Master Compressor for Hollywood-grade loudness & zero distortion
       const compressor = ctx.createDynamicsCompressor();
       compressor.threshold.setValueAtTime(-14, now);
       compressor.knee.setValueAtTime(24, now);
@@ -57,7 +230,7 @@ class ZhooshAudioEngine {
       compressor.release.setValueAtTime(0.28, now);
       compressor.connect(ctx.destination);
 
-      // --- 1. THE "Z" (Initial Electric Spark Transient at 0.0s) ---
+      // 1. "Zzz"
       const zOsc = ctx.createOscillator();
       const zGain = ctx.createGain();
       const zFilter = ctx.createBiquadFilter();
@@ -72,7 +245,7 @@ class ZhooshAudioEngine {
       zFilter.Q.setValueAtTime(4.5, now);
 
       zGain.gain.setValueAtTime(0.001, now);
-      zGain.gain.linearRampToValueAtTime(0.28, now + 0.07);
+      zGain.gain.linearRampToValueAtTime(0.3, now + 0.07);
       zGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
       zOsc.connect(zFilter);
@@ -81,10 +254,8 @@ class ZhooshAudioEngine {
       zOsc.start(now);
       zOsc.stop(now + 0.26);
 
-      // --- 2. THE "OOOO" (Subterranean Sub-Bass Chord + Analog Brass) ---
+      // 2. "OOOO" Sub-bass + Brass
       const boomTime = now + 0.12;
-
-      // Sub Bass Fundamental (44Hz deep rumble)
       const subOsc = ctx.createOscillator();
       const subGain = ctx.createGain();
       subOsc.type = 'sine';
@@ -100,7 +271,7 @@ class ZhooshAudioEngine {
       subOsc.start(boomTime);
       subOsc.stop(boomTime + 2.3);
 
-      // Cinematic Detuned Brass Unison (D2 = 73.4Hz, A2 = 110Hz, D3 = 146.8Hz)
+      // Detuned Brass Unisons
       [73.4, 74.1, 110.0, 146.8].forEach((freq, idx) => {
         const brassOsc = ctx.createOscillator();
         const brassGain = ctx.createGain();
@@ -114,7 +285,7 @@ class ZhooshAudioEngine {
         brassFilter.frequency.exponentialRampToValueAtTime(75, boomTime + 1.9);
         brassFilter.Q.setValueAtTime(3.2, boomTime);
 
-        const vol = 0.2 / (idx + 1);
+        const vol = 0.22 / (idx + 1);
         brassGain.gain.setValueAtTime(0.001, boomTime);
         brassGain.gain.linearRampToValueAtTime(vol, boomTime + 0.06);
         brassGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 2.0);
@@ -127,7 +298,7 @@ class ZhooshAudioEngine {
         brassOsc.stop(boomTime + 2.1);
       });
 
-      // --- 3. THE "SHHHHH" (Massive Resonant Acoustic Whoosh "ZHOOO-SSHHH") ---
+      // 3. "SHHHHH" Whoosh
       const noiseDuration = 2.2;
       const bufferSize = ctx.sampleRate * noiseDuration;
       const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -146,14 +317,13 @@ class ZhooshAudioEngine {
       const sweepFilter = ctx.createBiquadFilter();
       sweepFilter.type = 'bandpass';
       sweepFilter.frequency.setValueAtTime(200, now);
-      // Sweep dynamically up through the "ZHOOO" into the wide "SHHHH"
       sweepFilter.frequency.exponentialRampToValueAtTime(3200, now + 0.38);
       sweepFilter.frequency.exponentialRampToValueAtTime(380, now + 1.7);
       sweepFilter.Q.setValueAtTime(2.6, now);
 
       const noiseGain = ctx.createGain();
       noiseGain.gain.setValueAtTime(0.001, now);
-      noiseGain.gain.linearRampToValueAtTime(0.55, now + 0.3);
+      noiseGain.gain.linearRampToValueAtTime(0.6, now + 0.3);
       noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.9);
 
       noiseSource.connect(sweepFilter);
@@ -163,7 +333,7 @@ class ZhooshAudioEngine {
       noiseSource.start(now);
       noiseSource.stop(now + 2.0);
 
-      // --- 4. THE CRYSTALLINE CINEMATIC SHIMMER (Bells & Star Dust) ---
+      // 4. Shimmer
       [1318.51, 1661.22, 1975.53, 2637.02].forEach((freq, idx) => {
         const chimeOsc = ctx.createOscillator();
         const chimeGain = ctx.createGain();
@@ -172,7 +342,7 @@ class ZhooshAudioEngine {
         chimeOsc.frequency.setValueAtTime(freq, boomTime + idx * 0.04);
 
         chimeGain.gain.setValueAtTime(0.001, boomTime + idx * 0.04);
-        chimeGain.gain.linearRampToValueAtTime(0.07, boomTime + idx * 0.04 + 0.03);
+        chimeGain.gain.linearRampToValueAtTime(0.08, boomTime + idx * 0.04 + 0.03);
         chimeGain.gain.exponentialRampToValueAtTime(0.0001, boomTime + idx * 0.04 + 2.2);
 
         chimeOsc.connect(chimeGain);
@@ -181,9 +351,7 @@ class ZhooshAudioEngine {
         chimeOsc.start(boomTime + idx * 0.04);
         chimeOsc.stop(boomTime + idx * 0.04 + 2.3);
       });
-    } catch (e) {
-      console.warn('AudioContext playback error (user interaction may be required):', e);
-    }
+    } catch {}
   }
 
   /**
@@ -210,13 +378,11 @@ class ZhooshAudioEngine {
 
       osc.start(now);
       osc.stop(now + 0.11);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   /**
-   * Uplifting harmonic chord for account created or milestone reached
+   * Uplifting harmonic chord for milestones
    */
   playSuccessFanfare() {
     if (this.isMuted) return;
@@ -224,7 +390,7 @@ class ZhooshAudioEngine {
     if (!ctx) return;
     try {
       const now = ctx.currentTime;
-      const freqs = [523.25, 659.25, 783.99, 1046.50]; // C Major arpeggio chord
+      const freqs = [523.25, 659.25, 783.99, 1046.50];
 
       freqs.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
@@ -243,9 +409,7 @@ class ZhooshAudioEngine {
         osc.start(now + idx * 0.06);
         osc.stop(now + idx * 0.06 + 0.65);
       });
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 }
 
