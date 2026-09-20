@@ -21,6 +21,7 @@ import { useMovies, useLikeMutation } from '@/api/hooks';
 import { useAppStore } from '@/store/useAppStore';
 import { triggerLikeBurst } from '@/utils/confetti';
 import { synthEngine } from '@/utils/audioSynth';
+import { recordMoviePlay } from '@/utils/continueWatching';
 import type { Movie } from '@/types';
 
 // ─── HERO SHOWCASE MOVIES (Ultra HD Backdrops + Stylized Custom Logos) ────────
@@ -662,6 +663,7 @@ const HeroBillboard: React.FC<{ items?: HeroShowcaseItem[] }> = ({ items }) => {
             <button
               onClick={() => {
                 synthEngine.playAmbientDrone();
+                recordMoviePlay({ id: current.id, title: current.title });
                 useAppStore.getState().addToast({
                   title: `Playing "${current.title}"`,
                   description: 'Buffering Ultra HD 4K stream with Dolby Atmos audio...',
@@ -776,6 +778,7 @@ const ContinueWatchingCard: React.FC<{
   const handleCardPlay = (e: React.MouseEvent) => {
     e.stopPropagation();
     synthEngine.playAmbientDrone();
+    recordMoviePlay(movie);
     useAppStore.getState().addToast({
       title: `Resuming "${movie.title}"`,
       description: `Picking up at ${progressPercent}% (${timeLeft})`,
@@ -913,7 +916,7 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
     }
   });
 
-  // Track active continue watching items so removing an item shrinks the row instead of pulling next catalog movie
+  // Track active continue watching items - Starts EMPTY for any new user until they play a movie!
   const [activeCwIds, setActiveCwIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('zhoosh_active_cw_ids');
@@ -922,9 +925,28 @@ const ContinueWatchingShelf: React.FC<{ movies: Movie[] }> = ({ movies }) => {
         if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    // Initial seed list of continue watching items
-    return ['1', '2', '3', '4', 'm-forrest-gump', 'm-gladiator'];
+    // Initial state: EMPTY for any new user!
+    return [];
   });
+
+  // Real-time listener: when user clicks Play on any movie, Continue Watching appears immediately!
+  useEffect(() => {
+    const handleCwUpdate = () => {
+      try {
+        const saved = localStorage.getItem('zhoosh_active_cw_ids');
+        setActiveCwIds(saved ? JSON.parse(saved) : []);
+        const savedRemoved = localStorage.getItem('zhoosh_removed_cw_ids');
+        setRemovedIds(savedRemoved ? JSON.parse(savedRemoved) : []);
+      } catch {}
+    };
+
+    window.addEventListener('zhoosh:cw-updated', handleCwUpdate);
+    window.addEventListener('storage', handleCwUpdate);
+    return () => {
+      window.removeEventListener('zhoosh:cw-updated', handleCwUpdate);
+      window.removeEventListener('storage', handleCwUpdate);
+    };
+  }, []);
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;
@@ -1115,8 +1137,14 @@ const Top10Card: React.FC<{ movie: Movie; rank: number }> = ({ movie, rank }) =>
               onClick={(e) => {
                 e.stopPropagation();
                 synthEngine.playAmbientDrone();
+                recordMoviePlay(movie);
+                useAppStore.getState().addToast({
+                  title: `Playing "${movie.title}"`,
+                  description: 'Streaming in Ultra HD 4K...',
+                  type: 'info'
+                });
               }}
-              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow hover:scale-105 transition-transform"
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
               title="Play"
             >
               <Play className="w-4 h-4 fill-black ml-0.5" />
@@ -1260,8 +1288,14 @@ const CategoryMovieCard: React.FC<{ movie: Movie }> = ({ movie }) => {
               onClick={(e) => {
                 e.stopPropagation();
                 synthEngine.playAmbientDrone();
+                recordMoviePlay(movie);
+                useAppStore.getState().addToast({
+                  title: `Playing "${movie.title}"`,
+                  description: 'Streaming in Ultra HD 4K...',
+                  type: 'info'
+                });
               }}
-              className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+              className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer"
               title="Play"
             >
               <Play className="w-4 h-4 fill-black ml-0.5" />

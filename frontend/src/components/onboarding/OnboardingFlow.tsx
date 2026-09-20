@@ -91,6 +91,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     try {
       localStorage.setItem('zhoosh_onboarding_completed', 'true');
       localStorage.setItem('zhoosh_user_profile', JSON.stringify(userData));
+      // For any newly onboarded user, Continue Watching starts fresh & empty
+      localStorage.removeItem('zhoosh_active_cw_ids');
+      localStorage.removeItem('zhoosh_removed_cw_ids');
     } catch {
       // ignore
     }

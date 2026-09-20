@@ -47,6 +47,8 @@ export default function App() {
       localStorage.setItem('zhoosh_auth_session', 'false');
       localStorage.removeItem('zhoosh_auth_session');
       localStorage.removeItem('zhoosh_onboarding_completed');
+      localStorage.removeItem('zhoosh_active_cw_ids');
+      localStorage.removeItem('zhoosh_removed_cw_ids');
     } catch {}
     resetForLogout();
     setHasCompletedOnboarding(false);
@@ -68,6 +70,12 @@ export default function App() {
               localStorage.setItem('zhoosh_auth_session', 'true');
               localStorage.setItem('zhoosh_onboarding_completed', 'true');
               localStorage.setItem('zhoosh_last_email', email);
+              const lastEmail = localStorage.getItem('zhoosh_current_active_email');
+              if (lastEmail !== email) {
+                localStorage.removeItem('zhoosh_active_cw_ids');
+                localStorage.removeItem('zhoosh_removed_cw_ids');
+              }
+              localStorage.setItem('zhoosh_current_active_email', email);
             } catch {}
 
             const savedProfileStr = localStorage.getItem('zhoosh_user_profile');
@@ -106,6 +114,10 @@ export default function App() {
               localStorage.setItem('zhoosh_onboarding_completed', 'true');
               localStorage.setItem('zhoosh_last_email', data.email);
               localStorage.setItem('zhoosh_user_profile', JSON.stringify(data));
+              localStorage.setItem('zhoosh_current_active_email', data.email);
+              // New user starts with NO continue watching until they play a movie
+              localStorage.removeItem('zhoosh_active_cw_ids');
+              localStorage.removeItem('zhoosh_removed_cw_ids');
             } catch {}
 
             setUser({

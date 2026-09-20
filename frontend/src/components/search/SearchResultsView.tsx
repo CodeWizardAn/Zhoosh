@@ -25,6 +25,7 @@ import { SkeletonCard } from '../cards/SkeletonCard';
 import { EmptyState } from '../common/EmptyState';
 import { synthEngine } from '@/utils/audioSynth';
 import { triggerLikeBurst } from '@/utils/confetti';
+import { recordMoviePlay } from '@/utils/continueWatching';
 import type { Movie, Song } from '@/types';
 
 interface SearchResultsViewProps {
@@ -75,6 +76,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query, onC
 
   const handlePlayMovie = (movie: Movie) => {
     synthEngine.playAmbientDrone();
+    recordMoviePlay(movie);
     addToast({
       title: `Starting "${movie.title}"`,
       description: 'Streaming in 4K Ultra HD with Dolby Atmos.',

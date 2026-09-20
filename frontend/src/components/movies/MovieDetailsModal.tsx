@@ -19,6 +19,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useMovieRecommendations, useLikeMutation } from '@/api/hooks';
 import { triggerLikeBurst } from '@/utils/confetti';
 import { synthEngine } from '@/utils/audioSynth';
+import { recordMoviePlay } from '@/utils/continueWatching';
 import type { Movie } from '@/types';
 
 export const MovieDetailsModal: React.FC = () => {
@@ -68,6 +69,7 @@ export const MovieDetailsModal: React.FC = () => {
 
   const handlePlay = () => {
     synthEngine.playAmbientDrone();
+    recordMoviePlay(selectedMovie);
     addToast({
       title: `Starting "${selectedMovie.title}"`,
       description: 'Ultra HD 4K streaming initialized with Dolby Atmos audio.',
