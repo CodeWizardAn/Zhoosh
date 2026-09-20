@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Check,
   Film,
+  Music,
   Globe,
   Layers,
   Heart,
@@ -42,6 +43,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
   initialPreferences = []
 }) => {
   const shouldReduceMotion = useReducedMotion();
+  const [activeTab, setActiveTab] = useState<'movie' | 'music'>('movie');
   const [selectedItems, setSelectedItems] = useState<PreferenceItem[]>(initialPreferences);
   const [limitNotice, setLimitNotice] = useState<string | null>(null);
 
@@ -51,10 +53,10 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
   // User Requirement: Minimum 2 each, maximum 5 each
   const isComplete = selectedGenres.length >= 2 && selectedLanguages.length >= 2;
 
-  // Pure movie & cinema preference items (Music tab completely removed)
-  const movieItems = PREFERENCE_ITEMS.filter((item) => item.type === 'movie');
-  const languageItems = movieItems.filter((i) => i.section === 'language');
-  const genreItems = movieItems.filter((i) => i.section === 'genre');
+  // Filter items according to active tab (Movies vs Music) with identical typography and layout
+  const currentTabItems = PREFERENCE_ITEMS.filter((item) => item.type === activeTab);
+  const languageItems = currentTabItems.filter((i) => i.section === 'language');
+  const genreItems = currentTabItems.filter((i) => i.section === 'genre');
 
   const toggleItem = (item: PreferenceItem) => {
     const exists = selectedItems.some((i) => i.id === item.id);
@@ -93,7 +95,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
     }
   };
 
-  const accent = '#FF1E56';
+  const accent = activeTab === 'movie' ? '#FF1E56' : '#A855F7';
 
   // Helper for language badges
   const getLanguageCode = (item: PreferenceItem) => {
@@ -165,7 +167,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
     const isSelected = selectedItems.some((i) => i.id === item.id);
     const isGenre = item.section === 'genre';
     const isCategoryFull = (isGenre ? selectedGenres.length >= 5 : selectedLanguages.length >= 5) && !isSelected;
-    const tag = item.tags?.[0] || (isGenre ? 'Genre' : 'Cinema');
+    const tag = item.tags?.[0] || (isGenre ? 'Genre' : 'Culture');
 
     return (
       <motion.button
@@ -174,9 +176,11 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         onClick={() => toggleItem(item)}
         whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
         whileHover={shouldReduceMotion ? {} : { scale: 1.02, y: -2 }}
-        className={`group relative w-full text-left p-4 rounded-2xl border transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between min-h-[118px] ${
+        className={`group relative w-full text-left p-4 rounded-2xl border transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between min-h-[118px] font-sans ${
           isSelected
-            ? 'border-[#FF1E56] bg-gradient-to-br from-[#FF1E56]/20 via-[#FF1E56]/8 to-[#11111a]/95 shadow-[0_0_25px_rgba(255,30,86,0.35)] ring-1 ring-[#FF1E56]/60'
+            ? activeTab === 'movie'
+              ? 'border-[#FF1E56] bg-gradient-to-br from-[#FF1E56]/20 via-[#FF1E56]/8 to-[#11111a]/95 shadow-[0_0_25px_rgba(255,30,86,0.35)] ring-1 ring-[#FF1E56]/60'
+              : 'border-[#A855F7] bg-gradient-to-br from-[#A855F7]/20 via-[#A855F7]/8 to-[#11111a]/95 shadow-[0_0_25px_rgba(168,85,247,0.35)] ring-1 ring-[#A855F7]/60'
             : isCategoryFull
             ? 'border-white/5 bg-black/40 opacity-40 hover:opacity-60 cursor-not-allowed'
             : 'border-white/10 bg-[#0d0d14]/70 hover:border-white/25 hover:bg-[#141420]/80 backdrop-blur-md shadow-lg shadow-black/40'
@@ -186,7 +190,9 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         <div
           className={`absolute -top-10 -right-10 w-24 h-24 rounded-full blur-xl pointer-events-none transition-opacity duration-300 ${
             isSelected
-              ? 'bg-[#FF1E56]/35 opacity-100'
+              ? activeTab === 'movie'
+                ? 'bg-[#FF1E56]/35 opacity-100'
+                : 'bg-[#A855F7]/35 opacity-100'
               : 'bg-white/5 opacity-0 group-hover:opacity-100'
           }`}
         />
@@ -205,7 +211,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
           {/* Badge */}
           {item.section === 'language' ? (
             <div
-              className={`px-2 py-0.5 rounded-lg border text-xs font-black tracking-wider transition-transform group-hover:scale-105 shadow-sm ${
+              className={`px-2 py-0.5 rounded-lg border text-xs font-black tracking-wider font-sans transition-transform group-hover:scale-105 shadow-sm ${
                 isSelected
                   ? 'bg-white/15 border-white/30 text-white'
                   : 'bg-white/5 border-white/10 text-gray-300'
@@ -249,24 +255,24 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
           </div>
         </div>
 
-        {/* Card Middle: Title + Subtitle */}
+        {/* Card Middle: Title + Subtitle - Uniform font family and sizes */}
         <div className="mt-2.5">
           <span
-            className={`text-sm font-bold tracking-tight block transition-colors ${
+            className={`text-sm font-bold tracking-tight block font-sans transition-colors ${
               isSelected ? 'text-white' : 'text-gray-200 group-hover:text-white'
             }`}
           >
             {item.title}
           </span>
           {item.subtitle && (
-            <p className="text-[11px] text-gray-400 group-hover:text-gray-300 line-clamp-2 leading-snug mt-0.5">
+            <p className="text-[11px] font-normal text-gray-400 group-hover:text-gray-300 line-clamp-2 leading-snug mt-0.5 font-sans">
               {item.subtitle}
             </p>
           )}
         </div>
 
         {/* Card Bottom: Micro tag */}
-        <div className="mt-2.5 pt-1.5 border-t border-white/5 flex items-center justify-between">
+        <div className="mt-2.5 pt-1.5 border-t border-white/5 flex items-center justify-between font-sans">
           <span
             className={`text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-md transition-colors ${
               isSelected
@@ -290,30 +296,50 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       animate={{ x: '0%', opacity: 1 }}
       exit={shouldReduceMotion ? { opacity: 0 } : { x: '-100%', opacity: 0 }}
       transition={{ duration: 0.3, ease: TRANSITION_BEZIER }}
-      className="relative min-h-screen w-full flex flex-col items-center bg-[#050508] text-white overflow-x-hidden select-none"
+      className="relative min-h-screen w-full flex flex-col items-center bg-[#050508] text-white overflow-x-hidden select-none font-sans"
     >
       {/* Background cinematic poster wall mosaic */}
       <FadedGridBackdrop intensity="subtle" showPosters={true} />
 
       {/* Top ambient glow flares */}
       <div className="fixed top-0 left-1/4 w-96 h-96 rounded-full bg-[#FF1E56]/10 blur-[140px] pointer-events-none" />
-      <div className="fixed top-1/3 right-1/4 w-96 h-96 rounded-full bg-[#FF1E56]/8 blur-[150px] pointer-events-none" />
+      <div className="fixed top-1/3 right-1/4 w-96 h-96 rounded-full bg-[#A855F7]/10 blur-[150px] pointer-events-none" />
 
       {/* Fixed top navbar */}
-      <div className="relative z-20 w-full border-b border-white/10 bg-[#050508]/85 backdrop-blur-xl sticky top-0">
+      <div className="relative z-20 w-full border-b border-white/10 bg-[#050508]/85 backdrop-blur-xl sticky top-0 font-sans">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10"
+            className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10 font-sans"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back
+            <span>Back</span>
           </button>
 
-          {/* Centered Step Indicator */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300">
-            <Film className="w-3.5 h-3.5 text-[#FF1E56]" />
-            <span>Movie & Series Taste Profile</span>
+          {/* Unified Tab Switcher: Identical typography, identical font, identical size */}
+          <div className="flex items-center gap-1 p-1 rounded-full bg-black/50 border border-white/10 shadow-inner font-sans">
+            <button
+              onClick={() => setActiveTab('movie')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer font-sans ${
+                activeTab === 'movie'
+                  ? 'bg-gradient-to-r from-[#FF1E56] to-rose-600 text-white shadow-[0_0_15px_rgba(255,30,86,0.4)]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Film className="w-3.5 h-3.5" />
+              <span>Movies</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('music')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer font-sans ${
+                activeTab === 'music'
+                  ? 'bg-gradient-to-r from-[#A855F7] to-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Music className="w-3.5 h-3.5" />
+              <span>Music</span>
+            </button>
           </div>
 
           {/* Quick Counter */}
@@ -324,19 +350,19 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       </div>
 
       {/* Main page content */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8">
-        {/* Header Banner */}
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8 font-sans">
+        {/* Header Banner - Identical font structure */}
         <div className="space-y-2.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#FF1E56]/15 via-rose-500/10 to-[#FF1E56]/15 border border-[#FF1E56]/30 text-rose-300 text-xs font-semibold uppercase tracking-wider backdrop-blur-md shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#FF1E56]/15 via-rose-500/10 to-[#A855F7]/15 border border-[#FF1E56]/30 text-rose-300 text-xs font-semibold uppercase tracking-wider backdrop-blur-md shadow-sm font-sans">
             <Sparkles className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
             Step 4 of 5 · AI Feed Calibration
           </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-            What do you like to watch
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight font-sans">
+            {activeTab === 'movie' ? 'What do you like to watch' : 'What do you like to listen to'}
             {userName ? (
               <>
                 ,{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E56] via-rose-300 to-[#FF477E]">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E56] via-rose-300 to-[#A855F7]">
                   {userName}
                 </span>
               </>
@@ -345,7 +371,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             )}
             ?
           </h1>
-          <p className="text-sm text-gray-400 max-w-xl leading-relaxed">
+          <p className="text-sm font-normal text-gray-400 max-w-xl leading-relaxed font-sans">
             Select 2 to 5 genres and 2 to 5 languages to personalize your dashboard feed and recommendations.
           </p>
         </div>
@@ -357,10 +383,10 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
               initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
-              className="px-4 py-3 rounded-xl bg-red-950/60 border border-red-500/40 backdrop-blur-md flex items-center justify-between text-xs font-semibold text-rose-200 shadow-[0_0_20px_rgba(255,30,86,0.25)]"
+              className="px-4 py-3 rounded-xl bg-purple-950/60 border border-purple-500/40 backdrop-blur-md flex items-center justify-between text-xs font-semibold text-purple-200 shadow-[0_0_20px_rgba(168,85,247,0.25)] font-sans"
             >
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />
                 <span>{limitNotice}</span>
               </div>
               <button
@@ -375,14 +401,14 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
 
         {/* Selected Tray */}
         {selectedItems.length > 0 && (
-          <motion.div layout className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md">
+          <motion.div layout className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md font-sans">
             <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider font-sans">
                 Your Selection ({selectedItems.length})
               </span>
               <button
                 onClick={clearAll}
-                className="text-[11px] font-medium text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+                className="text-[11px] font-medium text-gray-400 hover:text-red-400 transition-colors cursor-pointer font-sans"
               >
                 Clear all
               </button>
@@ -397,7 +423,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.8, opacity: 0 }}
                     onClick={() => toggleItem(item)}
-                    className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-white/20 bg-white/10 text-white hover:border-red-400/60 hover:bg-red-500/15 transition-all cursor-pointer"
+                    className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-white/20 bg-white/10 text-white hover:border-red-400/60 hover:bg-red-500/15 transition-all cursor-pointer font-sans"
                   >
                     <span>{item.title}</span>
                     <span className="text-[10px] text-gray-400 group-hover:text-red-300">✕</span>
@@ -410,7 +436,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
 
         {/* Section 1: Languages */}
         {languageItems.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 font-sans">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-white/10">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.15)]">
@@ -418,15 +444,17 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                      Audio & Subtitle Languages
+                    <h2 className="text-sm sm:text-base font-bold text-white tracking-wide font-sans">
+                      {activeTab === 'movie' ? 'Audio & Subtitle Languages' : 'Track & Vocal Languages'}
                     </h2>
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-sans">
                       (Min 2, Max 5)
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 hidden sm:block">
-                    Choose what you love to watch & hear
+                  <p className="text-xs font-normal text-gray-400 hidden sm:block font-sans">
+                    {activeTab === 'movie'
+                      ? 'Choose what you love to watch & hear'
+                      : 'Choose languages for music and vocal tracks'}
                   </p>
                 </div>
               </div>
@@ -434,17 +462,17 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
               {/* Status counter pill */}
               <div>
                 {selectedLanguages.length < 2 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 backdrop-blur-sm animate-pulse">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 backdrop-blur-sm animate-pulse font-sans">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
                     {selectedLanguages.length}/5 selected (need min 2)
                   </span>
                 ) : selectedLanguages.length === 5 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 backdrop-blur-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 backdrop-blur-sm font-sans">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
                     5/5 selected (max)
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm font-sans">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     {selectedLanguages.length}/5 selected ✓
                   </span>
@@ -460,23 +488,31 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
 
         {/* Section 2: Genres */}
         {genreItems.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 font-sans">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-white/10">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.15)]">
-                  <Layers className="w-4 h-4" />
+                <div
+                  className={`w-8 h-8 rounded-xl border flex items-center justify-center shadow-[0_0_12px_rgba(244,63,94,0.15)] ${
+                    activeTab === 'movie'
+                      ? 'bg-rose-500/10 border-rose-500/25 text-rose-400'
+                      : 'bg-purple-500/10 border-purple-500/25 text-purple-400'
+                  }`}
+                >
+                  {activeTab === 'movie' ? <Layers className="w-4 h-4" /> : <Music className="w-4 h-4" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                      Favorite Cinema Genres
+                    <h2 className="text-sm sm:text-base font-bold text-white tracking-wide font-sans">
+                      {activeTab === 'movie' ? 'Favorite Cinema Genres' : 'Favorite Music Genres'}
                     </h2>
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider font-sans">
                       (Min 2, Max 5)
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 hidden sm:block">
-                    Curates your home feed rows & recommendations
+                  <p className="text-xs font-normal text-gray-400 hidden sm:block font-sans">
+                    {activeTab === 'movie'
+                      ? 'Curates your home feed rows & recommendations'
+                      : 'Curates your personalized music mixes and stations'}
                   </p>
                 </div>
               </div>
@@ -484,17 +520,17 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
               {/* Status counter pill */}
               <div>
                 {selectedGenres.length < 2 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 backdrop-blur-sm animate-pulse">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 backdrop-blur-sm animate-pulse font-sans">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
                     {selectedGenres.length}/5 selected (need min 2)
                   </span>
                 ) : selectedGenres.length === 5 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 backdrop-blur-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 backdrop-blur-sm font-sans">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
                     5/5 selected (max)
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm font-sans">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     {selectedGenres.length}/5 selected ✓
                   </span>
@@ -513,14 +549,14 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       </div>
 
       {/* Floating Bottom Dock */}
-      <div className="fixed bottom-4 sm:bottom-6 left-0 right-0 z-30 flex justify-center px-4 pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-4xl bg-[#0a0a12]/92 backdrop-blur-2xl border border-white/15 rounded-2xl sm:rounded-full px-4 sm:px-6 py-3.5 shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_30px_rgba(255,30,86,0.15)] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+      <div className="fixed bottom-4 sm:bottom-6 left-0 right-0 z-30 flex justify-center px-4 pointer-events-none font-sans">
+        <div className="pointer-events-auto w-full max-w-4xl bg-[#0a0a12]/92 backdrop-blur-2xl border border-white/15 rounded-2xl sm:rounded-full px-4 sm:px-6 py-3.5 shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_30px_rgba(255,30,86,0.15)] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 font-sans">
           {/* Status chips */}
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start font-sans">
             <div className="flex items-center gap-2">
               {/* Languages chip */}
               <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 transition-colors ${
+                className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 transition-colors font-sans ${
                   selectedLanguages.length >= 2
                     ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
                     : 'bg-white/5 text-amber-300 border-amber-500/30'
@@ -532,7 +568,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
 
               {/* Genres chip */}
               <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 transition-colors ${
+                className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 transition-colors font-sans ${
                   selectedGenres.length >= 2
                     ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
                     : 'bg-white/5 text-amber-300 border-amber-500/30'
@@ -543,7 +579,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
               </span>
             </div>
 
-            <span className="text-xs text-gray-400 font-medium hidden md:inline">
+            <span className="text-xs text-gray-400 font-medium hidden md:inline font-sans">
               {isComplete ? '🎯 Ready to personalize feed' : 'Pick min 2 of each'}
             </span>
           </div>
@@ -552,7 +588,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
           <div className="hidden lg:flex items-center gap-2 flex-1 max-w-[140px]">
             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-[#FF1E56] to-rose-400 rounded-full"
+                className="h-full bg-gradient-to-r from-[#FF1E56] to-[#A855F7] rounded-full"
                 animate={{
                   width: `${Math.min(
                     100,
@@ -570,9 +606,9 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             disabled={!isComplete}
             whileHover={isComplete ? { scale: 1.03 } : {}}
             whileTap={isComplete ? { scale: 0.97 } : {}}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2.5 px-7 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all ${
+            className={`w-full sm:w-auto flex items-center justify-center gap-2.5 px-7 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all font-sans ${
               isComplete
-                ? 'bg-gradient-to-r from-[#FF1E56] via-rose-500 to-[#FF477E] text-white cursor-pointer shadow-[0_0_25px_rgba(255,30,86,0.5)] hover:shadow-[0_0_35px_rgba(255,30,86,0.7)]'
+                ? 'bg-gradient-to-r from-[#FF1E56] via-rose-500 to-[#A855F7] text-white cursor-pointer shadow-[0_0_25px_rgba(255,30,86,0.5)] hover:shadow-[0_0_35px_rgba(255,30,86,0.7)]'
                 : 'bg-white/8 text-gray-500 cursor-not-allowed border border-white/5'
             }`}
           >
