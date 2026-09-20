@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Check,
   Film,
-  Music,
   Globe,
   Layers,
   Heart,
@@ -43,7 +42,6 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
   initialPreferences = []
 }) => {
   const shouldReduceMotion = useReducedMotion();
-  const [activeTab, setActiveTab] = useState<'movie' | 'music'>('movie');
   const [selectedItems, setSelectedItems] = useState<PreferenceItem[]>(initialPreferences);
   const [limitNotice, setLimitNotice] = useState<string | null>(null);
 
@@ -53,9 +51,10 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
   // User Requirement: Minimum 2 each, maximum 5 each
   const isComplete = selectedGenres.length >= 2 && selectedLanguages.length >= 2;
 
-  const currentTabItems = PREFERENCE_ITEMS.filter((item) => item.type === activeTab);
-  const languageItems = currentTabItems.filter((i) => i.section === 'language');
-  const genreItems = currentTabItems.filter((i) => i.section === 'genre');
+  // Pure movie & cinema preference items (Music tab completely removed)
+  const movieItems = PREFERENCE_ITEMS.filter((item) => item.type === 'movie');
+  const languageItems = movieItems.filter((i) => i.section === 'language');
+  const genreItems = movieItems.filter((i) => i.section === 'genre');
 
   const toggleItem = (item: PreferenceItem) => {
     const exists = selectedItems.some((i) => i.id === item.id);
@@ -94,7 +93,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
     }
   };
 
-  const accent = activeTab === 'movie' ? '#FF1E56' : '#A855F7';
+  const accent = '#FF1E56';
 
   // Helper for language badges
   const getLanguageCode = (item: PreferenceItem) => {
@@ -177,9 +176,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         whileHover={shouldReduceMotion ? {} : { scale: 1.02, y: -2 }}
         className={`group relative w-full text-left p-4 rounded-2xl border transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between min-h-[118px] ${
           isSelected
-            ? activeTab === 'movie'
-              ? 'border-[#FF1E56] bg-gradient-to-br from-[#FF1E56]/20 via-[#FF1E56]/8 to-[#11111a]/95 shadow-[0_0_25px_rgba(255,30,86,0.35)] ring-1 ring-[#FF1E56]/60'
-              : 'border-[#A855F7] bg-gradient-to-br from-[#A855F7]/20 via-[#A855F7]/8 to-[#11111a]/95 shadow-[0_0_25px_rgba(168,85,247,0.35)] ring-1 ring-[#A855F7]/60'
+            ? 'border-[#FF1E56] bg-gradient-to-br from-[#FF1E56]/20 via-[#FF1E56]/8 to-[#11111a]/95 shadow-[0_0_25px_rgba(255,30,86,0.35)] ring-1 ring-[#FF1E56]/60'
             : isCategoryFull
             ? 'border-white/5 bg-black/40 opacity-40 hover:opacity-60 cursor-not-allowed'
             : 'border-white/10 bg-[#0d0d14]/70 hover:border-white/25 hover:bg-[#141420]/80 backdrop-blur-md shadow-lg shadow-black/40'
@@ -189,9 +186,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         <div
           className={`absolute -top-10 -right-10 w-24 h-24 rounded-full blur-xl pointer-events-none transition-opacity duration-300 ${
             isSelected
-              ? activeTab === 'movie'
-                ? 'bg-[#FF1E56]/35 opacity-100'
-                : 'bg-[#A855F7]/35 opacity-100'
+              ? 'bg-[#FF1E56]/35 opacity-100'
               : 'bg-white/5 opacity-0 group-hover:opacity-100'
           }`}
         />
@@ -302,7 +297,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
 
       {/* Top ambient glow flares */}
       <div className="fixed top-0 left-1/4 w-96 h-96 rounded-full bg-[#FF1E56]/10 blur-[140px] pointer-events-none" />
-      <div className="fixed top-1/3 right-1/4 w-96 h-96 rounded-full bg-[#A855F7]/10 blur-[150px] pointer-events-none" />
+      <div className="fixed top-1/3 right-1/4 w-96 h-96 rounded-full bg-[#FF1E56]/8 blur-[150px] pointer-events-none" />
 
       {/* Fixed top navbar */}
       <div className="relative z-20 w-full border-b border-white/10 bg-[#050508]/85 backdrop-blur-xl sticky top-0">
@@ -315,30 +310,10 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             Back
           </button>
 
-          {/* Tab switcher */}
-          <div className="flex items-center gap-1 p-1 rounded-full bg-black/50 border border-white/10 shadow-inner">
-            <button
-              onClick={() => setActiveTab('movie')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'movie'
-                  ? 'bg-gradient-to-r from-[#FF1E56] to-rose-600 text-white shadow-[0_0_15px_rgba(255,30,86,0.4)]'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <Film className="w-3.5 h-3.5" />
-              Movies & TV
-            </button>
-            <button
-              onClick={() => setActiveTab('music')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'music'
-                  ? 'bg-gradient-to-r from-[#A855F7] to-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <Music className="w-3.5 h-3.5" />
-              Soundtracks & Music
-            </button>
+          {/* Centered Step Indicator */}
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300">
+            <Film className="w-3.5 h-3.5 text-[#FF1E56]" />
+            <span>Movie & Series Taste Profile</span>
           </div>
 
           {/* Quick Counter */}
@@ -352,7 +327,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8">
         {/* Header Banner */}
         <div className="space-y-2.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#FF1E56]/15 via-rose-500/10 to-[#A855F7]/15 border border-[#FF1E56]/30 text-rose-300 text-xs font-semibold uppercase tracking-wider backdrop-blur-md shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#FF1E56]/15 via-rose-500/10 to-[#FF1E56]/15 border border-[#FF1E56]/30 text-rose-300 text-xs font-semibold uppercase tracking-wider backdrop-blur-md shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
             Step 4 of 5 · AI Feed Calibration
           </div>
@@ -361,7 +336,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             {userName ? (
               <>
                 ,{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E56] via-rose-300 to-[#A855F7]">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E56] via-rose-300 to-[#FF477E]">
                   {userName}
                 </span>
               </>
@@ -382,10 +357,10 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
               initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
-              className="px-4 py-3 rounded-xl bg-purple-950/60 border border-purple-500/40 backdrop-blur-md flex items-center justify-between text-xs font-semibold text-purple-200 shadow-[0_0_20px_rgba(168,85,247,0.25)]"
+              className="px-4 py-3 rounded-xl bg-red-950/60 border border-red-500/40 backdrop-blur-md flex items-center justify-between text-xs font-semibold text-rose-200 shadow-[0_0_20px_rgba(255,30,86,0.25)]"
             >
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
                 <span>{limitNotice}</span>
               </div>
               <button
@@ -464,8 +439,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
                     {selectedLanguages.length}/5 selected (need min 2)
                   </span>
                 ) : selectedLanguages.length === 5 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 backdrop-blur-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 backdrop-blur-sm">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" />
                     5/5 selected (max)
                   </span>
                 ) : (
@@ -514,8 +489,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
                     {selectedGenres.length}/5 selected (need min 2)
                   </span>
                 ) : selectedGenres.length === 5 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 backdrop-blur-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 backdrop-blur-sm">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" />
                     5/5 selected (max)
                   </span>
                 ) : (
@@ -577,7 +552,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
           <div className="hidden lg:flex items-center gap-2 flex-1 max-w-[140px]">
             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-[#FF1E56] to-[#A855F7] rounded-full"
+                className="h-full bg-gradient-to-r from-[#FF1E56] to-rose-400 rounded-full"
                 animate={{
                   width: `${Math.min(
                     100,
@@ -597,7 +572,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             whileTap={isComplete ? { scale: 0.97 } : {}}
             className={`w-full sm:w-auto flex items-center justify-center gap-2.5 px-7 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all ${
               isComplete
-                ? 'bg-gradient-to-r from-[#FF1E56] via-rose-500 to-[#A855F7] text-white cursor-pointer shadow-[0_0_25px_rgba(255,30,86,0.5)] hover:shadow-[0_0_35px_rgba(255,30,86,0.7)]'
+                ? 'bg-gradient-to-r from-[#FF1E56] via-rose-500 to-[#FF477E] text-white cursor-pointer shadow-[0_0_25px_rgba(255,30,86,0.5)] hover:shadow-[0_0_35px_rgba(255,30,86,0.7)]'
                 : 'bg-white/8 text-gray-500 cursor-not-allowed border border-white/5'
             }`}
           >
