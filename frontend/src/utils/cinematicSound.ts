@@ -165,7 +165,9 @@ class ZhooshAudioEngine {
     if (this.isMuted && !force) return;
     if (this.hasPlayedIntro && !force) return;
 
-    this.hasPlayedIntro = true;
+    if (!force) {
+      this.hasPlayedIntro = true;
+    }
 
     // Strategy 1: HTML5 Audio element with pure synthesized 16-bit Stereo PCM WAV
     const wavUrl = this.getWavUrl();
@@ -182,7 +184,9 @@ class ZhooshAudioEngine {
             .catch(() => {
               // If browser blocked initial zero-gesture autoplay, attach one-time listener
               const unlockSound = () => {
-                audio.play().catch(() => {});
+                const freshAudio = new Audio(wavUrl);
+                freshAudio.volume = 1.0;
+                freshAudio.play().catch(() => {});
                 window.removeEventListener('pointerdown', unlockSound);
                 window.removeEventListener('click', unlockSound);
                 window.removeEventListener('keydown', unlockSound);
