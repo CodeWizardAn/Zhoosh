@@ -22,6 +22,7 @@ import { FadedGridBackdrop } from '../common/FadedGridBackdrop';
 import { AIChatView } from '../agent/AIChatView';
 import { FixedFooter } from '../common/FixedFooter';
 import { NavThemeTransition } from '../common/NavThemeTransition';
+import { ModeTransitionVideo } from '../common/ModeTransitionVideo';
 import { DEFAULT_AVATAR } from '@/utils/avatars';
 
 export const AppShell: React.FC = () => {
@@ -32,6 +33,19 @@ export const AppShell: React.FC = () => {
   const [isNavTransitioning, setIsNavTransitioning] = useState(false);
   const [transitionTarget, setTransitionTarget] = useState('');
   const prevNavRef = React.useRef(activeNav);
+
+  // Mode Transition Video state (Blue for Music, Red & Black for Cinema)
+  const [modeTransition, setModeTransition] = useState<'to-music' | 'to-movies' | null>(null);
+  const prevModeRef = React.useRef(mode);
+
+  useEffect(() => {
+    if (prevModeRef.current !== mode) {
+      if (!shouldReduceMotion) {
+        setModeTransition(mode === 'music' ? 'to-music' : 'to-movies');
+      }
+      prevModeRef.current = mode;
+    }
+  }, [mode, shouldReduceMotion]);
 
   // Trigger cinematic theme loading transition when switching between Home and My Zhoosh (Watchlist)
   useEffect(() => {
@@ -186,6 +200,17 @@ export const AppShell: React.FC = () => {
               onInstantBypass={closeOnboarding}
             />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mode Transition Video (Blue for Music Mode, Red & Black for Cinema Mode) */}
+      <AnimatePresence>
+        {modeTransition && (
+          <ModeTransitionVideo
+            key={modeTransition}
+            direction={modeTransition}
+            onComplete={() => setModeTransition(null)}
+          />
         )}
       </AnimatePresence>
     </div>
