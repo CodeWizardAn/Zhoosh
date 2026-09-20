@@ -98,23 +98,37 @@ class RecommendationEngine:
             return []
         
         df = self.movies_df
+        bad_words_re = r'(?i)\b(hooker|cosmetology|slave wife|pleasure guide|wife for rent|mother\'s friend|girlfriend\'s mother|young mom|young aunt|cousin|student\'s mom|affair|swapping|porno|bondage|erotic|toruko|sex exchange|bosomy)\b'
+        df = df[~df['title'].str.contains(bad_words_re, na=False)]
+
         if genre and genre.lower() != 'all':
-            df = df[df['genres_str'].str.contains(genre, case=False, na=False)]
+            g_low = genre.lower().strip()
+            df = df[df['genres_str'].str.lower().str.contains(g_low, na=False)]
+            if g_low != 'documentary':
+                df = df[~df['genres_str'].str.lower().str.contains('documentary|tv movie', na=False)]
         if language and language.lower() != 'all':
             df = df[df['language'].str.contains(language, case=False, na=False)]
             
+        # Sort candidates by consensus quality
+        v_counts = df['vote_count'].fillna(0).astype(float)
+        v_avgs = df['vote_average'].fillna(7.0).astype(float)
+        quality_score = (v_avgs * 0.6) + (np.log1p(v_counts) * 0.4)
+        df = df.iloc[quality_score.argsort()[::-1]]
+
         exclude_set = set([t.lower().strip() for t in (exclude_titles or [])])
         results = []
         skipped = 0
+        seen_titles = set()
         for _, row in df.iterrows():
             t_name = str(row['title']).lower().strip()
-            if t_name in exclude_set:
+            if t_name in exclude_set or t_name in seen_titles:
                 continue
+            seen_titles.add(t_name)
             if skipped < offset:
                 skipped += 1
                 continue
             vote_avg = float(row.get('vote_average', 7.5))
-            match_score = int(min(99, max(85, int(vote_avg * 10 + 10))))
+            match_score = int(min(99, max(85, int(vote_avg * 10 + 8))))
             results.append(self._format_movie_row(
                 row, 
                 match_pct=match_score, 
@@ -134,7 +148,9 @@ class RecommendationEngine:
         vote_avg = float(row.get('vote_average', 7.5))
         return self._format_movie_row(row, match_pct=int(min(99, max(88, int(vote_avg * 10 + 12)))))
 
-    def recommend_movies_for_title(self, title: str, top_n: int = 8, exclude_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def recommend_movies_for_title(self, title: str, top_n: int = 8, limit: Optional[int] = None, exclude_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        if limit is not None:
+            top_n = limit
         if self.movies_df is None or self.movie_tfidf_matrix is None:
             return []
         
@@ -157,6 +173,25 @@ class RecommendationEngine:
         target_title = str(target_row['title'])
         target_genres = set([g.strip().lower() for g in str(target_row.get('genres_str', '')).split(',') if g.strip()])
         target_director = str(target_row.get('director', '')).strip().lower()
+        target_lang = str(target_row.get('language', 'English')).strip().lower()
+
+        # Franchise definition for high-affinity grouping
+        FRANCHISE_PATTERNS = [
+            re.compile(r'batman|dark knight|joker|gotham|bruce wayne', re.I),
+            re.compile(r'spider-man|spiderman|spider-verse|peter parker|miles morales', re.I),
+            re.compile(r'avengers|iron man|thor|captain america|marvel|thanos|infinity war', re.I),
+            re.compile(r'godfather|corleone|mafia|don vito', re.I),
+            re.compile(r'inception|interstellar|oppenheimer|tenet|prestige|memento|dunkirk', re.I),
+            re.compile(r'spirited away|princess mononoke|howl\'s moving castle|my neighbor totoro|your name|suzume', re.I),
+            re.compile(r'pulp fiction|django unchained|kill bill|inglourious basterds|reservoir dogs', re.I),
+            re.compile(r'3 idiots|pk|taare zameen|like stars on earth|munna bhai|dangal|swades|lagaan', re.I),
+            re.compile(r'3 idiots|chhichhore|dil chahta hai|zindagi na milegi dobara|yeh jawaani hai deewani', re.I),
+            re.compile(r'jab we met|dilwale dulhania|kal ho naa ho|kabir singh|barfi|queen|om shanti om', re.I),
+            re.compile(r'interstellar|gravity|the martian|arrival|2001: a space odyssey|space|alien|wormhole', re.I),
+            re.compile(r'godfather|goodfellas|scarface|the departed|gangs of wasseypur|irishman|se7en', re.I),
+            re.compile(r'conjuring|annabelle|insidious|hereditary|a quiet place|sinister|shining', re.I),
+        ]
+        active_franchises = [p for p in FRANCHISE_PATTERNS if p.search(target_title)]
 
         # Cosine similarity on TF-IDF vectors
         sim_scores = cosine_similarity(self.movie_tfidf_matrix[target_idx], self.movie_tfidf_matrix).flatten()
@@ -165,26 +200,49 @@ class RecommendationEngine:
         vote_counts = self.movies_df['vote_count'].fillna(100).astype(float).values if 'vote_count' in self.movies_df.columns else np.ones(len(self.movies_df)) * 500
         vote_boost = np.clip(np.log1p(vote_counts) / 11.5, 0.0, 1.0)
         
-        # Composite score
-        composite_scores = sim_scores * 0.72 + vote_boost * 0.28
+        # Composite score with director & franchise synergy
+        composite_scores = sim_scores * 0.68 + vote_boost * 0.22
         
+        # Vectorized bonuses
+        if target_director and target_director != 'visionary director':
+            is_same_dir = self.movies_df['director'].str.lower().str.contains(re.escape(target_director), na=False).values
+            composite_scores += is_same_dir * 0.15
+            
+        for f_pat in active_franchises:
+            is_same_fran = self.movies_df['title'].str.contains(f_pat, na=False).values
+            composite_scores += is_same_fran * 0.25
+            
+        # Language coherence
+        if target_lang:
+            is_same_lang = (self.movies_df['language'].str.lower() == target_lang).values
+            composite_scores += is_same_lang * 0.08
+
         # Sort descending
         ranked_indices = composite_scores.argsort()[::-1]
         
+        bad_words_re = re.compile(r'\b(hooker|cosmetology|slave wife|pleasure guide|wife for rent|mother\'s friend|girlfriend\'s mother|young mom|young aunt|cousin|student\'s mom|affair|swapping|porno|bondage|erotic|toruko|sex exchange|bosomy)\b', re.I)
+        
         results = []
+        seen_titles = set([target_title.lower().strip()])
         for idx in ranked_indices:
             row = self.movies_df.iloc[idx]
             row_id = str(row['id'])
             row_title = str(row['title'])
+            row_title_lower = row_title.lower().strip()
             
-            # Exclude self and explicit exclude_id
-            if row_id == target_id or (exclude_id and row_id == str(exclude_id)):
+            # Exclude self, explicit exclude_id, and duplicate titles
+            if row_id == target_id or (exclude_id and row_id == str(exclude_id)) or row_title_lower in seen_titles:
+                continue
+                
+            # Filter inappropriate titles
+            if bad_words_re.search(row_title):
                 continue
                 
             # Exclude making-of/shorts that clone the exact target title prefix (e.g. "Interstellar: Nolan's Odyssey")
-            if row_title.lower().startswith(target_title.lower() + ":") or row_title.lower().startswith("the science of " + target_title.lower()):
+            if row_title_lower.startswith(target_title.lower() + ":") or row_title_lower.startswith("the science of " + target_title.lower()):
                 continue
                 
+            seen_titles.add(row_title_lower)
             calibrated_score = max(88, 99 - (len(results) * 2))
             match_pct = int(calibrated_score)
             
@@ -213,22 +271,54 @@ class RecommendationEngine:
         matches = self.movies_df[self.movies_df['genres_str'].str.lower().str.contains(genre_clean, na=False)].copy()
         
         if matches.empty:
-            return self.get_movies(limit=limit, offset=offset, exclude_titles=exclude_titles)
+            return self.get_movies(genre=genre, limit=limit, offset=offset, exclude_titles=exclude_titles)
             
-        if 'vote_count' in matches.columns and 'vote_average' in matches.columns:
-            # Weighted rating formula
-            matches['quality_rank'] = (matches['vote_average'].astype(float) * 0.6) + (np.log1p(matches['vote_count'].astype(float)) * 0.4)
-            matches = matches.sort_values(by='quality_rank', ascending=False)
-        else:
-            matches = matches.sort_values(by='vote_average', ascending=False)
+        # Filter inappropriate titles
+        bad_words_re = r'\b(?:hooker|cosmetology|slave wife|pleasure guide|wife for rent|mother\'s friend|girlfriend\'s mother|young mom|young aunt|cousin|student\'s mom|affair|swapping|porno|bondage|erotic|toruko|sex exchange|bosomy|wrestlemania|wwe|behind the scenes|making of)\b'
+        matches = matches[~matches['title'].str.contains(bad_words_re, case=False, regex=True, na=False)]
+        
+        # Exclude documentaries & TV movies from main cinema genres (unless explicitly asking for documentary)
+        if genre_clean != 'documentary':
+            matches = matches[~matches['genres_str'].str.lower().str.contains('documentary|tv movie', na=False)]
+            
+        # Minimum vote threshold to ensure consensus quality
+        v_counts = matches['vote_count'].fillna(0).astype(float)
+        if (v_counts >= 300).sum() >= (limit + offset):
+            matches = matches[v_counts >= 300].copy()
+        elif (v_counts >= 100).sum() >= (limit + offset):
+            matches = matches[v_counts >= 100].copy()
+            
+        # Bayesian weighted ranking with genre primacy bonus
+        C = 6.8
+        m = 300.0
+        v = matches['vote_count'].fillna(0).astype(float)
+        R = matches['vote_average'].fillna(7.0).astype(float)
+        bayesian = (v / (v + m)) * R + (m / (v + m)) * C
+        
+        def genre_boost(g_str):
+            parts = [p.strip().lower() for p in str(g_str).split(',')]
+            if not parts:
+                return 1.0
+            if parts[0] == genre_clean:
+                return 1.25 # Primary genre
+            elif len(parts) > 1 and parts[1] == genre_clean:
+                return 1.12 # Secondary genre
+            elif len(parts) > 2 and parts[2] == genre_clean:
+                return 0.82 # Tertiary genre
+            return 0.70
+            
+        matches['quality_rank'] = bayesian * matches['genres_str'].apply(genre_boost)
+        matches = matches.sort_values(by='quality_rank', ascending=False)
             
         exclude_set = set([t.lower().strip() for t in (exclude_titles or [])])
         results = []
         skipped = 0
+        seen_titles = set()
         for i, (_, row) in enumerate(matches.iterrows()):
             t_name = str(row['title']).lower().strip()
-            if t_name in exclude_set:
+            if t_name in exclude_set or t_name in seen_titles:
                 continue
+            seen_titles.add(t_name)
             if skipped < offset:
                 skipped += 1
                 continue
@@ -241,6 +331,7 @@ class RecommendationEngine:
             if len(results) >= limit:
                 break
         return results
+
 
     def _format_song_row(self, row, match_pct: int = 95, rationale: Optional[str] = None) -> Dict[str, Any]:
         duration_sec = int(row.get('duration_ms', 210000)) // 1000
@@ -346,6 +437,7 @@ class RecommendationEngine:
             
         idx = matches.index[0]
         target_track = matches.iloc[0]
+        target_name_clean = str(target_track['track_name']).strip().lower()
         target_vec = self.music_feature_matrix[idx].reshape(1, -1)
         sim_scores = cosine_similarity(target_vec, self.music_feature_matrix).flatten()
         
@@ -353,9 +445,11 @@ class RecommendationEngine:
         sorted_indices = sim_scores.argsort()[::-1]
         
         results = []
+        seen_titles = set([target_name_clean])
         for s_idx in sorted_indices:
             row = self.music_df.iloc[s_idx]
-            if str(row['track_id']) == str(target_track_id):
+            r_title = str(row['track_name']).strip().lower()
+            if str(row['track_id']) == str(target_track_id) or r_title in seen_titles:
                 continue
                 
             if filter_romantic:
@@ -366,6 +460,7 @@ class RecommendationEngine:
                 if not is_romantic:
                     continue
                     
+            seen_titles.add(r_title)
             match_pct = int(min(99, max(82, int(sim_scores[s_idx] * 100))))
             rationale = (
                 f"Harmonic & acoustic similarity with '{target_track['track_name']}' "
@@ -378,12 +473,53 @@ class RecommendationEngine:
         return results
 
     def cross_modal_recommend(self, mode: str = 'movies') -> List[Dict[str, Any]]:
-        """Cross-correlates movie and music preferences."""
+        """Cross-correlates movie and music preferences across diverse genres."""
         if mode == 'movies':
-            recs = self.recommend_movies_for_title('Interstellar', top_n=8)
-            return recs if recs else self.get_movies(limit=8)
+            showcase_titles = [
+                'Inception', 'Interstellar', 'The Dark Knight', 'Spirited Away',
+                'Dune: Part Two', 'The Godfather', '3 Idiots', 'Pulp Fiction',
+                'La La Land', 'Fight Club'
+            ]
+            results = []
+            seen = set()
+            for t in showcase_titles:
+                m = self.get_movie_by_id(t)
+                if not m and self.movies_df is not None:
+                    matched = self.movies_df[self.movies_df['title'].str.lower() == t.lower()]
+                    if not matched.empty:
+                        m = self._format_movie_row(matched.iloc[0], match_pct=98, rationale="Curated blockbuster showcase based on universal critical consensus.")
+                if m and m['title'].lower() not in seen:
+                    results.append(m)
+                    seen.add(m['title'].lower())
+            if len(results) < 8:
+                extra = self.get_movies(limit=10)
+                for em in extra:
+                    if em['title'].lower() not in seen:
+                        results.append(em)
+                        seen.add(em['title'].lower())
+            return results[:8]
         else:
-            return self.get_music(limit=8)
+            showcase_music = [
+                'Starboy', 'Blinding Lights', 'Kesariya', 'Ilahi',
+                'HUMBLE.', 'Bohemian Rhapsody', 'Resonance', 'Tum Hi Ho'
+            ]
+            results = []
+            seen = set()
+            if self.music_df is not None:
+                for t in showcase_music:
+                    matched = self.music_df[self.music_df['track_name'].str.lower() == t.lower()]
+                    if not matched.empty:
+                        s = self._format_song_row(matched.iloc[0], match_pct=99, rationale="Signature acoustic showcase matching peak streaming frequency.")
+                        if s['title'].lower() not in seen:
+                            results.append(s)
+                            seen.add(s['title'].lower())
+            if len(results) < 8:
+                extra = self.get_music(limit=10)
+                for es in extra:
+                    if es['title'].lower() not in seen:
+                        results.append(es)
+                        seen.add(es['title'].lower())
+            return results[:8]
 
     def search_all(self, query: str, mode: str = 'movies') -> Dict[str, Any]:
         q = query.lower().strip()

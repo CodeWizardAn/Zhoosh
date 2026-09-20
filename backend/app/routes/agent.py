@@ -85,11 +85,18 @@ def find_movie_in_query(query: str):
     top_df = engine.movies_df.sort_values(by='vote_count', ascending=False)
     q_lower = q.lower()
     
+    # Exclude genre and generic words so queries like "suggest comedy movies" don't match movie titles
+    GENERIC_EXCLUSIONS = COMMON_STOPWORDS | set(KNOWN_GENRES.keys()) | {
+        'movie', 'movies', 'film', 'films', 'songs', 'song', 'music', 'recommend',
+        'recommendation', 'good', 'best', 'top', 'trending', 'suggest', 'cinema',
+        'soundtrack', 'soundtracks', 'sound', 'sounds', 'audio', 'stream', 'play'
+    }
+
     # Priority check for titles with length > 2
     for _, row in top_df.head(3000).iterrows():
         title = str(row['title']).strip()
         t_lower = title.lower()
-        if t_lower in COMMON_STOPWORDS or len(t_lower) <= 2:
+        if t_lower in GENERIC_EXCLUSIONS or len(t_lower) <= 2:
             continue
             
         pattern = r'(?:\b|^)' + re.escape(t_lower) + r'(?:\b|$|[?!.,])'
@@ -442,9 +449,9 @@ def detect_movie_mood_in_query(query: str):
                     seen.add(r['title'].lower())
         return "🚗 **Wanderlust & Travelling Journeys**", selected[:6]
 
-    # 3. Exciting / Thrilling / Action / Adrenaline
+    # 3. Exciting / Adrenaline / Action-Packed
     if any(k in q_lower for k in [
-        'exciting', 'thrilling', 'thriller', 'adrenaline', 'edge of my seat',
+        'exciting', 'adrenaline', 'edge of my seat',
         'edge of seat', 'mind-blowing', 'mind blowing', 'action packed', 'intense', 'hype', 'hyped'
     ]):
         thrill_titles = [
@@ -459,10 +466,10 @@ def detect_movie_mood_in_query(query: str):
                 if r['title'].lower() not in seen:
                     selected.append(engine._format_movie_row(
                         r, match_pct=99,
-                        rationale=f"Electrifying high-octane thriller: '{r['title']}'."
+                        rationale=f"Electrifying high-octane cinematic journey: '{r['title']}'."
                     ))
                     seen.add(r['title'].lower())
-        return "⚡ **Exciting & High-Octane Thrillers**", selected[:6]
+        return "⚡ **Exciting & High-Octane Spectacles**", selected[:6]
 
     # 4. Sad / Tired / Depressed / Poignant Comfort
     if any(k in q_lower for k in [
@@ -960,17 +967,57 @@ def generate_grounded_response(
             []
         )
 
-    # 2. Check for Movie Mood & Situational Requests (Travelling, College Days, Thrillers, Sad/Tired, Happy)
-    movie_mood_title, movie_mood_results = detect_movie_mood_in_query(message)
-    if movie_mood_results:
+    # 2. Check for Movie Genre Query (Horror, Comedy, Thriller, Sci-Fi, Action, Romance, etc.)
+    genre = detect_genre_in_query(message)
+    if genre:
+        top_genre_movies = engine.get_top_genre_movies(genre, limit=6)
+        if not top_genre_movies:
+            top_genre_movies = engine.get_movies(genre=genre, limit=6)
+        if top_genre_movies:
+            movies_res = top_genre_movies
+            return (
+                f"You like **{genre}**? Then you definitely need to watch these {genre} movies on Zhoosh:\n\n"
+                f"Click **Watch / View Movie** on any card below to start streaming! If you want more, just say **'more'**.",
+                movies_res,
+                []
+            )
+
+    # 3. Check for Movie Language (Hindi, Korean, Anime)
+    movie_lang_title, movie_lang_results = detect_movie_language_in_query(message)
+    if movie_lang_results:
         return (
-            f"Here are {movie_mood_title} films curated for you on Zhoosh:\n\n"
-            f"Click **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.",
-            movie_mood_results,
+            f"Here are top-rated {movie_lang_title} films curated for you on Zhoosh:\n\n"
+            f"Click **Watch / View Movie** on any card below to start streaming! Say **'more'** for more titles.",
+            movie_lang_results,
             []
         )
 
-    # 3. Check for specific movie match
+    # 4. Check for Director / Actor Filmography Query
+    person_type, person_name = detect_person_in_query(message)
+    if person_type == "director" and engine.movies_df is not None:
+        matched = engine.movies_df[engine.movies_df['director'].str.lower().str.contains(person_name.lower(), na=False)]
+        if not matched.empty:
+            top_works = matched.sort_values(by='vote_count', ascending=False).head(6)
+            movies_res = [engine._format_movie_row(row) for _, row in top_works.iterrows()]
+            return (
+                f"Here are the top critically acclaimed films directed by **{person_name}** available on Zhoosh:\n\n"
+                f"Click on any film below to watch the trailer or start streaming! If you want more, say **'more'**.",
+                movies_res,
+                []
+            )
+    elif person_type == "actor" and engine.movies_df is not None:
+        matched = engine.movies_df[engine.movies_df['cast'].str.lower().str.contains(person_name.lower(), na=False)]
+        if not matched.empty:
+            top_works = matched.sort_values(by='vote_count', ascending=False).head(6)
+            movies_res = [engine._format_movie_row(row) for _, row in top_works.iterrows()]
+            return (
+                f"Here are the top films starring **{person_name}** available on Zhoosh:\n\n"
+                f"Click on any movie below to view details and stream in 4K! Say **'more'** for another batch.",
+                movies_res,
+                []
+            )
+
+    # 5. Check for specific movie match & recommendations
     movie = find_movie_in_query(message)
     if movie is not None:
         title = str(movie['title'])
@@ -1028,55 +1075,15 @@ def generate_grounded_response(
             []
         )
 
-    # 3. Check for Director / Actor Filmography Query
-    person_type, person_name = detect_person_in_query(message)
-    if person_type == "director" and engine.movies_df is not None:
-        matched = engine.movies_df[engine.movies_df['director'].str.lower().str.contains(person_name.lower(), na=False)]
-        if not matched.empty:
-            top_works = matched.sort_values(by='vote_count', ascending=False).head(6)
-            movies_res = [engine._format_movie_row(row) for _, row in top_works.iterrows()]
-            return (
-                f"Here are the top critically acclaimed films directed by **{person_name}** available on Zhoosh:\n\n"
-                f"Click on any film below to watch the trailer or start streaming! If you want more, say **'more'**.",
-                movies_res,
-                []
-            )
-    elif person_type == "actor" and engine.movies_df is not None:
-        matched = engine.movies_df[engine.movies_df['cast'].str.lower().str.contains(person_name.lower(), na=False)]
-        if not matched.empty:
-            top_works = matched.sort_values(by='vote_count', ascending=False).head(6)
-            movies_res = [engine._format_movie_row(row) for _, row in top_works.iterrows()]
-            return (
-                f"Here are the top films starring **{person_name}** available on Zhoosh:\n\n"
-                f"Click on any movie below to view details and stream in 4K! Say **'more'** for another batch.",
-                movies_res,
-                []
-            )
-
-    # 4. Check for Movie Language (Hindi, Korean, Anime)
-    movie_lang_title, movie_lang_results = detect_movie_language_in_query(message)
-    if movie_lang_results:
+    # 6. Check for Movie Mood & Situational Requests (Travelling, College Days, Adrenaline, Sad/Tired, Happy)
+    movie_mood_title, movie_mood_results = detect_movie_mood_in_query(message)
+    if movie_mood_results:
         return (
-            f"Here are top-rated {movie_lang_title} films curated for you on Zhoosh:\n\n"
-            f"Click **Watch / View Movie** on any card below to start streaming! Say **'more'** for more titles.",
-            movie_lang_results,
+            f"Here are {movie_mood_title} films curated for you on Zhoosh:\n\n"
+            f"Click **Watch / View Movie** on any card below to launch playback! Say **'more'** for another batch.",
+            movie_mood_results,
             []
         )
-
-    # 5. Check for Movie Genre Query (Horror, Comedy, Thriller, Sci-Fi, etc.)
-    genre = detect_genre_in_query(message)
-    if genre:
-        top_genre_movies = engine.get_top_genre_movies(genre, limit=6)
-        if not top_genre_movies:
-            top_genre_movies = engine.get_movies(genre=genre, limit=6)
-        if top_genre_movies:
-            movies_res = top_genre_movies
-            return (
-                f"You like **{genre}**? Then you definitely need to watch these {genre} movies on Zhoosh:\n\n"
-                f"Click **Watch / View Movie** on any card below to start streaming! If you want more, just say **'more'**.",
-                movies_res,
-                []
-            )
 
     # 7. Check for Trending / Top Movies
     if any(w in msg_lower for w in ["trending", "top", "popular", "best movies", "what should i watch", "recommend something", "suggest"]):
