@@ -8,6 +8,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/api/client';
 import { ZhooshLogo } from '@/components/common/ZhooshLogo';
 import { zhooshAudio } from '@/utils/cinematicSound';
+import { validateStrictEmail } from '@/utils/security';
 
 // ─────────────────────────────────────────────
 // Security constants
@@ -271,9 +272,8 @@ export const AuthModal: React.FC = () => {
   }, []);
 
   const validateEmail = useCallback((v: string) => {
-    if (!v.trim()) return 'Email is required';
-    if (!EMAIL_REGEX.test(v.trim())) return 'Enter a valid email address';
-    return null;
+    const res = validateStrictEmail(v);
+    return res.isValid ? null : res.error;
   }, []);
 
   const validatePassword = useCallback((v: string) => {
@@ -328,20 +328,20 @@ export const AuthModal: React.FC = () => {
     setIsLoading(true);
     try {
       if (authMode === 'signup') {
-        const newUser = await api.signup(name.trim(), email.trim());
+        const newUser = await api.signup(name.trim(), email.trim(), password);
         setUser(newUser);
         recordSuccess(email.trim());
         try { zhooshAudio.playSuccessFanfare(); } catch {}
         addToast({ title: `Welcome to Zhoosh, ${newUser.name}!`, description: 'Your account has been created', type: 'success' });
       } else {
-        const loggedIn = await api.login(email.trim());
+        const loggedIn = await api.login(email.trim(), password);
         setUser(loggedIn);
         recordSuccess(email.trim());
         try { zhooshAudio.playSubImpact(); } catch {}
         addToast({ title: `Welcome back, ${loggedIn.name}`, type: 'success' });
       }
       closeAuth();
-    } catch {
+    } catch (err: any) {
       recordFailedAttempt(email.trim());
       const info = getAttemptInfo(email.trim());
       setAttemptCount(info.count);
@@ -351,7 +351,8 @@ export const AuthModal: React.FC = () => {
         addToast({ title: 'Account temporarily locked', description: 'Too many failed attempts. Try again in 2 minutes.', type: 'error' });
       } else {
         const remaining = MAX_LOGIN_ATTEMPTS - info.count;
-        setPasswordError('Incorrect email or password');
+        const msg = err?.message || 'Incorrect email or password';
+        setPasswordError(msg);
         if (authMode === 'login' && remaining <= 2 && remaining > 0) {
           addToast({ title: `${remaining} attempt${remaining === 1 ? '' : 's'} remaining`, description: 'Account will be locked after too many failures', type: 'error' });
         }

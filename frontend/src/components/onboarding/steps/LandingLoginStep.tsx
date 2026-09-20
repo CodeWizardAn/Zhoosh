@@ -23,8 +23,11 @@ import {
   GraduationCap,
   Award,
   Scale,
-  Code2
+  Code2,
+  Loader2
 } from 'lucide-react';
+import { api } from '@/api/client';
+import { validateStrictEmail, validateStrictPassword } from '@/utils/security';
 import { ZhooshLogo } from '@/components/common/ZhooshLogo';
 import { ProjectCreditsModal } from '@/components/common/ProjectCreditsModal';
 import { ACADEMIC_PROJECT_INFO } from '@/data/teamMembers';
@@ -76,19 +79,37 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
     setTimeout(() => setIsShaking(false), 500);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !email.includes('@')) {
-      triggerErrorShake('Please provide a valid email address');
+    const emailValidation = validateStrictEmail(email);
+    if (!emailValidation.isValid) {
+      triggerErrorShake(emailValidation.error || 'Please enter a valid email address (e.g. name@domain.com)');
       return;
     }
-    if (!password || password.length < 4) {
-      triggerErrorShake('Password must be at least 4 characters');
+
+    const passValidation = validateStrictPassword(password, false);
+    if (!passValidation.isValid) {
+      triggerErrorShake(passValidation.error || 'Password must be at least 6 characters');
       return;
     }
 
     setErrorMessage('');
-    onLoginSuccess(email);
+    setIsSubmitting(true);
+
+    try {
+      const cleanEmail = emailValidation.normalizedEmail || email.trim();
+      await api.login(cleanEmail, password);
+      try {
+        localStorage.setItem('zhoosh_last_email', cleanEmail);
+      } catch {}
+      onLoginSuccess(cleanEmail);
+    } catch (err: any) {
+      triggerErrorShake(err.message || 'Authentication failed. Please check your credentials.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleQuickDemo = () => {
@@ -312,12 +333,22 @@ export const LandingLoginStep: React.FC<LandingLoginStepProps> = ({
               {/* Submit Button */}
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF1E56] to-[#A855F7] hover:from-[#E50914] hover:to-[#9333EA] font-bold text-sm text-white shadow-lg shadow-[#FF1E56]/30 transition-all flex items-center justify-center gap-2 mt-2"
+                disabled={isSubmitting}
+                whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+                whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF1E56] to-[#A855F7] hover:from-[#E50914] hover:to-[#9333EA] font-bold text-sm text-white shadow-lg shadow-[#FF1E56]/30 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span>Enter Zhoosh</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Authenticating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Enter Zhoosh</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </motion.button>
             </form>
 

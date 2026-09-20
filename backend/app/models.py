@@ -66,3 +66,4 @@ class UserResponse(BaseModel):
     email: str
     avatar: str
     role: str
+    token: Optional[str] = None

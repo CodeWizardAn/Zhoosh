@@ -1,6 +1,7 @@
 import { Movie, Song, Playlist, User, AppMode } from '@/types';
 import { MOCK_MOVIES, MOCK_SONGS } from './mockData';
 import { DEFAULT_AVATAR } from '@/utils/avatars';
+import { validateStrictEmail } from '@/utils/security';
 
 // Simulated latency helper for smooth skeleton demonstration
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -369,42 +370,80 @@ class ApiClient {
     }
   }
 
-  async login(email: string): Promise<User> {
+  async login(email: string, password?: string): Promise<User> {
+    const emailValidation = validateStrictEmail(email);
+    if (!emailValidation.isValid) {
+      throw new Error(emailValidation.error || 'Invalid email address format.');
+    }
+    const cleanEmail = emailValidation.normalizedEmail || email.trim().toLowerCase();
+
+    if (!password || password.trim().length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+
     try {
       const res = await fetch(`${this.baseUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: cleanEmail, password: password.trim() })
       });
+      if (res.status === 422 || res.status === 400 || res.status === 401 || res.status === 429) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Authentication failed. Please check your credentials.');
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
-    } catch {
+    } catch (err: any) {
+      if (err.message && !err.message.startsWith('HTTP') && !err.message.includes('fetch')) {
+        throw err;
+      }
       await delay(400);
       return {
         id: 'u-user',
-        name: email.split('@')[0] || 'Zhoosh Explorer',
-        email,
+        name: cleanEmail.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || 'Zhoosh Explorer',
+        email: cleanEmail,
         avatar: DEFAULT_AVATAR,
         role: 'Zhoosh Member'
       };
     }
   }
 
-  async signup(name: string, email: string): Promise<User> {
+  async signup(name: string, email: string, password?: string): Promise<User> {
+    const emailValidation = validateStrictEmail(email);
+    if (!emailValidation.isValid) {
+      throw new Error(emailValidation.error || 'Invalid email address format.');
+    }
+    const cleanEmail = emailValidation.normalizedEmail || email.trim().toLowerCase();
+
+    if (!name || name.trim().length < 2) {
+      throw new Error('Name must be at least 2 characters.');
+    }
+
+    if (!password || password.trim().length < 8) {
+      throw new Error('Registration password must be at least 8 characters long.');
+    }
+
     try {
       const res = await fetch(`${this.baseUrl}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email })
+        body: JSON.stringify({ name: name.trim(), email: cleanEmail, password: password.trim() })
       });
+      if (res.status === 422 || res.status === 400 || res.status === 409) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Registration failed.');
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
-    } catch {
+    } catch (err: any) {
+      if (err.message && !err.message.startsWith('HTTP') && !err.message.includes('fetch')) {
+        throw err;
+      }
       await delay(450);
       return {
         id: `u-${Date.now()}`,
-        name,
-        email,
+        name: name.trim(),
+        email: cleanEmail,
         avatar: DEFAULT_AVATAR,
         role: 'AI VIP Member'
       };

@@ -6,6 +6,7 @@ import { SvgSuccessCheckmark } from '../components/SvgSuccessCheckmark';
 import { SubscriptionPlan, OnboardingUserData } from '../types';
 import { zhooshAudio } from '@/utils/cinematicSound';
 import { FadedGridBackdrop } from '@/components/common/FadedGridBackdrop';
+import { validateStrictEmail } from '@/utils/security';
 
 interface AccountCreationStepProps {
   selectedPlan: SubscriptionPlan;
@@ -27,6 +28,7 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
   const [email, setEmail] = useState('');
   const [isEmailValidating, setIsEmailValidating] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState<boolean | null>(null);
+  const [emailErrorText, setEmailErrorText] = useState<string | null>(null);
   const [emailErrorShake, setEmailErrorShake] = useState(false);
 
   const [password, setPassword] = useState('');
@@ -48,11 +50,13 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
 
     const timer = setTimeout(() => {
       setIsEmailValidating(false);
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (emailRegex.test(email)) {
+      const res = validateStrictEmail(email);
+      if (res.isValid) {
         setIsEmailValid(true);
+        setEmailErrorText(null);
       } else {
         setIsEmailValid(false);
+        setEmailErrorText(res.error);
         setEmailErrorShake(true);
         setTimeout(() => setEmailErrorShake(false), 500);
       }
@@ -267,6 +271,12 @@ export const AccountCreationStep: React.FC<AccountCreationStepProps> = ({
                           )}
                         </div>
                       </motion.div>
+                      {isEmailValid === false && emailErrorText && (
+                        <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1 font-medium">
+                          <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                          <span>{emailErrorText}</span>
+                        </p>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
