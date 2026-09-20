@@ -30,7 +30,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
   const selectedLanguages = selectedItems.filter((i) => i.section === 'language');
 
   const count = selectedItems.length;
-  const isComplete = selectedGenres.length >= 1 || selectedLanguages.length >= 1;
+  // User Requirement: Minimum 2 each, maximum 5 each
+  const isComplete = selectedGenres.length >= 2 && selectedLanguages.length >= 2;
 
   const currentTabItems = PREFERENCE_ITEMS.filter((item) => item.type === activeTab);
   const languageItems = currentTabItems.filter((i) => i.section === 'language');
@@ -51,11 +52,11 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
         setSelectedItems(next);
         const nextGenres = next.filter((i) => i.section === 'genre').length;
         const nextLangs = next.filter((i) => i.section === 'language').length;
-        if (nextGenres === 5 && nextLangs === 5) {
+        if (nextGenres >= 2 && nextLangs >= 2) {
           try { zhooshAudio.playZhooshIntroSound(); } catch {}
         }
       } else {
-        setLimitNotice(`5/5 ${categoryLabel} already selected! Tap any selected to swap.`);
+        setLimitNotice(`Maximum 5 ${categoryLabel} reached. Tap any selected to swap.`);
         setTimeout(() => setLimitNotice(null), 3000);
       }
     }
@@ -187,8 +188,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
           <h1 className="text-2xl font-bold text-white tracking-tight">
             What do you like to watch{userName ? `, ${userName}` : ''}?
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Select up to 5 genres and 5 languages to personalise your feed.
+          <p className="text-sm text-gray-400 mt-1">
+            Select 2 to 5 genres and 2 to 5 languages to personalise your dashboard feed.
           </p>
         </div>
 
@@ -229,10 +230,10 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-gray-500" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Languages</span>
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Languages (Min 2, Max 5)</span>
               </div>
-              <span className="text-xs font-mono text-gray-400">
-                {selectedLanguages.length}/5 selected
+              <span className={`text-xs font-mono font-medium ${selectedLanguages.length >= 2 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {selectedLanguages.length}/5 selected {selectedLanguages.length < 2 ? '(need min 2)' : '✓'}
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
@@ -247,10 +248,10 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Layers className="w-3.5 h-3.5 text-gray-500" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Genres</span>
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Genres (Min 2, Max 5)</span>
               </div>
-              <span className="text-xs font-mono text-gray-400">
-                {selectedGenres.length}/5 selected
+              <span className={`text-xs font-mono font-medium ${selectedGenres.length >= 2 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {selectedGenres.length}/5 selected {selectedGenres.length < 2 ? '(need min 2)' : '✓'}
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
@@ -267,18 +268,20 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#050508]/95 backdrop-blur-md border-t border-white/8">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <div className="text-xs">
-            {selectedGenres.length === 5 && selectedLanguages.length === 5 ? (
+            {isComplete ? (
               <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                5 genres & 5 languages selected • Ready to go!
-              </span>
-            ) : selectedGenres.length > 0 || selectedLanguages.length > 0 ? (
-              <span className="text-gray-300">
-                Selected: <strong className="text-white">{selectedGenres.length}/5</strong> genres • <strong className="text-white">{selectedLanguages.length}/5</strong> languages
+                Ready! {selectedGenres.length}/5 genres & {selectedLanguages.length}/5 languages selected
               </span>
             ) : (
-              <span className="text-gray-500">
-                Select your favorite genres and languages to continue
+              <span className="text-amber-400 font-medium">
+                {selectedGenres.length < 2 && selectedLanguages.length < 2 ? (
+                  `Select at least ${2 - selectedGenres.length} more genre${2 - selectedGenres.length > 1 ? 's' : ''} and ${2 - selectedLanguages.length} more language${2 - selectedLanguages.length > 1 ? 's' : ''}`
+                ) : selectedGenres.length < 2 ? (
+                  `Select at least ${2 - selectedGenres.length} more genre${2 - selectedGenres.length > 1 ? 's' : ''}`
+                ) : (
+                  `Select at least ${2 - selectedLanguages.length} more language${2 - selectedLanguages.length > 1 ? 's' : ''}`
+                )}
               </span>
             )}
           </div>

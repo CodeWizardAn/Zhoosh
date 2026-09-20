@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -27,7 +27,21 @@ import type { Movie } from '@/types';
 interface HeroShowcaseItem {
   id: string | number;
   title: string;
-  logoType: 'breaking-bad' | 'forrest-gump' | 'shawshank' | 'gladiator' | 'oppenheimer' | 'inception' | 'batman' | 'spiderman' | 'generic';
+  language: string;
+  logoType:
+    | 'breaking-bad'
+    | 'forrest-gump'
+    | 'shawshank'
+    | 'gladiator'
+    | 'oppenheimer'
+    | 'inception'
+    | 'batman'
+    | 'spiderman'
+    | 'spirited-away'
+    | 'your-name'
+    | 'three-idiots'
+    | 'parasite'
+    | 'generic';
   tagline: string;
   genres: string[];
   year: number;
@@ -48,6 +62,7 @@ const HERO_SHOWCASE: HeroShowcaseItem[] = [
   {
     id: 'hero-breaking-bad',
     title: 'Breaking Bad',
+    language: 'English',
     logoType: 'breaking-bad',
     tagline: 'ALL HAIL THE KING',
     genres: ['Drama', 'Crime', 'Thriller'],
@@ -66,8 +81,146 @@ const HERO_SHOWCASE: HeroShowcaseItem[] = [
     awardBadge: 'Emmy Winner'
   },
   {
+    id: 'hero-spirited-away',
+    title: 'Spirited Away',
+    language: 'Japanese',
+    logoType: 'spirited-away',
+    tagline: 'NOTHING THAT HAPPENS IS EVER FORGOTTEN',
+    genres: ['Animation', 'Family', 'Fantasy'],
+    year: 2001,
+    runtimeStr: '2h 05m',
+    rating: 'U',
+    matchScore: 99,
+    director: 'Hayao Miyazaki',
+    cast: 'Rumi Hiiragi, Miyu Irino, Mari Natsuki, Takashi Naito',
+    overview:
+      'A sullen 10-year-old girl wanders into a magical spirit realm ruled by gods, witches, and monsters after her parents are transformed into beasts, and must find a way to free them.',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/Ab8mkHmkYADjU7wQiOkia9BzGvS.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w780/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg',
+    backdropPosition: 'center 20%',
+    awardBadge: 'Oscar® Winner'
+  },
+  {
+    id: 'hero-your-name',
+    title: 'Your Name.',
+    language: 'Japanese',
+    logoType: 'your-name',
+    tagline: 'TREASURE THE EXPERIENCE · DREAMS FADE AWAY',
+    genres: ['Romance', 'Animation', 'Drama'],
+    year: 2016,
+    runtimeStr: '1h 47m',
+    rating: 'U/A 13+',
+    matchScore: 98,
+    director: 'Makoto Shinkai',
+    cast: 'Ryunosuke Kamiki, Mone Kamishiraishi, Ryo Narita, Aoi Yuki',
+    overview:
+      'Two high schoolers from opposite worlds share a profound, magical connection upon discovering they are swapping bodies across time and space.',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/dIWwZW7dJJtqC6CgWzYkNVKIUm8.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w780/q719jXXEzOoYaps6babgKnONONX.jpg',
+    backdropPosition: 'center 25%',
+    awardBadge: 'Anime Sensation'
+  },
+  {
+    id: 'hero-3-idiots',
+    title: '3 Idiots',
+    language: 'Hindi',
+    logoType: 'three-idiots',
+    tagline: 'ALL IZZ WELL · CHASE EXCELLENCE',
+    genres: ['Comedy', 'Drama'],
+    year: 2009,
+    runtimeStr: '2h 50m',
+    rating: 'U/A 13+',
+    matchScore: 99,
+    director: 'Rajkumar Hirani',
+    cast: 'Aamir Khan, R. Madhavan, Sharman Joshi, Kareena Kapoor',
+    overview:
+      'Two friends embark on a road trip searching for their long-lost college buddy who inspired them to think independently, defying society’s rigid expectations.',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/u7kuUaySqXBVAtqEl9vkTkAzHV9.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w780/66A9MqXOyVFCssoloscw79z8Tew.jpg',
+    backdropPosition: 'center 20%',
+    awardBadge: 'Bollywood Legend'
+  },
+  {
+    id: 'hero-parasite',
+    title: 'Parasite',
+    language: 'Korean',
+    logoType: 'parasite',
+    tagline: 'ACT LIKE YOU OWN THE PLACE',
+    genres: ['Thriller', 'Drama', 'Comedy'],
+    year: 2019,
+    runtimeStr: '2h 12m',
+    rating: 'A 18+',
+    matchScore: 99,
+    director: 'Bong Joon-ho',
+    cast: 'Song Kang-ho, Lee Sun-kyun, Cho Yeo-jeong, Choi Woo-shik',
+    overview:
+      'All unemployed, the crafty Kim family takes a peculiar interest in the wealthy Park family, scheming their way into high-paying roles until an unexpected secret unravels.',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/hiKmpZMGZsrkA3cdce8a7Dpos1j.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w780/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg',
+    backdropPosition: 'center 20%',
+    awardBadge: '4 Oscars®'
+  },
+  {
+    id: 'hero-oppenheimer',
+    title: 'Oppenheimer',
+    language: 'English',
+    logoType: 'oppenheimer',
+    tagline: 'THE WORLD FOREVER CHANGES',
+    genres: ['Drama', 'History', 'Thriller', 'Biography'],
+    year: 2023,
+    runtimeStr: '3h 00m',
+    rating: 'A 18+',
+    matchScore: 98,
+    director: 'Christopher Nolan',
+    cast: 'Cillian Murphy, Emily Blunt, Matt Damon, Robert Downey Jr.',
+    overview:
+      'The pulse-pounding story of J. Robert Oppenheimer and the Manhattan Project — racing against the Nazis to build the atomic bomb and confronting the catastrophic reality of what came next.',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w780/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
+    backdropPosition: 'center 20%'
+  },
+  {
+    id: 'hero-inception',
+    title: 'Inception',
+    language: 'English',
+    logoType: 'inception',
+    tagline: 'YOUR MIND IS THE SCENE OF THE CRIME',
+    genres: ['Action', 'Sci-Fi', 'Adventure', 'Mystery'],
+    year: 2010,
+    runtimeStr: '2h 28m',
+    rating: 'U/A 13+',
+    matchScore: 97,
+    director: 'Christopher Nolan',
+    cast: 'Leonardo DiCaprio, Joseph Gordon-Levitt, Elliot Page, Tom Hardy',
+    overview:
+      'Dom Cobb is a master thief who extracts corporate secrets from within the subconscious during the dream state. Now, he is offered a chance at redemption: plant an idea into a target’s mind.',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/s3TBrRGB1iav7gFOCNx3H31MoES.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w780/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',
+    backdropPosition: 'center 25%'
+  },
+  {
+    id: 'hero-batman',
+    title: 'The Dark Knight',
+    language: 'English',
+    logoType: 'batman',
+    tagline: 'WHY SO SERIOUS?',
+    genres: ['Action', 'Crime', 'Drama', 'Thriller'],
+    year: 2008,
+    runtimeStr: '2h 32m',
+    rating: 'U/A 16+',
+    matchScore: 99,
+    director: 'Christopher Nolan',
+    cast: 'Christian Bale, Heath Ledger, Aaron Eckhart, Gary Oldman',
+    overview:
+      'Batman raises the stakes in his war on crime with the help of Lt. Jim Gordon and DA Harvey Dent, but finds himself tested psychologically and physically when a psychopathic mastermind known as The Joker unleashes anarchy.',
+    backdropUrl: 'https://image.tmdb.org/t/p/original/nMKdUUepR0i5zn0y1T4CsSB5chy.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w780/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+    backdropPosition: 'center top'
+  },
+  {
     id: 'hero-forrest-gump',
     title: 'Forrest Gump',
+    language: 'English',
     logoType: 'forrest-gump',
     tagline: 'LIFE IS LIKE A BOX OF CHOCOLATES',
     genres: ['Drama', 'Romance', 'Comedy'],
@@ -87,6 +240,7 @@ const HERO_SHOWCASE: HeroShowcaseItem[] = [
   {
     id: 'hero-shawshank',
     title: 'The Shawshank Redemption',
+    language: 'English',
     logoType: 'shawshank',
     tagline: 'FEAR CAN HOLD YOU PRISONER. HOPE CAN SET YOU FREE.',
     genres: ['Drama', 'Crime', 'Classic'],
@@ -103,26 +257,9 @@ const HERO_SHOWCASE: HeroShowcaseItem[] = [
     backdropPosition: 'center top'
   },
   {
-    id: 'hero-oppenheimer',
-    title: 'Oppenheimer',
-    logoType: 'oppenheimer',
-    tagline: 'THE WORLD FOREVER CHANGES',
-    genres: ['Drama', 'History', 'Thriller', 'Biography'],
-    year: 2023,
-    runtimeStr: '3h 00m',
-    rating: 'A 18+',
-    matchScore: 98,
-    director: 'Christopher Nolan',
-    cast: 'Cillian Murphy, Emily Blunt, Matt Damon, Robert Downey Jr.',
-    overview:
-      'The pulse-pounding story of J. Robert Oppenheimer and the Manhattan Project — racing against the Nazis to build the atomic bomb and confronting the catastrophic reality of what came next.',
-    backdropUrl: 'https://image.tmdb.org/t/p/original/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg',
-    posterUrl: 'https://image.tmdb.org/t/p/w780/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
-    backdropPosition: 'center 20%'
-  },
-  {
     id: 'hero-gladiator',
     title: 'Gladiator',
+    language: 'English',
     logoType: 'gladiator',
     tagline: 'WHAT WE DO IN LIFE ECHOES IN ETERNITY',
     genres: ['Action', 'Drama', 'Adventure'],
@@ -139,44 +276,9 @@ const HERO_SHOWCASE: HeroShowcaseItem[] = [
     backdropPosition: 'center top'
   },
   {
-    id: 'hero-inception',
-    title: 'Inception',
-    logoType: 'inception',
-    tagline: 'YOUR MIND IS THE SCENE OF THE CRIME',
-    genres: ['Action', 'Sci-Fi', 'Adventure', 'Mystery'],
-    year: 2010,
-    runtimeStr: '2h 28m',
-    rating: 'U/A 13+',
-    matchScore: 97,
-    director: 'Christopher Nolan',
-    cast: 'Leonardo DiCaprio, Joseph Gordon-Levitt, Elliot Page, Tom Hardy',
-    overview:
-      'Dom Cobb is a master thief who extracts corporate secrets from within the subconscious during the dream state. Now, he is offered a chance at redemption: plant an idea into a target’s mind.',
-    backdropUrl: 'https://image.tmdb.org/t/p/original/s3TBrRGB1iav7gFOCNx3H31MoES.jpg',
-    posterUrl: 'https://image.tmdb.org/t/p/w780/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',
-    backdropPosition: 'center 25%'
-  },
-  {
-    id: 'hero-batman',
-    title: 'The Dark Knight',
-    logoType: 'batman',
-    tagline: 'WHY SO SERIOUS?',
-    genres: ['Action', 'Crime', 'Drama', 'Thriller'],
-    year: 2008,
-    runtimeStr: '2h 32m',
-    rating: 'U/A 16+',
-    matchScore: 99,
-    director: 'Christopher Nolan',
-    cast: 'Christian Bale, Heath Ledger, Aaron Eckhart, Gary Oldman',
-    overview:
-      'Batman raises the stakes in his war on crime with the help of Lt. Jim Gordon and DA Harvey Dent, but finds himself tested psychologically and physically when a psychopathic mastermind known as The Joker unleashes anarchy.',
-    backdropUrl: 'https://image.tmdb.org/t/p/original/nMKdUUepR0i5zn0y1T4CsSB5chy.jpg',
-    posterUrl: 'https://image.tmdb.org/t/p/w780/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-    backdropPosition: 'center top'
-  },
-  {
     id: 'hero-spiderman',
     title: 'Spider-Man: Across the Spider-Verse',
+    language: 'English',
     logoType: 'spiderman',
     tagline: 'IT’S HOW YOU WEAR THE MASK THAT MATTERS',
     genres: ['Animation', 'Action', 'Adventure', 'Sci-Fi'],
@@ -222,6 +324,66 @@ const MovieLogoTreatment: React.FC<{ item: HeroShowcaseItem }> = ({ item }) => {
               </span>
             </div>
           </div>
+        </div>
+      );
+
+    case 'spirited-away':
+      return (
+        <div className="mb-2 sm:mb-2.5">
+          <div className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-emerald-400 uppercase mb-1 drop-shadow">
+            STUDIO GHIBLI · OSCAR® WINNER
+          </div>
+          <h1 className="font-serif font-black text-3xl sm:text-4xl md:text-5xl tracking-[0.08em] text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-100 to-white uppercase drop-shadow-[0_4px_24px_rgba(16,185,129,0.5)] leading-tight select-none">
+            SPIRITED AWAY
+          </h1>
+          <p className="text-[10px] sm:text-xs font-medium tracking-[0.2em] text-teal-200 uppercase mt-1">
+            千と千尋の神隠し · HAYAO MIYAZAKI
+          </p>
+        </div>
+      );
+
+    case 'your-name':
+      return (
+        <div className="mb-2 sm:mb-2.5">
+          <div className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-sky-400 uppercase mb-1 drop-shadow">
+            MAKOTO SHINKAI MASTERPIECE
+          </div>
+          <h1 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl tracking-[0.12em] text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-200 to-rose-300 uppercase drop-shadow-[0_4px_24px_rgba(56,189,248,0.5)] leading-tight select-none">
+            YOUR NAME.
+          </h1>
+          <p className="text-[10px] sm:text-xs font-medium tracking-[0.2em] text-indigo-200 uppercase mt-1">
+            君の名は · A MAGICAL METEOR CONNECTION
+          </p>
+        </div>
+      );
+
+    case 'three-idiots':
+      return (
+        <div className="mb-2 sm:mb-2.5">
+          <div className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-amber-400 uppercase mb-1 drop-shadow">
+            ALL-TIME BOLLYWOOD LEGEND
+          </div>
+          <h1 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl tracking-[0.12em] text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-100 to-white uppercase drop-shadow-[0_4px_24px_rgba(245,158,11,0.5)] leading-tight select-none">
+            3 IDIOTS
+          </h1>
+          <p className="text-[10px] sm:text-xs font-semibold tracking-[0.2em] text-amber-200 uppercase mt-1">
+            ALL IZZ WELL · CHASE EXCELLENCE
+          </p>
+        </div>
+      );
+
+    case 'parasite':
+      return (
+        <div className="mb-2 sm:mb-2.5">
+          <div className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-cyan-400 uppercase mb-1 drop-shadow">
+            4 ACADEMY AWARDS® · BEST PICTURE
+          </div>
+          <h1 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl tracking-[0.16em] text-white uppercase drop-shadow-[0_4px_24px_rgba(255,255,255,0.5)] leading-tight select-none">
+            PARASITE
+          </h1>
+          <p className="text-[10px] sm:text-xs font-mono tracking-[0.25em] text-gray-400 uppercase mt-1">
+            기생충 · ACT LIKE YOU OWN THE PLACE
+          </p>
         </div>
       );
 
@@ -333,28 +495,33 @@ const MovieLogoTreatment: React.FC<{ item: HeroShowcaseItem }> = ({ item }) => {
 };
 
 // ─── HERO BILLBOARD COMPONENT ────────────────────────────────────────────────
-const HeroBillboard: React.FC = () => {
+const HeroBillboard: React.FC<{ items?: HeroShowcaseItem[] }> = ({ items }) => {
+  const showcaseList = items && items.length > 0 ? items : HERO_SHOWCASE;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const { likedIds, openMovieModal } = useAppStore();
   const likeMutation = useLikeMutation();
 
-  const current = HERO_SHOWCASE[currentIndex];
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [items]);
+
+  const current = showcaseList[currentIndex] || showcaseList[0] || HERO_SHOWCASE[0];
   const isLiked = !!likedIds[String(current.id)];
 
   // Auto-advance every 8 seconds when not hovered
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % HERO_SHOWCASE.length);
+      setCurrentIndex((prev) => (prev + 1) % showcaseList.length);
     }, 8000);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, showcaseList.length]);
 
-  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % HERO_SHOWCASE.length);
+  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % showcaseList.length);
   const handlePrev = () =>
-    setCurrentIndex((prev) => (prev - 1 + HERO_SHOWCASE.length) % HERO_SHOWCASE.length);
+    setCurrentIndex((prev) => (prev - 1 + showcaseList.length) % showcaseList.length);
 
   const toggleSound = () => {
     setIsMuted((prev) => {
@@ -545,7 +712,7 @@ const HeroBillboard: React.FC = () => {
 
         {/* Carousel Slide Indicators */}
         <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
-          {HERO_SHOWCASE.map((item, idx) => (
+          {showcaseList.map((item, idx) => (
             <button
               key={item.id}
               onClick={() => setCurrentIndex(idx)}
@@ -1217,123 +1384,266 @@ const CategoryShelf: React.FC<CategoryShelfProps> = ({
 // ─── MAIN MOVIES VIEW DASHBOARD ──────────────────────────────────────────────
 export const MoviesView: React.FC = () => {
   const { data: movies = [], isLoading } = useMovies();
+  const [profileVersion, setProfileVersion] = useState(0);
 
-  // Categorize the master 13,598 movies dataset into diverse shelves
-  // Helper to ensure each category shelf is always richly populated with at least 10 items
-  const ensureShelfMin = (filteredList: Movie[], fallbackPool: Movie[], minCount = 10) => {
-    if (filteredList.length >= minCount) return filteredList.slice(0, 16);
-    const existingIds = new Set(filteredList.map((m) => String(m.id)));
-    const padding = fallbackPool.filter((m) => !existingIds.has(String(m.id)));
-    return [...filteredList, ...padding].slice(0, 16);
-  };
+  // Re-read profile when localStorage or profile changes
+  useEffect(() => {
+    const handleStorage = () => setProfileVersion((v) => v + 1);
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('zhoosh:profile-updated', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('zhoosh:profile-updated', handleStorage);
+    };
+  }, []);
 
-  const trendingMovies = useMemo(() => movies.slice(0, 16), [movies]);
+  // Retrieve user onboarding preferences from localStorage
+  const userPreferences = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('zhoosh_user_profile');
+      if (!raw) return { languages: [], genres: [] };
+      const parsed = JSON.parse(raw);
+      const prefs: any[] = parsed.selectedPreferences || [];
+      const languages: string[] = prefs
+        .filter((p: any) => p.section === 'language')
+        .map((p: any) => p.title.toLowerCase().trim());
+      const genres: string[] = prefs
+        .filter((p: any) => p.section === 'genre')
+        .map((p: any) => p.title.toLowerCase().trim());
+      return { languages, genres };
+    } catch {
+      return { languages: [], genres: [] };
+    }
+  }, [profileVersion]);
 
+  // Tailor HERO_SHOWCASE strictly to user's selected languages
+  const tailoredHeroShowcase = useMemo(() => {
+    if (!userPreferences.languages.length) return HERO_SHOWCASE;
+    const matched = HERO_SHOWCASE.filter((item) =>
+      userPreferences.languages.includes(item.language.toLowerCase().trim())
+    );
+    return matched.length > 0 ? matched : HERO_SHOWCASE;
+  }, [userPreferences.languages]);
+
+  // Robust language matcher supporting both names and language codes
+  const isMovieInLanguages = useCallback((m: Movie, targetLangs: string[]) => {
+    if (!targetLangs || targetLangs.length === 0) return true;
+    const mlang = (m.language || '').toLowerCase().trim();
+    const title = (m.title || '').toLowerCase();
+    const overview = (m.overview || '').toLowerCase();
+    const genres = (m.genres || []).map((g) => g.toLowerCase());
+
+    return targetLangs.some((lang) => {
+      const l = lang.toLowerCase().trim();
+      if (l === 'english' || l === 'en') {
+        return mlang === 'english' || mlang === 'en';
+      }
+      if (l === 'hindi' || l === 'hi') {
+        return mlang === 'hindi' || mlang === 'hi' || overview.includes('bollywood') || title.includes('bollywood');
+      }
+      if (l === 'japanese' || l === 'ja') {
+        return (
+          mlang === 'japanese' ||
+          mlang === 'ja' ||
+          genres.includes('anime') ||
+          (genres.includes('animation') && (title.includes('ghibli') || overview.includes('japan'))) ||
+          overview.includes('anime') ||
+          overview.includes('manga')
+        );
+      }
+      if (l === 'korean' || l === 'ko') {
+        return mlang === 'korean' || mlang === 'ko' || overview.includes('k-drama') || overview.includes('korea');
+      }
+      if (l === 'spanish' || l === 'es') {
+        return mlang === 'spanish' || mlang === 'es';
+      }
+      if (l === 'french' || l === 'fr') {
+        return mlang === 'french' || mlang === 'fr';
+      }
+      if (l === 'tamil' || l === 'ta') {
+        return mlang === 'tamil' || mlang === 'ta' || overview.includes('kollywood');
+      }
+      if (l === 'telugu' || l === 'te') {
+        return mlang === 'telugu' || mlang === 'te' || overview.includes('tollywood');
+      }
+      return mlang.includes(l);
+    });
+  }, []);
+
+  // Primary user-filtered movies pool (100% matched to selected languages)
+  const userPreferredMovies = useMemo(() => {
+    if (!userPreferences.languages.length) return movies;
+    const matched = movies.filter((m) => isMovieInLanguages(m, userPreferences.languages));
+    return matched.length >= 3 ? matched : movies;
+  }, [movies, userPreferences.languages, isMovieInLanguages]);
+
+  // Ensure shelf has at least minCount items, prioritizing userPreferredMovies
+  const ensureShelfMin = useCallback(
+    (filteredList: Movie[], minCount = 10) => {
+      if (filteredList.length >= minCount) return filteredList.slice(0, 16);
+      const existingIds = new Set(filteredList.map((m) => String(m.id)));
+      const padding = userPreferredMovies.filter((m) => !existingIds.has(String(m.id)));
+      if (filteredList.length + padding.length >= minCount) {
+        return [...filteredList, ...padding].slice(0, 16);
+      }
+      // If user pool has fewer than minCount, gently pad from general dataset
+      const globalPadding = movies.filter(
+        (m) => !existingIds.has(String(m.id)) && !padding.some((p) => p.id === m.id)
+      );
+      return [...filteredList, ...padding, ...globalPadding].slice(0, 16);
+    },
+    [userPreferredMovies, movies]
+  );
+
+  const trendingMovies = useMemo(() => userPreferredMovies.slice(0, 16), [userPreferredMovies]);
+
+  // Dedicated shelf for each of user's selected languages
+  const languageShelves = useMemo(() => {
+    const languageConfig: Record<string, { title: string }> = {
+      english: { title: 'Top English & Hollywood Blockbusters' },
+      hindi: { title: 'Best of Hindi Cinema & Bollywood Blockbusters' },
+      japanese: { title: 'Japanese Masterpieces & Anime Hits' },
+      korean: { title: 'Sensational Korean Cinema & K-Dramas' },
+      spanish: { title: 'Must-Watch Spanish Cinema & Thrillers' },
+      french: { title: 'Acclaimed French Cinema & Auteur Works' },
+      tamil: { title: 'Top Kollywood & Tamil Hits' },
+      telugu: { title: 'Epic Tollywood & Telugu Spectacles' }
+    };
+
+    return userPreferences.languages
+      .map((lang) => {
+        const conf = languageConfig[lang] || {
+          title: `Best of ${lang.charAt(0).toUpperCase() + lang.slice(1)} Cinema`
+        };
+        const shelfItems = movies.filter((m) => isMovieInLanguages(m, [lang]));
+        return {
+          lang,
+          title: conf.title,
+          movies: shelfItems.slice(0, 16)
+        };
+      })
+      .filter((shelf) => shelf.movies.length > 0);
+  }, [userPreferences.languages, movies, isMovieInLanguages]);
+
+  // Genre Shelves (all filtered strictly from userPreferredMovies!)
   const actionMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('action'))),
-        movies
+        userPreferredMovies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('action')))
       ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const sciFiMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter((m) =>
+        userPreferredMovies.filter((m) =>
           m.genres.some((g) => {
             const gl = g.toLowerCase();
             return gl.includes('sci-fi') || gl.includes('science fiction') || gl.includes('fantasy');
           })
-        ),
-        movies
+        )
       ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const thrillerMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter((m) =>
+        userPreferredMovies.filter((m) =>
           m.genres.some((g) => {
             const gl = g.toLowerCase();
             return gl.includes('thriller') || gl.includes('crime') || gl.includes('mystery');
           })
-        ),
-        movies
+        )
       ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const comedyMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('comedy'))),
-        movies
+        userPreferredMovies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('comedy')))
       ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const dramaMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('drama'))),
-        movies
+        userPreferredMovies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('drama')))
       ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const horrorMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('horror'))),
-        movies
+        userPreferredMovies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('horror')))
       ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const animeMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter(
+        userPreferredMovies.filter(
           (m) =>
             m.genres.some((g) => g.toLowerCase().includes('animation')) ||
             (m.language && m.language.toLowerCase() === 'japanese')
-        ),
-        movies
+        )
       ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const romanceMovies = useMemo(
     () =>
       ensureShelfMin(
-        movies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('romance'))),
-        movies
+        userPreferredMovies.filter((m) => m.genres.some((g) => g.toLowerCase().includes('romance')))
       ),
-    [movies]
-  );
-
-  const internationalMovies = useMemo(
-    () =>
-      ensureShelfMin(
-        movies.filter(
-          (m) =>
-            m.language &&
-            ['french', 'spanish', 'korean', 'japanese', 'hindi', 'italian'].includes(
-              m.language.toLowerCase()
-            )
-        ),
-        movies
-      ),
-    [movies]
+    [userPreferredMovies, ensureShelfMin]
   );
 
   const topRatedMasterpieces = useMemo(
-    () => ensureShelfMin(movies.filter((m) => m.vote_average >= 8.0), movies),
-    [movies]
+    () => ensureShelfMin(userPreferredMovies.filter((m) => m.vote_average >= 7.8)),
+    [userPreferredMovies, ensureShelfMin]
   );
+
+  // Group all genre shelf definitions to prioritize user-selected genres at the top!
+  const genreShelvesList = useMemo(() => {
+    const allShelves = [
+      { key: 'action', title: 'Blockbuster Action & High-Octane Thrills', movies: actionMovies },
+      { key: 'thriller', title: 'Edge-of-Your-Seat Thrillers & Mystery', movies: thrillerMovies },
+      { key: 'scifi', title: 'Mind-Bending Sci-Fi & Cosmic Marvels', movies: sciFiMovies },
+      { key: 'romance', title: 'Heartfelt Romance & Late Night Cinema', movies: romanceMovies },
+      { key: 'comedy', title: 'Laugh-Out-Loud Comedies & Feel-Good', movies: comedyMovies },
+      { key: 'drama', title: 'Critically Acclaimed Dramas & Award Winners', movies: dramaMovies },
+      { key: 'anime', title: 'Anime & Animated Masterpieces', movies: animeMovies },
+      { key: 'horror', title: 'Spine-Chilling Horror & Dread', movies: horrorMovies },
+    ];
+
+    const selectedKeys = new Set(userPreferences.genres.map((g) => g.toLowerCase().replace(/[^a-z]/g, '')));
+
+    return allShelves
+      .filter((s) => s.movies.length > 0)
+      .sort((a, b) => {
+        const aMatches = selectedKeys.has(a.key) || (a.key === 'scifi' && selectedKeys.has('scifi'));
+        const bMatches = selectedKeys.has(b.key) || (b.key === 'scifi' && selectedKeys.has('scifi'));
+        if (aMatches && !bMatches) return -1;
+        if (!aMatches && bMatches) return 1;
+        return 0;
+      });
+  }, [
+    userPreferences.genres,
+    actionMovies,
+    thrillerMovies,
+    sciFiMovies,
+    romanceMovies,
+    comedyMovies,
+    dramaMovies,
+    animeMovies,
+    horrorMovies
+  ]);
 
   return (
     <div className="relative pb-28 bg-[#07070b] min-h-screen overflow-x-hidden">
@@ -1356,111 +1666,50 @@ export const MoviesView: React.FC = () => {
         />
       </div>
 
-      {/* 1. CINEMATIC HERO BILLBOARD (Big Movie Logo On Top) */}
+      {/* 1. CINEMATIC HERO BILLBOARD (Personalized to User Languages) */}
       <div className="relative z-10">
-        <HeroBillboard />
+        <HeroBillboard items={tailoredHeroShowcase} />
       </div>
 
-      {/* 2. DASHBOARD CATEGORY ROWS (Downside of Hero) */}
+      {/* 2. DASHBOARD CATEGORY ROWS (Strictly Filtered to User Preferences) */}
       <div className="relative z-10 mt-3 sm:mt-6 space-y-6">
-        {/* Continue Watching Row (16:9 widescreen landscape cards with red progress bar) */}
-        <ContinueWatchingShelf movies={movies} />
+        {/* Continue Watching Row (Personalized) */}
+        <ContinueWatchingShelf movies={userPreferredMovies} />
 
-        {/* Top 10 in Movies Today (Netflix signature giant numbered typography #1 to #10) */}
-        <Top10Shelf movies={movies} />
+        {/* Top 10 in Movies Today (Strictly from User's Preferred Languages) */}
+        <Top10Shelf movies={userPreferredMovies} />
 
-        {/* Trending Now */}
+        {/* Dedicated Language Shelves for each selected language */}
+        {languageShelves.map((shelf) => (
+          <CategoryShelf
+            key={shelf.lang}
+            title={shelf.title}
+            movies={shelf.movies}
+            isLoading={isLoading}
+          />
+        ))}
+
+        {/* Trending Now in Your Languages */}
         <CategoryShelf
           title="Trending Now"
           movies={trendingMovies}
           isLoading={isLoading}
         />
 
-        {/* Blockbuster Action & Explosive Thrills */}
-        {actionMovies.length > 0 && (
+        {/* Genre Shelves (Prioritizing User's Chosen Genres First!) */}
+        {genreShelvesList.map((shelf) => (
           <CategoryShelf
-            title="Blockbuster Action & High-Octane Thrills"
-            movies={actionMovies}
+            key={shelf.key}
+            title={shelf.title}
+            movies={shelf.movies}
             isLoading={isLoading}
           />
-        )}
+        ))}
 
-        {/* Mind-Bending Sci-Fi & Cosmic Marvels */}
-        {sciFiMovies.length > 0 && (
-          <CategoryShelf
-            title="Mind-Bending Sci-Fi & Cosmic Marvels"
-            movies={sciFiMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Edge-of-Your-Seat Thrillers & True Crime */}
-        {thrillerMovies.length > 0 && (
-          <CategoryShelf
-            title="Edge-of-Your-Seat Thrillers & Mystery"
-            movies={thrillerMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Critically Acclaimed Dramas */}
-        {dramaMovies.length > 0 && (
-          <CategoryShelf
-            title="Critically Acclaimed Dramas & Award Winners"
-            movies={dramaMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Laugh-Out-Loud Comedies */}
-        {comedyMovies.length > 0 && (
-          <CategoryShelf
-            title="Laugh-Out-Loud Comedies & Feel-Good"
-            movies={comedyMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Spine-Chilling Horror */}
-        {horrorMovies.length > 0 && (
-          <CategoryShelf
-            title="Spine-Chilling Horror & Supernatural Dread"
-            movies={horrorMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Anime & Japanese Masterpieces */}
-        {animeMovies.length > 0 && (
-          <CategoryShelf
-            title="Anime & Japanese Masterpieces"
-            movies={animeMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Heartfelt Romance */}
-        {romanceMovies.length > 0 && (
-          <CategoryShelf
-            title="Heartfelt Romance & Late Night Cinema"
-            movies={romanceMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Global Cinema */}
-        {internationalMovies.length > 0 && (
-          <CategoryShelf
-            title="International Cinema & Global Hits"
-            movies={internationalMovies}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* All-Time Masterpieces */}
+        {/* All-Time Masterpieces in User's Languages */}
         {topRatedMasterpieces.length > 0 && (
           <CategoryShelf
-            title="All-Time Masterpieces (IMDb 8.0+)"
+            title="All-Time Masterpieces (IMDb 7.8+)"
             movies={topRatedMasterpieces}
             isLoading={isLoading}
           />
@@ -1470,3 +1719,4 @@ export const MoviesView: React.FC = () => {
   );
 };
 export default MoviesView;
+

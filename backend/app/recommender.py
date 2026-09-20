@@ -107,7 +107,22 @@ class RecommendationEngine:
             if g_low != 'documentary':
                 df = df[~df['genres_str'].str.lower().str.contains('documentary|tv movie', na=False)]
         if language and language.lower() != 'all':
-            df = df[df['language'].str.contains(language, case=False, na=False)]
+            raw_langs = [l.strip().lower() for l in language.split(',') if l.strip()]
+            if raw_langs:
+                alias_map = {
+                    'en': 'english', 'hi': 'hindi', 'ja': 'japanese',
+                    'ko': 'korean', 'es': 'spanish', 'fr': 'french',
+                    'ta': 'tamil', 'te': 'telugu'
+                }
+                expanded = set(raw_langs)
+                for l in raw_langs:
+                    if l in alias_map:
+                        expanded.add(alias_map[l])
+                    for k, v in alias_map.items():
+                        if v == l:
+                            expanded.add(k)
+                pat = '|'.join(re.escape(x) for x in expanded)
+                df = df[df['language'].str.lower().str.contains(pat, na=False)]
             
         # Sort candidates by consensus quality
         v_counts = df['vote_count'].fillna(0).astype(float)
