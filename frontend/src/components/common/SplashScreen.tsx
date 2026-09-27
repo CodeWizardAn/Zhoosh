@@ -8,8 +8,6 @@ interface SplashScreenProps {
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [progress, setProgress] = useState(15);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [requiresInteraction, setRequiresInteraction] = useState(false);
 
   useEffect(() => {
     // ── Zhoosh Intro Music (Swoosh) ──
@@ -17,50 +15,26 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     audio.preload = 'auto';
     audio.volume = 0.85;
 
-    let p1: ReturnType<typeof setTimeout>;
-    let p2: ReturnType<typeof setTimeout>;
-    let p3: ReturnType<typeof setTimeout>;
-    let timer: ReturnType<typeof setTimeout>;
+    // Attempt audio playback
+    audio.play().catch(() => {});
 
-    const startTransition = () => {
-      setHasStarted(true);
-      setRequiresInteraction(false);
-      audio.play().catch(() => {});
+    // Progress bar simulation
+    const p1 = setTimeout(() => setProgress(45), 350);
+    const p2 = setTimeout(() => setProgress(78), 900);
+    const p3 = setTimeout(() => setProgress(100), 1600);
 
-      // Progress bar simulation
-      p1 = setTimeout(() => setProgress(45), 350);
-      p2 = setTimeout(() => setProgress(78), 900);
-      p3 = setTimeout(() => setProgress(100), 1600);
-
-      // Splash duration: 2.3s for clean swoosh sound and brand reveal
-      timer = setTimeout(() => {
-        setIsVisible(false);
-        setTimeout(onComplete, 350);
-      }, 2300);
-    };
-
-    // Attempt immediate playback to test autoplay policy
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {
-        // Autoplay is allowed!
-        audio.pause();
-        audio.currentTime = 0;
-        startTransition();
-      }).catch(() => {
-        // Autoplay blocked. Show interaction overlay.
-        setRequiresInteraction(true);
-      });
-    }
+    // Splash duration: 2.3s for clean swoosh sound and brand reveal
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+      setTimeout(onComplete, 350);
+    }, 2300);
 
     const handleGesture = () => {
-      if (!hasStarted) {
-        startTransition();
-      }
+      audio.play().catch(() => {});
     };
 
-    window.addEventListener('pointerdown', handleGesture);
-    window.addEventListener('keydown', handleGesture);
+    window.addEventListener('pointerdown', handleGesture, { once: true });
+    window.addEventListener('keydown', handleGesture, { once: true });
 
     return () => {
       window.removeEventListener('pointerdown', handleGesture);
@@ -74,7 +48,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         audio.currentTime = 0;
       } catch {}
     };
-  }, [onComplete, hasStarted]);
+  }, [onComplete]);
 
   return (
     <AnimatePresence>
@@ -86,26 +60,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050508] select-none overflow-hidden"
         >
-          {/* Interaction Barrier Overlay */}
-          <AnimatePresence>
-            {requiresInteraction && !hasStarted && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm cursor-pointer"
-              >
-                <div className="flex flex-col items-center gap-4 animate-pulse">
-                  <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                  <span className="text-white font-medium tracking-widest text-sm">CLICK TO EXPERIENCE ZHOOSH</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
           {/* Deep Black, Crimson Red & Electric Purple Atmospheric Cosmic Flares */}
           <div className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full bg-[#FF1E56]/22 blur-[170px] pointer-events-none animate-pulse" />
           <div className="absolute bottom-1/4 right-1/3 w-[600px] h-[600px] rounded-full bg-[#9D4EDD]/25 blur-[180px] pointer-events-none animate-pulse" />
