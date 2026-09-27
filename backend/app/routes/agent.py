@@ -1221,7 +1221,7 @@ def generate_grounded_response(
     # =========================================================================
     # Check if user explicitly asked for music / songs while in Cinema mode
     early_entity_type, early_entity_val = find_track_or_artist_in_query(message)
-    if (is_explicit_music and not is_explicit_movie) or (early_entity_type == "artist" and not is_explicit_movie):
+    if (is_explicit_music and not is_explicit_movie) or (early_entity_type in ["artist", "track"] and not is_explicit_movie):
         return (
             f"🎬 **You are currently in Cinema mode with {agent_name}!**\n\n"
             f"To discover music tracks, browse artist discographies, and stream lossless audio, please switch to **Music mode** using the toggle in the top bar 🎵.\n\n"
@@ -1421,7 +1421,7 @@ async def groq_stream(message: str, history: List[ConversationMessage], agent_na
     if songs:
         yield f"data: {json.dumps({'type': 'songs', 'songs': songs})}\n\n"
 
-    yield f"dduring on boarding..that 5ata: {json.dumps({'type': 'intent', 'intent': 'grounded_response'})}\n\n"
+    yield f"data: {json.dumps({'type': 'intent', 'intent': 'grounded_response'})}\n\n"
     async for chunk in stream_text_words(response_text, delay_ms=18):
         yield chunk
 

@@ -50,6 +50,7 @@ class LikeRequest(BaseModel):
 
 class VoiceSearchRequest(BaseModel):
     query: str
+    mode: Optional[str] = "movies"
 
 class VoiceSearchResponse(BaseModel):
     query: str

@@ -10,22 +10,50 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [progress, setProgress] = useState(15);
 
   useEffect(() => {
+    // ── Zhoosh Intro Music (Swoosh) ──
+    const audio = new Audio(encodeURI('/Zhoosh Swoosh (Short).mp3'));
+    audio.preload = 'auto';
+    audio.volume = 0.85;
+
+    const playAudio = () => {
+      audio.play().catch((err) => {
+        // Autoplay may be restricted by modern browser policies before first interaction
+        console.debug('Splash audio autoplay deferred:', err);
+      });
+    };
+
+    // Attempt immediate playback
+    playAudio();
+
+    // Fallback: If autoplay policy blocks unprompted audio, play on first touch/click
+    const handleGesture = () => {
+      playAudio();
+    };
+    window.addEventListener('pointerdown', handleGesture, { once: true });
+    window.addEventListener('keydown', handleGesture, { once: true });
+
     // Progress bar simulation
     const p1 = setTimeout(() => setProgress(45), 350);
     const p2 = setTimeout(() => setProgress(78), 900);
-    const p3 = setTimeout(() => setProgress(100), 1500);
+    const p3 = setTimeout(() => setProgress(100), 1600);
 
-    // Splash duration: 2.1s for clean brand reveal
+    // Splash duration: 2.3s for clean swoosh sound and brand reveal
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(onComplete, 350);
-    }, 2100);
+    }, 2300);
 
     return () => {
+      window.removeEventListener('pointerdown', handleGesture);
+      window.removeEventListener('keydown', handleGesture);
       clearTimeout(p1);
       clearTimeout(p2);
       clearTimeout(p3);
       clearTimeout(timer);
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {}
     };
   }, [onComplete]);
 

@@ -188,6 +188,8 @@ export const AIChatView: React.FC = () => {
 
   const shouldReduceMotion = useReducedMotion();
   const [input, setInput] = useState('');
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -195,6 +197,75 @@ export const AIChatView: React.FC = () => {
 
   const botName = profile?.name || (isMovieMode ? 'Nova' : 'SonicBot');
   const botAvatar = profile?.avatarUrl || '/agent-avatar.jpg';
+
+  // In-chat speech-to-text dictation
+  const toggleVoiceInput = () => {
+    if (isVoiceListening) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+        recognitionRef.current = null;
+      }
+      setIsVoiceListening(false);
+      return;
+    }
+
+    const SpeechRec =
+      (window as unknown as { SpeechRecognition?: { new(): any } }).SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: { new(): any } }).webkitSpeechRecognition;
+
+    if (!SpeechRec) {
+      addToast({
+        title: 'Voice input unavailable',
+        description: 'Speech recognition is not supported in this browser.',
+        type: 'info'
+      });
+      return;
+    }
+
+    try {
+      const rec = new SpeechRec();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        setIsVoiceListening(true);
+      };
+
+      rec.onresult = (event: any) => {
+        let text = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          text += event.results[i][0].transcript;
+        }
+        if (text) {
+          setInput(text);
+        }
+      };
+
+      rec.onend = () => {
+        setIsVoiceListening(false);
+        recognitionRef.current = null;
+      };
+
+      rec.onerror = () => {
+        setIsVoiceListening(false);
+        recognitionRef.current = null;
+      };
+
+      rec.start();
+      recognitionRef.current = rec;
+    } catch {
+      setIsVoiceListening(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+    };
+  }, []);
 
   useEffect(() => {
     loadFromStorage();
@@ -744,13 +815,19 @@ export const AIChatView: React.FC = () => {
                 : 'border-white/20 focus-within:border-[#0070F3] focus-within:shadow-[0_0_25px_rgba(0,112,243,0.35)] ring-1 ring-white/5'
             }`}
           >
-            {/* Voice Search Integration */}
+            {/* In-Chat Voice Dictation */}
             <button
-              onClick={() => openVoiceSearch()}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
-              title="Speak with Voice"
+              onClick={toggleVoiceInput}
+              className={`p-2 rounded-xl transition-all cursor-pointer shrink-0 ${
+                isVoiceListening
+                  ? isMovieMode
+                    ? 'text-white bg-red-600/40 border border-red-500 shadow-[0_0_12px_rgba(229,9,20,0.5)] animate-pulse'
+                    : 'text-white bg-cyan-500/30 border border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.5)] animate-pulse'
+                  : 'text-gray-400 hover:text-white hover:bg-white/10'
+              }`}
+              title={isVoiceListening ? 'Listening... click to stop' : 'Speak with Voice'}
             >
-              <Mic className="w-4 h-4" />
+              <Mic className={`w-4 h-4 ${isVoiceListening ? (isMovieMode ? 'text-red-400' : 'text-cyan-300') : ''}`} />
             </button>
 
             {/* Input Field */}

@@ -9,7 +9,8 @@ from backend.app.routes import (
     search,
     voice_search,
     auth,
-    agent
+    agent,
+    shazam
 )
 
 app = FastAPI(
@@ -37,6 +38,7 @@ app.include_router(search.router, prefix="/api")
 app.include_router(voice_search.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(agent.router, prefix="/api")
+app.include_router(shazam.router, prefix="/api")
 
 @app.get("/")
 def root():

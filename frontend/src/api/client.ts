@@ -298,59 +298,78 @@ class ApiClient {
         }
       }
 
-      if (isInterstellar) {
-        primary_movie = MOCK_MOVIES.find((m) => m.title.toLowerCase().includes('interstellar')) || MOCK_MOVIES[0];
-        similar_movies = MOCK_MOVIES.filter((m) => String(m.id) !== String(primary_movie?.id)).slice(0, 6);
-        search_type = 'title_match';
-      } else if (isThriller) {
-        genre_top_movies = MOCK_MOVIES.filter((m) =>
-          m.genres.some((g) => g.toLowerCase().includes('thriller') || g.toLowerCase().includes('crime') || g.toLowerCase().includes('action'))
-        );
-        search_type = 'genre_match';
+      if (mode === 'movies') {
+        if (isInterstellar) {
+          primary_movie = MOCK_MOVIES.find((m) => m.title.toLowerCase().includes('interstellar')) || MOCK_MOVIES[0];
+          similar_movies = MOCK_MOVIES.filter((m) => String(m.id) !== String(primary_movie?.id)).slice(0, 6);
+          search_type = 'title_match';
+        } else if (isThriller) {
+          genre_top_movies = MOCK_MOVIES.filter((m) =>
+            m.genres.some((g) => g.toLowerCase().includes('thriller') || g.toLowerCase().includes('crime') || g.toLowerCase().includes('action'))
+          );
+          search_type = 'genre_match';
+        }
+      } else {
+        // In music mode, ensure all movie fields are null and empty
+        primary_movie = null;
+        similar_movies = [];
+        genre_top_movies = [];
+        
+        // If generic music search ("song", "music", "play a song") and no specific track matched yet
+        if (!primary_song && artist_songs.length === 0 && similar_romantic_songs.length === 0 && filteredMusic.length === 0) {
+          filteredMusic = MOCK_SONGS.slice(0, 12);
+        }
       }
 
       return {
         query,
         search_type,
         mode,
-        primary_movie,
-        similar_movies,
-        genre: isThriller ? 'Thriller' : isRomanticQuery ? 'Romance' : null,
-        genre_top_movies,
+        primary_movie: mode === 'music' ? null : primary_movie,
+        similar_movies: mode === 'music' ? [] : similar_movies,
+        genre: mode === 'music' ? (isRomanticQuery ? 'Romance' : null) : (isThriller ? 'Thriller' : isRomanticQuery ? 'Romance' : null),
+        genre_top_movies: mode === 'music' ? [] : genre_top_movies,
         primary_song,
         artist_name,
         artist_songs,
         similar_songs,
         similar_romantic_songs,
-        movies: filteredMovies,
-        music: filteredMusic
+        movies: mode === 'music' ? [] : filteredMovies,
+        music: mode === 'movies' ? [] : (filteredMusic.length > 0 ? filteredMusic : MOCK_SONGS.slice(0, 10))
       };
     }
   }
 
-  async voiceSearch(audioBlobOrTranscript: string): Promise<{ query: string; results: Array<Movie | Song> }> {
+  async voiceSearch(audioBlobOrTranscript: string, mode: AppMode = 'movies'): Promise<{ query: string; results: Array<Movie | Song> }> {
     try {
       const res = await fetch(`${this.baseUrl}/voice-search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: audioBlobOrTranscript })
+        body: JSON.stringify({ query: audioBlobOrTranscript, mode })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch {
-      await delay(600);
+      await delay(400);
       const q = audioBlobOrTranscript.toLowerCase();
-      // Match against query keywords
+      const isMusicIntent = mode === 'music' || ['song', 'songs', 'track', 'tracks', 'music', 'singer', 'listen', 'play', 'sing', 'kesariya', 'arijit', 'album'].some(k => q.includes(k));
+
+      if (isMusicIntent) {
+        const matchedSongs = MOCK_SONGS.filter((s) =>
+          q.includes('music') || q.includes('synth') || q.includes('beat') || s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+        );
+        return {
+          query: audioBlobOrTranscript,
+          results: matchedSongs.length > 0 ? matchedSongs : MOCK_SONGS.slice(0, 6)
+        };
+      }
+
       const matchedMovies = MOCK_MOVIES.filter((m) =>
         q.includes('movie') || q.includes('sci-fi') || q.includes('space') || m.title.toLowerCase().includes(q)
       );
-      const matchedSongs = MOCK_SONGS.filter((s) =>
-        q.includes('music') || q.includes('synth') || q.includes('beat') || s.title.toLowerCase().includes(q)
-      );
-      const results = [...matchedMovies, ...matchedSongs];
       return {
         query: audioBlobOrTranscript,
-        results: results.length > 0 ? results : [...MOCK_MOVIES.slice(0, 3), ...MOCK_SONGS.slice(0, 3)]
+        results: matchedMovies.length > 0 ? matchedMovies : MOCK_MOVIES.slice(0, 6)
       };
     }
   }
@@ -942,6 +961,49 @@ class ApiClient {
       }
       onDone(intent);
     }
+  }
+
+  async identifyAudio(audioBlob: Blob): Promise<{
+    found: boolean;
+    message?: string;
+    track?: Song & { share_url?: string };
+    similar_songs?: Song[];
+    matching_movies?: Movie[];
+  }> {
+    const makeFormData = () => {
+      const fd = new FormData();
+      fd.append('file', audioBlob, 'recording.webm');
+      return fd;
+    };
+
+    try {
+      const res = await fetch(`${this.baseUrl}/shazam/identify`, {
+        method: 'POST',
+        body: makeFormData(),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Proxy identify attempt failed, trying direct URL...', err);
+    }
+
+    try {
+      const directRes = await fetch(`${this.directUrl}/shazam/identify`, {
+        method: 'POST',
+        body: makeFormData(),
+      });
+      if (directRes.ok) {
+        return await directRes.json();
+      }
+    } catch (err) {
+      console.warn('Direct identify attempt failed:', err);
+    }
+
+    return {
+      found: false,
+      message: 'Could not connect to song identification service. Please check your backend connection and microphone.'
+    };
   }
 }
 
