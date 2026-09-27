@@ -8,6 +8,9 @@ import asyncio
 import os
 import re
 import random
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from backend.app.recommender import engine
 
@@ -1422,6 +1425,53 @@ async def groq_stream(message: str, history: List[ConversationMessage], agent_na
         yield f"data: {json.dumps({'type': 'songs', 'songs': songs})}\n\n"
 
     yield f"data: {json.dumps({'type': 'intent', 'intent': 'grounded_response'})}\n\n"
+
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if groq_api_key:
+        try:
+            from groq import AsyncGroq
+            client = AsyncGroq(api_key=groq_api_key)
+            
+            # Formulate prompt for full intelligence
+            system_prompt = f"You are {agent_name}, an intelligent, sassy, and friendly AI assistant for Zhoosh, a modern streaming platform. Keep your responses short, witty, and engaging. "
+            if movies:
+                titles = [m.get('title', '') for m in movies]
+                system_prompt += f"You are showing the user these movies: {', '.join(titles)}. Recommend them naturally! "
+            elif songs:
+                titles = [s.get('title', '') for s in songs]
+                system_prompt += f"You are showing the user these songs: {', '.join(titles)}. Recommend them naturally! "
+            else:
+                system_prompt += f"The backend suggested this base response: '{response_text}'. Use it as inspiration but rewrite it to sound conversational and empathetic."
+
+            messages = [{"role": "system", "content": system_prompt}]
+            
+            # Append limited history
+            for h in history[-4:]:
+                role = "assistant" if h.role == "agent" else "user"
+                messages.append({"role": role, "content": h.content})
+                
+            messages.append({"role": "user", "content": message})
+            
+            stream = await client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=messages,
+                stream=True,
+                max_tokens=200,
+                temperature=0.7
+            )
+            
+            async for chunk in stream:
+                content = chunk.choices[0].delta.content
+                if content:
+                    yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
+                    
+            yield f"data: {json.dumps({'type': 'done', 'intent': 'done'})}\n\n"
+            return
+        except Exception as e:
+            print(f"Groq API Error: {e}")
+            # Fallback to standard response if Groq fails
+            pass
+
     async for chunk in stream_text_words(response_text, delay_ms=18):
         yield chunk
 
