@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { AgentMessage, AgentProfile } from '@/types';
+import { stopSpeech } from '@/utils/speechSynthesis';
 
 const STORAGE_KEY = 'zhoosh_agent_v2';
 const OLD_STORAGE_KEY = 'zhoosh_agent_v1';
@@ -41,6 +42,13 @@ interface AgentState {
   // Thinking / streaming state
   isThinking: boolean;
   setThinking: (thinking: boolean) => void;
+
+  // Voice response (TTS) settings & state
+  isVoiceMuted: boolean;
+  isSpeaking: boolean;
+  toggleVoiceMute: () => void;
+  setVoiceMuted: (muted: boolean) => void;
+  setSpeaking: (speaking: boolean) => void;
 
   // Mode-segregated Messages: Cinema vs Music are completely separate!
   messagesByMode: {
@@ -101,6 +109,33 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   isThinking: false,
   setThinking: (thinking) => set({ isThinking: thinking }),
+
+  isVoiceMuted: false,
+  isSpeaking: false,
+  toggleVoiceMute: () => {
+    const next = !get().isVoiceMuted;
+    if (next) {
+      stopSpeech();
+      set({ isVoiceMuted: true, isSpeaking: false });
+    } else {
+      set({ isVoiceMuted: false });
+    }
+    try {
+      localStorage.setItem('zhoosh_agent_voice_muted', String(next));
+    } catch {}
+  },
+  setVoiceMuted: (muted: boolean) => {
+    if (muted) {
+      stopSpeech();
+      set({ isVoiceMuted: true, isSpeaking: false });
+    } else {
+      set({ isVoiceMuted: false });
+    }
+    try {
+      localStorage.setItem('zhoosh_agent_voice_muted', String(muted));
+    } catch {}
+  },
+  setSpeaking: (speaking: boolean) => set({ isSpeaking: speaking }),
 
   messagesByMode: {
     movies: [],
@@ -280,6 +315,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   loadFromStorage: () => {
     try {
+      const storedMute = localStorage.getItem('zhoosh_agent_voice_muted');
+      if (storedMute !== null) {
+        set({ isVoiceMuted: storedMute === 'true' });
+      }
+
       const rawV2 = localStorage.getItem(STORAGE_KEY);
       if (rawV2) {
         const data = JSON.parse(rawV2);

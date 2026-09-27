@@ -14,7 +14,9 @@ import {
   ExternalLink,
   ChevronRight,
   Check,
-  Plus
+  Plus,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAgentStore } from '@/store/useAgentStore';
@@ -23,6 +25,7 @@ import { Movie, Song } from '@/types';
 import { FadedGridBackdrop } from '../common/FadedGridBackdrop';
 import { triggerLikeBurst } from '@/utils/confetti';
 import { synthEngine } from '@/utils/audioSynth';
+import { speakResponse, stopSpeech } from '@/utils/speechSynthesis';
 
 // Fallback high-res poster image for movies if image URL fails
 const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&auto=format&fit=crop&q=80';
@@ -172,6 +175,10 @@ export const AIChatView: React.FC = () => {
     messagesByMode,
     memoryByMode,
     isThinking,
+    isVoiceMuted,
+    isSpeaking,
+    toggleVoiceMute,
+    setSpeaking,
     addMessage,
     updateLastAgentMessage,
     attachMoviesToLastMessage,
@@ -292,9 +299,21 @@ export const AIChatView: React.FC = () => {
     }
   }, [messages.length, isThinking, scrollToBottom]);
 
+  // Cleanup speech synthesis on view unmount
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+      setSpeaking(false);
+    };
+  }, [setSpeaking]);
+
   const handleSendMessage = useCallback(async (text: string) => {
     const query = text.trim();
     if (!query || isThinking) return;
+
+    // Stop any ongoing speech when user sends a new query
+    stopSpeech();
+    setSpeaking(false);
 
     setInput('');
     abortRef.current = false;
@@ -325,10 +344,20 @@ export const AIChatView: React.FC = () => {
           if (abortRef.current) return;
           updateLastAgentMessage(accumulated, true, activeMode);
           setThinking(false);
+
+          // If voice response is NOT muted, speak Nova's response aloud!
+          const isMuted = useAgentStore.getState().isVoiceMuted;
+          if (!isMuted && accumulated) {
+            speakResponse(accumulated, {
+              onStart: () => setSpeaking(true),
+              onEnd: () => setSpeaking(false),
+            });
+          }
         },
         () => {
           updateLastAgentMessage('Sorry, I ran into an issue connecting. Please try again.', true, activeMode);
           setThinking(false);
+          setSpeaking(false);
         },
         (movies) => {
           if (abortRef.current) return;
@@ -351,8 +380,9 @@ export const AIChatView: React.FC = () => {
     } catch {
       updateLastAgentMessage('I had a brief glitch retrieving that recommendation. Please try asking again!', true, activeMode);
       setThinking(false);
+      setSpeaking(false);
     }
-  }, [activeMode, addMessage, botName, currentMemory, isThinking, likedItems, messages, setThinking, updateLastAgentMessage, attachMoviesToLastMessage, attachSongsToLastMessage]);
+  }, [activeMode, addMessage, botName, currentMemory, isThinking, likedItems, messages, setThinking, setSpeaking, updateLastAgentMessage, attachMoviesToLastMessage, attachSongsToLastMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -419,19 +449,85 @@ export const AIChatView: React.FC = () => {
         />
       </div>
 
-      {/* ── 2. Minimalist Clear Chat Bar (Subtle, blends seamlessly with dark theme) ── */}
-      {messages.length > 0 && (
-        <div className="shrink-0 z-20 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-3 pb-1 flex justify-end">
-          <button
-            onClick={handleClear}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/40 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/15 backdrop-blur-md transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
-            title={`Clear ${isMovieMode ? 'cinema' : 'music'} chat (taste memory remains preserved)`}
-          >
-            <Trash2 className="w-3.5 h-3.5 text-white/30 group-hover:text-red-400 transition-colors" />
-            <span>Clear chat</span>
-          </button>
+      {/* ── 2. Top Chat Controls Bar (Header with Voice Mute Toggle & Clear) ── */}
+      <div className="shrink-0 z-20 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-3 pb-2 flex items-center justify-between">
+        {/* Left: Bot Status Badge & Live Waveform */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex items-center justify-center">
+            <div className={`w-7 h-7 rounded-lg overflow-hidden border ${isMovieMode ? 'border-red-500/40' : 'border-blue-500/40'} bg-black/40`}>
+              <img
+                src={botAvatar}
+                alt={botName}
+                onError={(e) => { (e.target as HTMLImageElement).src = '/agent-avatar.jpg'; }}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {/* Live Green Online Dot */}
+            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#07070b]" />
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-white tracking-wide">{botName}</span>
+              {isSpeaking && (
+                <div className="flex items-center gap-0.5 ml-1">
+                  <span className="w-0.5 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-0.5 h-3 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-0.5 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="text-[10px] text-emerald-400 font-medium ml-1">Speaking...</span>
+                </div>
+              )}
+            </div>
+            <span className="text-[10px] text-white/40">
+              {isThinking ? 'Generating answer...' : isSpeaking ? 'Audio response active' : isMovieMode ? 'Cinema AI Assistant' : 'Music AI Companion'}
+            </span>
+          </div>
         </div>
-      )}
+
+        {/* Right: Mute/Unmute Voice Response Toggle & Clear Chat */}
+        <div className="flex items-center gap-2">
+          {/* MUTE / UNMUTE BUTTON */}
+          <button
+            onClick={toggleVoiceMute}
+            className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer shadow-sm active:scale-95 ${
+              isVoiceMuted
+                ? 'bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 border border-white/10'
+                : isMovieMode
+                  ? 'bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/40 shadow-[0_0_12px_rgba(229,9,20,0.15)]'
+                  : 'bg-blue-500/15 hover:bg-blue-500/25 text-cyan-200 border border-blue-500/40 shadow-[0_0_12px_rgba(0,140,255,0.15)]'
+            }`}
+            title={
+              isVoiceMuted
+                ? "Voice is muted: Click to hear Nova speak responses aloud"
+                : "Voice is active: Click to mute voice and only read text"
+            }
+          >
+            {isVoiceMuted ? (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors" />
+                <span className="tracking-wide">Muted (Text only)</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className={`w-3.5 h-3.5 ${isMovieMode ? 'text-red-400' : 'text-cyan-400'} ${isSpeaking ? 'animate-pulse' : ''}`} />
+                <span className="tracking-wide">Voice ON</span>
+              </>
+            )}
+          </button>
+
+          {/* Clear Chat Button (when messages exist) */}
+          {messages.length > 0 && (
+            <button
+              onClick={handleClear}
+              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/40 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/15 backdrop-blur-md transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
+              title={`Clear ${isMovieMode ? 'cinema' : 'music'} chat (taste memory remains preserved)`}
+            >
+              <Trash2 className="w-3.5 h-3.5 text-white/30 group-hover:text-red-400 transition-colors" />
+              <span className="hidden sm:inline">Clear chat</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* ══════════════════════════════════════════
           CHAT MESSAGES SCROLL VIEW

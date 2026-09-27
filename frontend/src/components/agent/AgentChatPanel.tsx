@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { X, Send, Trash2, Settings, RotateCcw, Sparkles } from 'lucide-react';
+import { X, Send, Trash2, Settings, RotateCcw, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useAgentStore } from '@/store/useAgentStore';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/api/client';
 import { AgentAvatar } from './AgentAvatar';
 import { AgentMessage } from './AgentMessage';
+import { speakResponse, stopSpeech } from '@/utils/speechSynthesis';
 
 const CINEMA_EXAMPLE_QUERIES = [
   { icon: '🎬', label: 'Top trending movies' },
@@ -32,6 +33,10 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
     profile,
     messagesByMode,
     isThinking,
+    isVoiceMuted,
+    isSpeaking,
+    toggleVoiceMute,
+    setSpeaking,
     addMessage,
     updateLastAgentMessage,
     attachMoviesToLastMessage,
@@ -67,9 +72,21 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
     setTimeout(() => inputRef.current?.focus(), 300);
   }, []);
 
+  // Cleanup speech synthesis on panel unmount
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+      setSpeaking(false);
+    };
+  }, [setSpeaking]);
+
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isThinking) return;
+
+    // Stop any ongoing speech when user sends a new message
+    stopSpeech();
+    setSpeaking(false);
 
     setInput('');
     abortRef.current = false;
@@ -101,10 +118,20 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
           setThinking(false);
           setAvatarState('responding');
           setTimeout(() => setAvatarState('idle'), 800);
+
+          // If voice response is NOT muted, speak Nova's response aloud!
+          const isMuted = useAgentStore.getState().isVoiceMuted;
+          if (!isMuted && accumulated) {
+            speakResponse(accumulated, {
+              onStart: () => setSpeaking(true),
+              onEnd: () => setSpeaking(false),
+            });
+          }
         },
         () => {
           updateLastAgentMessage('Sorry, I ran into an issue. Please try again.', true, activeMode);
           setThinking(false);
+          setSpeaking(false);
           setAvatarState('idle');
         },
         (movies) => {
@@ -127,9 +154,10 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
     } catch {
       updateLastAgentMessage('Sorry, something went wrong. Please try again.', true, activeMode);
       setThinking(false);
+      setSpeaking(false);
       setAvatarState('idle');
     }
-  }, [activeMode, addMessage, agentName, attachMoviesToLastMessage, attachSongsToLastMessage, isThinking, likedItems, messages, setThinking, updateLastAgentMessage]);
+  }, [activeMode, addMessage, agentName, attachMoviesToLastMessage, attachSongsToLastMessage, isThinking, likedItems, messages, setThinking, setSpeaking, updateLastAgentMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -202,6 +230,25 @@ export const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ onClose }) => {
         </div>
 
         <div className="flex items-center gap-1">
+          <button
+            onClick={toggleVoiceMute}
+            className={`p-1.5 rounded-lg transition-all ${
+              isVoiceMuted
+                ? 'text-gray-500 hover:text-white hover:bg-white/5'
+                : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'
+            }`}
+            title={
+              isVoiceMuted
+                ? "Voice is muted: Click to hear spoken responses"
+                : "Voice is active: Click to mute spoken responses"
+            }
+          >
+            {isVoiceMuted ? (
+              <VolumeX className="w-3.5 h-3.5" />
+            ) : (
+              <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'animate-pulse' : ''}`} />
+            )}
+          </button>
           <button
             onClick={() => { setShowSettings(!showSettings); setEditName(agentName); }}
             className="p-1.5 rounded-lg text-gray-500 hover:text-[#A855F7] hover:bg-white/5 transition-colors"
