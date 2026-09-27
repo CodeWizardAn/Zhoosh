@@ -450,83 +450,47 @@ export const AIChatView: React.FC = () => {
       </div>
 
       {/* ── 2. Top Chat Controls Bar (Header with Voice Mute Toggle & Clear) ── */}
-      <div className="shrink-0 z-20 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-3 pb-2 flex items-center justify-between">
-        {/* Left: Bot Status Badge & Live Waveform */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex items-center justify-center">
-            <div className={`w-7 h-7 rounded-lg overflow-hidden border ${isMovieMode ? 'border-red-500/40' : 'border-blue-500/40'} bg-black/40`}>
-              <img
-                src={botAvatar}
-                alt={botName}
-                onError={(e) => { (e.target as HTMLImageElement).src = '/agent-avatar.jpg'; }}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            {/* Live Green Online Dot */}
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#07070b]" />
-          </div>
-
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-white tracking-wide">{botName}</span>
-              {isSpeaking && (
-                <div className="flex items-center gap-0.5 ml-1">
-                  <span className="w-0.5 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-0.5 h-3 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-0.5 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  <span className="text-[10px] text-emerald-400 font-medium ml-1">Speaking...</span>
-                </div>
-              )}
-            </div>
-            <span className="text-[10px] text-white/40">
-              {isThinking ? 'Generating answer...' : isSpeaking ? 'Audio response active' : isMovieMode ? 'Cinema AI Assistant' : 'Music AI Companion'}
-            </span>
-          </div>
-        </div>
-
-        {/* Right: Mute/Unmute Voice Response Toggle & Clear Chat */}
-        <div className="flex items-center gap-2">
-          {/* MUTE / UNMUTE BUTTON */}
-          <button
-            onClick={toggleVoiceMute}
-            className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer shadow-sm active:scale-95 ${
-              isVoiceMuted
-                ? 'bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 border border-white/10'
-                : isMovieMode
-                  ? 'bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/40 shadow-[0_0_12px_rgba(229,9,20,0.15)]'
-                  : 'bg-blue-500/15 hover:bg-blue-500/25 text-cyan-200 border border-blue-500/40 shadow-[0_0_12px_rgba(0,140,255,0.15)]'
-            }`}
-            title={
-              isVoiceMuted
-                ? "Voice is muted: Click to hear Nova speak responses aloud"
-                : "Voice is active: Click to mute voice and only read text"
-            }
-          >
-            {isVoiceMuted ? (
-              <>
-                <VolumeX className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors" />
-                <span className="tracking-wide">Muted (Text only)</span>
-              </>
-            ) : (
-              <>
-                <Volume2 className={`w-3.5 h-3.5 ${isMovieMode ? 'text-red-400' : 'text-cyan-400'} ${isSpeaking ? 'animate-pulse' : ''}`} />
-                <span className="tracking-wide">Voice ON</span>
-              </>
-            )}
-          </button>
-
-          {/* Clear Chat Button (when messages exist) */}
-          {messages.length > 0 && (
-            <button
-              onClick={handleClear}
-              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/40 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/15 backdrop-blur-md transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
-              title={`Clear ${isMovieMode ? 'cinema' : 'music'} chat (taste memory remains preserved)`}
-            >
-              <Trash2 className="w-3.5 h-3.5 text-white/30 group-hover:text-red-400 transition-colors" />
-              <span className="hidden sm:inline">Clear chat</span>
-            </button>
+      <div className="shrink-0 z-20 w-full max-w-5xl mx-auto px-4 sm:px-8 pt-3 pb-1 flex items-center justify-end gap-2">
+        {/* MUTE / UNMUTE BUTTON */}
+        <button
+          onClick={toggleVoiceMute}
+          className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer shadow-sm active:scale-95 ${
+            isVoiceMuted
+              ? 'bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 border border-white/10'
+              : isMovieMode
+                ? 'bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/40 shadow-[0_0_12px_rgba(229,9,20,0.15)]'
+                : 'bg-blue-500/15 hover:bg-blue-500/25 text-cyan-200 border border-blue-500/40 shadow-[0_0_12px_rgba(0,140,255,0.15)]'
+          }`}
+          title={
+            isVoiceMuted
+              ? "Voice is muted: Click to hear Nova speak responses aloud"
+              : "Voice is active: Click to mute voice and only read text"
+          }
+        >
+          {isVoiceMuted ? (
+            <>
+              <VolumeX className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors" />
+              <span className="tracking-wide">Muted (Text only)</span>
+            </>
+          ) : (
+            <>
+              <Volume2 className={`w-3.5 h-3.5 ${isMovieMode ? 'text-red-400' : 'text-cyan-400'} ${isSpeaking ? 'animate-pulse' : ''}`} />
+              <span className="tracking-wide">Voice ON</span>
+            </>
           )}
-        </div>
+        </button>
+
+        {/* Clear Chat Button (when messages exist) */}
+        {messages.length > 0 && (
+          <button
+            onClick={handleClear}
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white/40 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/15 backdrop-blur-md transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
+            title={`Clear ${isMovieMode ? 'cinema' : 'music'} chat (taste memory remains preserved)`}
+          >
+            <Trash2 className="w-3.5 h-3.5 text-white/30 group-hover:text-red-400 transition-colors" />
+            <span className="hidden sm:inline">Clear chat</span>
+          </button>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════
@@ -627,8 +591,12 @@ export const AIChatView: React.FC = () => {
               <div className={`max-w-[95%] sm:max-w-4xl flex gap-2 sm:gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
                 {!isUser && (
                   <div
-                    className={`w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-md mt-1 border ${
-                      isMovieMode
+                    className={`relative w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-md mt-1 border transition-all ${
+                      isSpeaking && index === messages.length - 1
+                        ? isMovieMode
+                          ? 'border-red-400 ring-2 ring-red-500/50 shadow-[0_0_15px_rgba(255,30,86,0.6)]'
+                          : 'border-cyan-400 ring-2 ring-cyan-500/50 shadow-[0_0_15px_rgba(0,210,255,0.6)]'
+                        : isMovieMode
                         ? 'border-red-500/40 shadow-red-950/50'
                         : 'border-blue-500/40 shadow-blue-950/50'
                     }`}
@@ -641,6 +609,15 @@ export const AIChatView: React.FC = () => {
                       }}
                       className="w-full h-full object-cover"
                     />
+                    {isSpeaking && index === messages.length - 1 && (
+                      <motion.div
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.8, 0, 0.8] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                        className={`absolute inset-0 rounded-lg border-2 pointer-events-none ${
+                          isMovieMode ? 'border-red-400' : 'border-cyan-400'
+                        }`}
+                      />
+                    )}
                   </div>
                 )}
 
@@ -653,6 +630,19 @@ export const AIChatView: React.FC = () => {
                     <span className="text-[10px] text-gray-500">
                       {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
+
+                    {/* Speaking Loading Animation Badge */}
+                    {!isUser && isSpeaking && index === messages.length - 1 && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-red-500/20 via-pink-500/20 to-purple-500/20 border border-red-500/35 text-white text-[10px] font-bold tracking-wider shadow-[0_0_12px_rgba(255,30,86,0.35)] animate-pulse">
+                        <span className="flex items-center gap-0.5">
+                          <span className="w-0.5 h-2.5 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-0.5 h-3.5 bg-pink-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-0.5 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <span className="w-0.5 h-3 bg-cyan-300 rounded-full animate-bounce" style={{ animationDelay: '450ms' }} />
+                        </span>
+                        <span>SPEAKING...</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Bubble Content */}
@@ -675,6 +665,51 @@ export const AIChatView: React.FC = () => {
                             isMovieMode ? 'bg-[#E50914]' : 'bg-cyan-400'
                           }`}
                         />
+                      )}
+
+                      {/* Live Speaking Audio Waveform Loading Visualizer inside bubble */}
+                      {!isUser && isSpeaking && index === messages.length - 1 && (
+                        <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            {/* Animated Audio Equalizer Bars */}
+                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/60 border border-red-500/30 shadow-[0_0_12px_rgba(255,30,86,0.25)]">
+                              {[35, 95, 60, 100, 45, 80, 50, 90, 40].map((h, barIdx) => (
+                                <motion.span
+                                  key={barIdx}
+                                  className={`w-1 rounded-full ${
+                                    isMovieMode
+                                      ? 'bg-gradient-to-t from-red-500 via-pink-400 to-purple-300 shadow-[0_0_8px_rgba(255,30,86,0.8)]'
+                                      : 'bg-gradient-to-t from-blue-500 via-cyan-400 to-teal-300 shadow-[0_0_8px_rgba(0,140,255,0.8)]'
+                                  }`}
+                                  animate={{
+                                    height: ['4px', `${(h / 100) * 18}px`, '4px'],
+                                    opacity: [0.5, 1, 0.5]
+                                  }}
+                                  transition={{
+                                    duration: 0.5 + (barIdx % 4) * 0.15,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                    delay: barIdx * 0.06
+                                  }}
+                                />
+                              ))}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={`text-xs font-bold tracking-wide ${isMovieMode ? 'text-red-300' : 'text-cyan-300'}`}>
+                                Nova is speaking aloud...
+                              </span>
+                              <span className="text-[10px] text-gray-400">Audio playback active</span>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={toggleVoiceMute}
+                            className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] text-gray-300 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95"
+                            title="Mute spoken response"
+                          >
+                            Mute
+                          </button>
+                        </div>
                       )}
 
                       {/* Quick Interactive Switcher when user asks about the other medium */}
