@@ -13,12 +13,13 @@ import {
   Heart,
   RotateCw,
   Upload,
-  Music2
+  Music2,
+  Film
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/api/client';
 import { triggerLikeBurst } from '@/utils/confetti';
-import { Song } from '@/types';
+import { Song, AppMode } from '@/types';
 
 type SearchAudioMode = 'voice' | 'identify';
 type IdentifyState = 'idle' | 'listening' | 'identifying' | 'found' | 'not_found' | 'error';

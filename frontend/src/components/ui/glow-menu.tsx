@@ -1,20 +1,20 @@
 "use client"
 
 import type * as React from "react"
-import { motion } from "framer-motion"
+import { motion, Variants } from "framer-motion"
 import { Search, Mic } from "lucide-react"
 
-const itemVariants = {
+const itemVariants: Variants = {
   initial: { rotateX: 0, opacity: 1 },
   hover: { rotateX: -90, opacity: 0 },
 }
 
-const backVariants = {
+const backVariants: Variants = {
   initial: { rotateX: 90, opacity: 0 },
   hover: { rotateX: 0, opacity: 1 },
 }
 
-const glowVariants = {
+const glowVariants: Variants = {
   initial: { opacity: 0, scale: 0.8 },
   hover: {
     opacity: 1,
@@ -26,7 +26,7 @@ const glowVariants = {
   },
 }
 
-const navGlowVariants = {
+const navGlowVariants: Variants = {
   initial: { opacity: 0 },
   hover: {
     opacity: 1,

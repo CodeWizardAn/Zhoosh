@@ -233,7 +233,7 @@ class ApiClient {
           m.genres.some((g) => g.toLowerCase().includes(q)) ||
           m.overview.toLowerCase().includes(q)
       );
-      const filteredMusic = MOCK_SONGS.filter(
+      let filteredMusic = MOCK_SONGS.filter(
         (s) =>
           s.title.toLowerCase().includes(q) ||
           s.artist.toLowerCase().includes(q) ||
