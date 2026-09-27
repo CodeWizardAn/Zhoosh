@@ -476,77 +476,14 @@ export const VoiceSearchBar: React.FC = () => {
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full max-w-xl rounded-[28px] bg-[#0c0c14]/95 border border-white/10 shadow-[0_25px_80px_rgba(0,0,0,0.85)] p-6 sm:p-7 text-white overflow-hidden max-h-[90vh] flex flex-col z-10"
         >
-          {/* Header: Segmented Tabs & Domain Switcher */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-white/[0.08] shrink-0">
-            {/* Mode Switcher Pill (Cinema vs Music) */}
-            <div className="flex items-center bg-black/60 p-1 rounded-2xl border border-white/10 shadow-inner">
-              <button
-                onClick={() => setSearchDomain('movies')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  searchDomain === 'movies'
-                    ? 'bg-gradient-to-r from-[#FF1E56] to-rose-600 text-white shadow-md shadow-[#FF1E56]/30'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-                title="Search Cinema Catalog"
-              >
-                <Film className="w-3.5 h-3.5" />
-                <span>Cinema</span>
-              </button>
-
-              <button
-                onClick={() => setSearchDomain('music')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  searchDomain === 'music'
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/25'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-                title="Search Music Catalog"
-              >
-                <Music2 className="w-3.5 h-3.5" />
-                <span>Music</span>
-              </button>
-            </div>
-
-            {/* Audio Modes (Voice Search vs Shazam) */}
-            <div className="flex items-center bg-black/50 p-1 rounded-2xl border border-white/10 shadow-inner">
-              <button
-                onClick={() => setActiveTab('voice')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'voice'
-                    ? searchDomain === 'movies'
-                      ? 'bg-gradient-to-r from-[#FF1E56] to-rose-600 text-white shadow-md shadow-[#FF1E56]/30'
-                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Mic className="w-3.5 h-3.5" />
-                <span>{searchDomain === 'movies' ? 'Voice Search' : 'Voice Search'}</span>
-              </button>
-
-              {searchDomain === 'music' && (
-                <button
-                  onClick={() => setActiveTab('identify')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'identify'
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30'
-                      : 'text-zinc-400 hover:text-cyan-300'
-                  }`}
-                >
-                  <Radio className="w-3.5 h-3.5 animate-pulse text-cyan-400" />
-                  <span className="text-cyan-300 font-extrabold">Shazam</span>
-                </button>
-              )}
-            </div>
-
-            {/* Close button */}
-            <button
-              onClick={closeVoiceSearch}
-              className="p-2 rounded-2xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ml-auto"
-              title="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          {/* Close button (Absolute top right) */}
+          <button
+            onClick={closeVoiceSearch}
+            className="absolute top-5 right-5 p-2 rounded-2xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer z-50"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
           <div className="overflow-y-auto flex-1 custom-scrollbar pt-6 text-center space-y-5">
             {/* ══════════════ TAB 1: VOICE SEARCH ══════════════ */}
@@ -654,7 +591,7 @@ export const VoiceSearchBar: React.FC = () => {
                           : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/30'
                       }`}
                     >
-                      {isListening ? 'Stop Listening' : 'Start Speaking'}
+                      {isListening ? 'Stop listening' : 'Start Speaking'}
                     </button>
                   )}
 
@@ -664,7 +601,7 @@ export const VoiceSearchBar: React.FC = () => {
                       className="px-5 py-2.5 rounded-full text-xs font-bold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105"
                     >
                       <Radio className="w-3.5 h-3.5 animate-pulse" />
-                      <span>Identify Song</span>
+                      <span>Identify a song</span>
                     </button>
                   )}
                 </div>
@@ -674,6 +611,16 @@ export const VoiceSearchBar: React.FC = () => {
             {/* ══════════════ TAB 2: SHAZAM SONG IDENTIFICATION (MUSIC ONLY) ══════════════ */}
             {!isCinema && activeTab === 'identify' && (
               <div className="space-y-5">
+                {/* Back Button */}
+                <div className="flex justify-start -mt-2">
+                  <button
+                    onClick={() => setActiveTab('voice')}
+                    className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    ← Back to Voice Search
+                  </button>
+                </div>
+
                 {/* ── Sub-State: Listening ── */}
                 {identifyState === 'listening' && (
                   <div className="py-4 flex flex-col items-center">
