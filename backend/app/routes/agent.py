@@ -1374,16 +1374,18 @@ def generate_grounded_response(
                 []
             )
 
-    # 8. Fallback with context search in catalog
-    search_res = engine.search_all(effective_message)
-    if search_res.get('movies'):
-        movies_res = search_res['movies'][:6]
-        return (
-            f"Based on \"{message}\", here are the closest matches in our cinema library:\n\n"
-            f"Click any title below to begin streaming! Say **'more'** for more matches.",
-            movies_res,
-            []
-        )
+    # 8. Fallback with context search in catalog (ONLY if search intent is clear)
+    search_intents = ["search", "find", "show me", "movie about", "song about", "film about", "looking for"]
+    if any(w in effective_msg_lower for w in search_intents):
+        search_res = engine.search_all(effective_message)
+        if search_res.get('movies'):
+            movies_res = search_res['movies'][:6]
+            return (
+                f"Based on \"{message}\", here are the closest matches in our cinema library:\n\n"
+                f"Click any title below to begin streaming! Say **'more'** for more matches.",
+                movies_res,
+                []
+            )
 
     return (
         f"I'm here to help you navigate Zhoosh's cinema and music catalog!\n\n"
@@ -1433,15 +1435,21 @@ async def groq_stream(message: str, history: List[ConversationMessage], agent_na
             client = AsyncGroq(api_key=groq_api_key)
             
             # Formulate prompt for full intelligence
-            system_prompt = f"You are {agent_name}, an intelligent, sassy, and friendly AI assistant for Zhoosh, a modern streaming platform. Keep your responses short, witty, and engaging. "
+            system_prompt = (
+                f"You are {agent_name}, an intelligent, sassy, and friendly AI assistant for Zhoosh, a modern streaming platform. "
+                f"Keep your responses short, witty, and engaging. "
+                f"The backend has provided this base response for the user's query:\n"
+                f"\"{response_text}\"\n"
+            )
+            
             if movies:
                 titles = [m.get('title', '') for m in movies]
-                system_prompt += f"You are showing the user these movies: {', '.join(titles)}. Recommend them naturally! "
+                system_prompt += f"You are also showing the user UI cards for these movies: {', '.join(titles)}. "
             elif songs:
                 titles = [s.get('title', '') for s in songs]
-                system_prompt += f"You are showing the user these songs: {', '.join(titles)}. Recommend them naturally! "
-            else:
-                system_prompt += f"The backend suggested this base response: '{response_text}'. Use it as inspiration but rewrite it to sound conversational and empathetic."
+                system_prompt += f"You are also showing the user UI cards for these songs: {', '.join(titles)}. "
+                
+            system_prompt += "Rewrite the backend's base response to sound conversational, natural, and empathetic. Do NOT use markdown like asterisks or bold text. If the base response answers a factual question (like a director or cast), ensure you preserve that fact!"
 
             messages = [{"role": "system", "content": system_prompt}]
             
