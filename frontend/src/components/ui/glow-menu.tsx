@@ -42,7 +42,7 @@ const sharedTransition = {
   stiffness: 100,
   damping: 20,
   duration: 0.5,
-}
+} as const
 
 export interface MenuItem {
   id: string
